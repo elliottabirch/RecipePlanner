@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   ReactFlow,
   Controls,
@@ -11,8 +11,8 @@ import {
   type Edge,
   type Node,
   BackgroundVariant,
-} from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
 import {
   Box,
   Button,
@@ -32,15 +32,22 @@ import {
   MenuItem,
   Chip,
   Autocomplete,
-} from '@mui/material';
+} from "@mui/material";
 import {
   ArrowBack as BackIcon,
   Save as SaveIcon,
   Egg as ProductIcon,
   PlayArrow as StepIcon,
   Delete as DeleteIcon,
-} from '@mui/icons-material';
-import { getAll, getOne, create, update, remove, collections } from '../lib/api';
+} from "@mui/icons-material";
+import {
+  getAll,
+  getOne,
+  create,
+  update,
+  remove,
+  collections,
+} from "../lib/api";
 import type {
   Recipe,
   Product,
@@ -50,9 +57,15 @@ import type {
   ProductToStepEdge,
   StepToProductEdge,
   Tag,
-} from '../lib/types';
-import ProductNode, { type ProductNodeData, type ProductNodeType } from '../components/nodes/ProductNode';
-import StepNode, { type StepNodeData, type StepNodeType } from '../components/nodes/StepNode';
+} from "../lib/types";
+import ProductNode, {
+  type ProductNodeData,
+  type ProductNodeType,
+} from "../components/nodes/ProductNode";
+import StepNode, {
+  type StepNodeData,
+  type StepNodeType,
+} from "../components/nodes/StepNode";
 
 const nodeTypes = {
   product: ProductNode,
@@ -73,8 +86,8 @@ export default function RecipeEditor() {
   const [error, setError] = useState<string | null>(null);
 
   // Form fields
-  const [name, setName] = useState('');
-  const [notes, setNotes] = useState('');
+  const [name, setName] = useState("");
+  const [notes, setNotes] = useState("");
 
   // React Flow state
   const [nodes, setNodes, onNodesChange] = useNodesState<FlowNode>([]);
@@ -88,15 +101,17 @@ export default function RecipeEditor() {
   // Add product dialog
   const [productDialogOpen, setProductDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [productQuantity, setProductQuantity] = useState<number | ''>('');
-  const [productUnit, setProductUnit] = useState('');
-  const [productMealDestination, setProductMealDestination] = useState('');
+  const [productQuantity, setProductQuantity] = useState<number | "">("");
+  const [productUnit, setProductUnit] = useState("");
+  const [productMealDestination, setProductMealDestination] = useState("");
 
   // Add step dialog
   const [stepDialogOpen, setStepDialogOpen] = useState(false);
-  const [stepName, setStepName] = useState('');
-  const [stepType, setStepType] = useState<'prep' | 'assembly'>('prep');
-  const [stepTiming, setStepTiming] = useState<'batch' | 'just_in_time'>('batch');
+  const [stepName, setStepName] = useState("");
+  const [stepType, setStepType] = useState<"prep" | "assembly">("prep");
+  const [stepTiming, setStepTiming] = useState<"batch" | "just_in_time">(
+    "batch"
+  );
 
   // Track database IDs for nodes/edges
   const [nodeDbIds, setNodeDbIds] = useState<Record<string, string>>({});
@@ -107,13 +122,13 @@ export default function RecipeEditor() {
   const loadLookupData = async () => {
     try {
       const [productsData, tagsData] = await Promise.all([
-        getAll<Product>(collections.products, { sort: 'name' }),
-        getAll<Tag>(collections.tags, { sort: 'name' }),
+        getAll<Product>(collections.products, { sort: "name" }),
+        getAll<Tag>(collections.tags, { sort: "name" }),
       ]);
       setProducts(productsData);
       setAllTags(tagsData);
     } catch (err) {
-      console.error('Failed to load lookup data:', err);
+      console.error("Failed to load lookup data:", err);
     }
   };
 
@@ -124,34 +139,42 @@ export default function RecipeEditor() {
       setLoading(true);
       setError(null);
 
-      const [recipeData, productNodes, steps, productToStepEdges, stepToProductEdges, recipeTags] =
-        await Promise.all([
-          getOne<Recipe>(collections.recipes, id),
-          getAll<RecipeProductNode>(collections.recipeProductNodes, {
-            filter: `recipe="${id}"`,
-            expand: 'product',
-          }),
-          getAll<RecipeStep>(collections.recipeSteps, {
-            filter: `recipe="${id}"`,
-          }),
-          getAll<ProductToStepEdge>(collections.productToStepEdges, {
-            filter: `recipe="${id}"`,
-          }),
-          getAll<StepToProductEdge>(collections.stepToProductEdges, {
-            filter: `recipe="${id}"`,
-          }),
-          getAll<RecipeTag & { expand?: { tag?: Tag } }>(collections.recipeTags, {
-            filter: `recipe="${id}"`,
-            expand: 'tag',
-          }),
-        ]);
+      const [
+        recipeData,
+        productNodes,
+        steps,
+        productToStepEdges,
+        stepToProductEdges,
+        recipeTags,
+      ] = await Promise.all([
+        getOne<Recipe>(collections.recipes, id),
+        getAll<RecipeProductNode>(collections.recipeProductNodes, {
+          filter: `recipe="${id}"`,
+          expand: "product",
+        }),
+        getAll<RecipeStep>(collections.recipeSteps, {
+          filter: `recipe="${id}"`,
+        }),
+        getAll<ProductToStepEdge>(collections.productToStepEdges, {
+          filter: `recipe="${id}"`,
+        }),
+        getAll<StepToProductEdge>(collections.stepToProductEdges, {
+          filter: `recipe="${id}"`,
+        }),
+        getAll<RecipeTag & { expand?: { tag?: Tag } }>(collections.recipeTags, {
+          filter: `recipe="${id}"`,
+          expand: "tag",
+        }),
+      ]);
 
       setRecipe(recipeData);
       setName(recipeData.name);
-      setNotes(recipeData.notes || '');
+      setNotes(recipeData.notes || "");
 
       // Set selected tags
-      const tags = recipeTags.filter((rt) => rt.expand?.tag).map((rt) => rt.expand!.tag!);
+      const tags = recipeTags
+        .filter((rt) => rt.expand?.tag)
+        .map((rt) => rt.expand!.tag!);
       setSelectedTags(tags);
 
       // Convert to React Flow nodes
@@ -161,15 +184,17 @@ export default function RecipeEditor() {
       productNodes.forEach((pn) => {
         const nodeId = `product-${pn.id}`;
         dbIds[nodeId] = pn.id;
-        const productData = (pn as RecipeProductNode & { expand?: { product?: Product } }).expand?.product;
+        const productData = (
+          pn as RecipeProductNode & { expand?: { product?: Product } }
+        ).expand?.product;
         flowNodes.push({
           id: nodeId,
-          type: 'product',
+          type: "product",
           position: { x: pn.position_x || 0, y: pn.position_y || 0 },
           data: {
-            label: productData?.name || 'Unknown Product',
+            label: productData?.name || "Unknown Product",
             productId: pn.product,
-            productType: productData?.type || 'raw',
+            productType: productData?.type || "raw",
             quantity: pn.quantity,
             unit: pn.unit,
             mealDestination: pn.meal_destination,
@@ -182,7 +207,7 @@ export default function RecipeEditor() {
         dbIds[nodeId] = step.id;
         flowNodes.push({
           id: nodeId,
-          type: 'step',
+          type: "step",
           position: { x: step.position_x || 0, y: step.position_y || 0 },
           data: {
             label: step.name,
@@ -218,7 +243,7 @@ export default function RecipeEditor() {
 
       setEdges(flowEdges);
     } catch (err) {
-      setError('Failed to load recipe');
+      setError("Failed to load recipe");
       console.error(err);
     } finally {
       setLoading(false);
@@ -253,7 +278,7 @@ export default function RecipeEditor() {
     const nodeId = `product-temp-${Date.now()}`;
     const newNode: ProductNodeType = {
       id: nodeId,
-      type: 'product',
+      type: "product",
       position: { x: Math.random() * 400, y: Math.random() * 400 },
       data: {
         label: selectedProduct.name,
@@ -268,9 +293,9 @@ export default function RecipeEditor() {
     setNodes((nds) => [...nds, newNode]);
     setProductDialogOpen(false);
     setSelectedProduct(null);
-    setProductQuantity('');
-    setProductUnit('');
-    setProductMealDestination('');
+    setProductQuantity("");
+    setProductUnit("");
+    setProductMealDestination("");
   };
 
   const handleAddStep = () => {
@@ -279,20 +304,20 @@ export default function RecipeEditor() {
     const nodeId = `step-temp-${Date.now()}`;
     const newNode: StepNodeType = {
       id: nodeId,
-      type: 'step',
+      type: "step",
       position: { x: Math.random() * 400, y: Math.random() * 400 },
       data: {
         label: stepName.trim(),
         stepType: stepType,
-        timing: stepType === 'assembly' ? stepTiming : undefined,
+        timing: stepType === "assembly" ? stepTiming : undefined,
       },
     };
 
     setNodes((nds) => [...nds, newNode]);
     setStepDialogOpen(false);
-    setStepName('');
-    setStepType('prep');
-    setStepTiming('batch');
+    setStepName("");
+    setStepType("prep");
+    setStepTiming("batch");
   };
 
   const handleDeleteNode = async () => {
@@ -301,19 +326,21 @@ export default function RecipeEditor() {
     const dbId = nodeDbIds[selectedNode.id];
     if (dbId) {
       try {
-        if (selectedNode.type === 'product') {
+        if (selectedNode.type === "product") {
           await remove(collections.recipeProductNodes, dbId);
         } else {
           await remove(collections.recipeSteps, dbId);
         }
       } catch (err) {
-        console.error('Failed to delete node:', err);
+        console.error("Failed to delete node:", err);
       }
     }
 
     setNodes((nds) => nds.filter((n) => n.id !== selectedNode.id));
     setEdges((eds) =>
-      eds.filter((e) => e.source !== selectedNode.id && e.target !== selectedNode.id)
+      eds.filter(
+        (e) => e.source !== selectedNode.id && e.target !== selectedNode.id
+      )
     );
     setSelectedNode(null);
   };
@@ -347,7 +374,9 @@ export default function RecipeEditor() {
         const existingTags = await getAll<RecipeTag>(collections.recipeTags, {
           filter: `recipe="${recipeId}"`,
         });
-        await Promise.all(existingTags.map((rt) => remove(collections.recipeTags, rt.id)));
+        await Promise.all(
+          existingTags.map((rt) => remove(collections.recipeTags, rt.id))
+        );
       }
 
       // Create new recipe tags
@@ -366,7 +395,7 @@ export default function RecipeEditor() {
       for (const node of nodes) {
         const existingDbId = nodeDbIds[node.id];
 
-        if (node.type === 'product') {
+        if (node.type === "product") {
           const data = node.data as ProductNodeData;
           const nodeData = {
             recipe: recipeId,
@@ -379,7 +408,11 @@ export default function RecipeEditor() {
           };
 
           if (existingDbId) {
-            await update(collections.recipeProductNodes, existingDbId, nodeData);
+            await update(
+              collections.recipeProductNodes,
+              existingDbId,
+              nodeData
+            );
           } else {
             const created = await create<RecipeProductNode>(
               collections.recipeProductNodes,
@@ -387,7 +420,7 @@ export default function RecipeEditor() {
             );
             newNodeDbIds[node.id] = created.id;
           }
-        } else if (node.type === 'step') {
+        } else if (node.type === "step") {
           const data = node.data as StepNodeData;
           const nodeData = {
             recipe: recipeId,
@@ -401,7 +434,10 @@ export default function RecipeEditor() {
           if (existingDbId) {
             await update(collections.recipeSteps, existingDbId, nodeData);
           } else {
-            const created = await create<RecipeStep>(collections.recipeSteps, nodeData);
+            const created = await create<RecipeStep>(
+              collections.recipeSteps,
+              nodeData
+            );
             newNodeDbIds[node.id] = created.id;
           }
         }
@@ -421,28 +457,36 @@ export default function RecipeEditor() {
         ]);
 
         await Promise.all([
-          ...oldPtsEdges.map((e) => remove(collections.productToStepEdges, e.id)),
-          ...oldStpEdges.map((e) => remove(collections.stepToProductEdges, e.id)),
+          ...oldPtsEdges.map((e) =>
+            remove(collections.productToStepEdges, e.id)
+          ),
+          ...oldStpEdges.map((e) =>
+            remove(collections.stepToProductEdges, e.id)
+          ),
         ]);
       }
 
       // Create edges
       for (const edge of edges) {
-        const sourceType = edge.source.startsWith('product') ? 'product' : 'step';
-        const targetType = edge.target.startsWith('product') ? 'product' : 'step';
+        const sourceType = edge.source.startsWith("product")
+          ? "product"
+          : "step";
+        const targetType = edge.target.startsWith("product")
+          ? "product"
+          : "step";
 
         const sourceDbId = newNodeDbIds[edge.source];
         const targetDbId = newNodeDbIds[edge.target];
 
         if (!sourceDbId || !targetDbId) continue;
 
-        if (sourceType === 'product' && targetType === 'step') {
+        if (sourceType === "product" && targetType === "step") {
           await create(collections.productToStepEdges, {
             recipe: recipeId,
             source: sourceDbId,
             target: targetDbId,
           });
-        } else if (sourceType === 'step' && targetType === 'product') {
+        } else if (sourceType === "step" && targetType === "product") {
           await create(collections.stepToProductEdges, {
             recipe: recipeId,
             source: sourceDbId,
@@ -455,7 +499,7 @@ export default function RecipeEditor() {
         navigate(`/recipes/${recipeId}`, { replace: true });
       }
     } catch (err) {
-      setError('Failed to save recipe');
+      setError("Failed to save recipe");
       console.error(err);
     } finally {
       setSaving(false);
@@ -464,18 +508,31 @@ export default function RecipeEditor() {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        height="100%"
+      >
         <CircularProgress />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ height: 'calc(100vh - 100px)', display: 'flex', flexDirection: 'column' }}>
+    <Box
+      sx={{
+        height: "calc(100vh - 112px)",
+        display: "flex",
+        flexDirection: "column",
+        width: "100%",
+        maxWidth: "100%",
+      }}
+    >
       {/* Header */}
       <Paper sx={{ p: 2, mb: 2 }}>
         <Box display="flex" alignItems="center" gap={2}>
-          <IconButton onClick={() => navigate('/recipes')}>
+          <IconButton onClick={() => navigate("/recipes")}>
             <BackIcon />
           </IconButton>
 
@@ -493,7 +550,9 @@ export default function RecipeEditor() {
             value={selectedTags}
             onChange={(_, newValue) => setSelectedTags(newValue)}
             getOptionLabel={(option) => option.name}
-            renderInput={(params) => <TextField {...params} label="Tags" size="small" />}
+            renderInput={(params) => (
+              <TextField {...params} label="Tags" size="small" />
+            )}
             renderTags={(value, getTagProps) =>
               value.map((option, index) => (
                 <Chip
@@ -501,7 +560,7 @@ export default function RecipeEditor() {
                   key={option.id}
                   label={option.name}
                   size="small"
-                  sx={{ backgroundColor: option.color, color: 'white' }}
+                  sx={{ backgroundColor: option.color, color: "white" }}
                 />
               ))
             }
@@ -543,7 +602,7 @@ export default function RecipeEditor() {
             onClick={handleSave}
             disabled={!name.trim() || saving}
           >
-            {saving ? 'Saving...' : 'Save'}
+            {saving ? "Saving..." : "Save"}
           </Button>
         </Box>
 
@@ -578,7 +637,7 @@ export default function RecipeEditor() {
           onNodeClick={onNodeClick}
           onPaneClick={onPaneClick}
           onEdgeDoubleClick={(event, current_edge) => {
-            setEdges(edges.filter(edge => edge.id !== current_edge.id))
+            setEdges(edges.filter((edge) => edge.id !== current_edge.id));
           }}
           nodeTypes={nodeTypes}
           fitView
@@ -613,13 +672,13 @@ export default function RecipeEditor() {
                     size="small"
                     sx={{
                       backgroundColor:
-                        option.type === 'raw'
-                          ? '#4caf50'
-                          : option.type === 'transient'
-                          ? '#ff9800'
-                          : '#2196f3',
-                      color: 'white',
-                      fontSize: '0.7rem',
+                        option.type === "raw"
+                          ? "#4caf50"
+                          : option.type === "transient"
+                          ? "#ff9800"
+                          : "#2196f3",
+                      color: "white",
+                      fontSize: "0.7rem",
                     }}
                   />
                   {option.name}
@@ -633,7 +692,9 @@ export default function RecipeEditor() {
               label="Quantity"
               type="number"
               value={productQuantity}
-              onChange={(e) => setProductQuantity(e.target.value ? Number(e.target.value) : '')}
+              onChange={(e) =>
+                setProductQuantity(e.target.value ? Number(e.target.value) : "")
+              }
               size="small"
               sx={{ width: 120 }}
             />
@@ -647,7 +708,7 @@ export default function RecipeEditor() {
             />
           </Box>
 
-         {selectedProduct?.type === 'stored' && (
+          {selectedProduct?.type === "stored" && (
             <TextField
               label="Meal Destination"
               value={productMealDestination}
@@ -662,14 +723,23 @@ export default function RecipeEditor() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setProductDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleAddProduct} variant="contained" disabled={!selectedProduct}>
+          <Button
+            onClick={handleAddProduct}
+            variant="contained"
+            disabled={!selectedProduct}
+          >
             Add
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Add Step Dialog */}
-      <Dialog open={stepDialogOpen} onClose={() => setStepDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={stepDialogOpen}
+        onClose={() => setStepDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Add Step Node</DialogTitle>
         <DialogContent>
           <TextField
@@ -687,30 +757,40 @@ export default function RecipeEditor() {
             <Select
               value={stepType}
               label="Step Type"
-              onChange={(e) => setStepType(e.target.value as 'prep' | 'assembly')}
+              onChange={(e) =>
+                setStepType(e.target.value as "prep" | "assembly")
+              }
             >
               <MenuItem value="prep">Prep (raw ingredients only)</MenuItem>
               <MenuItem value="assembly">Assembly</MenuItem>
             </Select>
           </FormControl>
 
-          {stepType === 'assembly' && (
+          {stepType === "assembly" && (
             <FormControl fullWidth margin="dense">
               <InputLabel>Timing</InputLabel>
               <Select
                 value={stepTiming}
                 label="Timing"
-                onChange={(e) => setStepTiming(e.target.value as 'batch' | 'just_in_time')}
+                onChange={(e) =>
+                  setStepTiming(e.target.value as "batch" | "just_in_time")
+                }
               >
                 <MenuItem value="batch">Batch (prep day)</MenuItem>
-                <MenuItem value="just_in_time">Just-in-time (serve time)</MenuItem>
+                <MenuItem value="just_in_time">
+                  Just-in-time (serve time)
+                </MenuItem>
               </Select>
             </FormControl>
           )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setStepDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleAddStep} variant="contained" disabled={!stepName.trim()}>
+          <Button
+            onClick={handleAddStep}
+            variant="contained"
+            disabled={!stepName.trim()}
+          >
             Add
           </Button>
         </DialogActions>

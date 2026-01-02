@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useState } from "react";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
   Drawer,
@@ -14,7 +14,7 @@ import {
   IconButton,
   useMediaQuery,
   useTheme,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Menu as MenuIcon,
   Restaurant as RecipeIcon,
@@ -28,21 +28,25 @@ import {
   Label as TagIcon,
   Egg as ProductIcon,
   Settings as RegistryIcon,
-} from '@mui/icons-material';
+} from "@mui/icons-material";
 
 const DRAWER_WIDTH = 260;
 
 const registryItems = [
-  { label: 'Products', path: '/registries/products', icon: <ProductIcon /> },
-  { label: 'Stores', path: '/registries/stores', icon: <StoreIcon /> },
-  { label: 'Sections', path: '/registries/sections', icon: <SectionIcon /> },
-  { label: 'Containers', path: '/registries/containers', icon: <ContainerIcon /> },
-  { label: 'Tags', path: '/registries/tags', icon: <TagIcon /> },
+  { label: "Products", path: "/registries/products", icon: <ProductIcon /> },
+  { label: "Stores", path: "/registries/stores", icon: <StoreIcon /> },
+  { label: "Sections", path: "/registries/sections", icon: <SectionIcon /> },
+  {
+    label: "Containers",
+    path: "/registries/containers",
+    icon: <ContainerIcon />,
+  },
+  { label: "Tags", path: "/registries/tags", icon: <TagIcon /> },
 ];
 
 export default function Layout() {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [registriesOpen, setRegistriesOpen] = useState(true);
   const navigate = useNavigate();
@@ -60,20 +64,25 @@ export default function Layout() {
   };
 
   const isActive = (path: string) => location.pathname === path;
-  const isRegistryActive = location.pathname.startsWith('/registries');
+  const isRegistryActive = location.pathname.startsWith("/registries");
 
   const drawerContent = (
     <Box>
       <Toolbar>
-        <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 'bold' }}>
+        <Typography
+          variant="h6"
+          noWrap
+          component="div"
+          sx={{ fontWeight: "bold" }}
+        >
           🍽️ Meal Planner
         </Typography>
       </Toolbar>
       <List>
         {/* Recipes */}
         <ListItemButton
-          selected={isActive('/recipes')}
-          onClick={() => handleNavClick('/recipes')}
+          selected={isActive("/recipes")}
+          onClick={() => handleNavClick("/recipes")}
         >
           <ListItemIcon>
             <RecipeIcon />
@@ -83,8 +92,8 @@ export default function Layout() {
 
         {/* Weekly Plans */}
         <ListItemButton
-          selected={isActive('/plans')}
-          onClick={() => handleNavClick('/plans')}
+          selected={isActive("/plans")}
+          onClick={() => handleNavClick("/plans")}
         >
           <ListItemIcon>
             <PlanIcon />
@@ -94,8 +103,8 @@ export default function Layout() {
 
         {/* Outputs */}
         <ListItemButton
-          selected={isActive('/outputs')}
-          onClick={() => handleNavClick('/outputs')}
+          selected={isActive("/outputs")}
+          onClick={() => handleNavClick("/outputs")}
         >
           <ListItemIcon>
             <OutputIcon />
@@ -131,7 +140,7 @@ export default function Layout() {
   );
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: "flex" }}>
       <AppBar
         position="fixed"
         sx={{
@@ -144,20 +153,20 @@ export default function Layout() {
             color="inherit"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { md: 'none' } }}
+            sx={{ mr: 2, display: { md: "none" } }}
           >
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div">
-            {location.pathname.includes('/registries')
-              ? 'Registries'
-              : location.pathname.includes('/recipes')
-              ? 'Recipes'
-              : location.pathname.includes('/plans')
-              ? 'Weekly Plans'
-              : location.pathname.includes('/outputs')
-              ? 'Outputs'
-              : 'Meal Planner'}
+            {location.pathname.includes("/registries")
+              ? "Registries"
+              : location.pathname.includes("/recipes")
+              ? "Recipes"
+              : location.pathname.includes("/plans")
+              ? "Weekly Plans"
+              : location.pathname.includes("/outputs")
+              ? "Outputs"
+              : "Meal Planner"}
           </Typography>
         </Toolbar>
       </AppBar>
@@ -169,8 +178,11 @@ export default function Layout() {
         onClose={handleDrawerToggle}
         ModalProps={{ keepMounted: true }}
         sx={{
-          display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH },
+          display: { xs: "block", md: "none" },
+          "& .MuiDrawer-paper": {
+            boxSizing: "border-box",
+            width: DRAWER_WIDTH,
+          },
         }}
       >
         {drawerContent}
@@ -180,8 +192,11 @@ export default function Layout() {
       <Drawer
         variant="permanent"
         sx={{
-          display: { xs: 'none', md: 'block' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH },
+          display: { xs: "none", md: "block" },
+          "& .MuiDrawer-paper": {
+            boxSizing: "border-box",
+            width: DRAWER_WIDTH,
+          },
         }}
         open
       >
@@ -194,9 +209,12 @@ export default function Layout() {
         sx={{
           flexGrow: 1,
           p: 3,
-          width: { xs: '100%', md: `calc(100% - ${DRAWER_WIDTH}px)` },
+          width: { xs: "100vw", md: `calc(100vw - ${DRAWER_WIDTH}px)` },
+          maxWidth: { xs: "100vw", md: `calc(100vw - ${DRAWER_WIDTH}px)` },
           ml: { xs: 0, md: `${DRAWER_WIDTH}px` },
-          mt: '64px',
+          mt: "64px",
+          overflow: "auto",
+          boxSizing: "border-box",
         }}
       >
         <Outlet />

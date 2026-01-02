@@ -13,7 +13,9 @@
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
     "@mui/styled-engine-sc": "^7.3.6",
+    "@types/dagre": "^0.7.53",
     "@xyflow/react": "^12.10.0",
+    "dagre": "^0.8.5",
     "pocketbase": "^0.26.5",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -37,5 +39,6 @@
   },
   "overrides": {
     "vite": "npm:rolldown-vite@7.2.5"
-  }
+  },
+  "packageManager": "npm@11.3.0+sha512.96eb611483f49c55f7fa74df61b588de9e213f80a256728e6798ddc67176c7b07e4a1cfc7de8922422cbce02543714367037536955221fa451b0c4fefaf20c66"
 }
