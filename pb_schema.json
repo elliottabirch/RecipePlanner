@@ -1,0 +1,78 @@
+[
+    {
+        "name": "stores",
+        "type": "base",
+        "schema": [
+            {
+                "name": "name",
+                "type": "text",
+                "required": true
+            }
+        ]
+    },
+    {
+        "name": "sections",
+        "type": "base",
+        "schema": [
+            {
+                "name": "name",
+                "type": "text",
+                "required": true
+            }
+        ]
+    },
+    {
+        "name": "container_types",
+        "type": "base",
+        "schema": [
+            {
+                "name": "name",
+                "type": "text",
+                "required": true
+            }
+        ]
+    },
+    {
+        "name": "tags",
+        "type": "base",
+        "schema": [
+            {
+                "name": "name",
+                "type": "text",
+                "required": true
+            },
+            {
+                "name": "color",
+                "type": "text",
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "recipes",
+        "type": "base",
+        "schema": [
+            {
+                "name": "name",
+                "type": "text",
+                "required": true
+            },
+            {
+                "name": "notes",
+                "type": "text",
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "weekly_plans",
+        "type": "base",
+        "schema": [
+            {
+                "name": "name",
+                "type": "text",
+                "required": false
+            }
+        ]
+    }
+]
