@@ -22,6 +22,7 @@ export interface AggregatedProduct {
   productName: string;
   productType: "raw" | "transient" | "stored";
   isPantry: boolean;
+  trackQuantity?: boolean;
   totalQuantity: number;
   unit: string;
   storeName?: string;
@@ -81,6 +82,12 @@ export interface AggregatedFlowProduct {
   unit: string;
   // Track which meals contribute to this product
   mealSources: { recipeName: string; quantity: number; count: number }[];
+  // Additional metadata for raw products
+  isPantry?: boolean;
+  trackQuantity?: boolean;
+  storeName?: string;
+  sectionName?: string;
+  storageLocation?: "fridge" | "freezer";
 }
 
 export interface AggregatedFlowStep {
@@ -144,125 +151,6 @@ export interface PlannedMealWithRecipe extends PlannedMeal {
 // ============================================================================
 
 /**
- * Builds a shopping list from all recipes in the plan.
- *
- * Logic:
- * 1. For each recipe, find all product nodes that are INPUTS (have edges going TO steps)
- * 2. Filter to only RAW products (ingredients to buy)
- * 3. Aggregate quantities by product ID
- * 4. Group by store and section
- */
-// function to add scalar to a recipe node if it appears multiple times in the week
-const combineSameRecipes = (plannedMeals: PlannedMealWithRecipe[]) => {
-  return Object.values(
-    plannedMeals.reduce((uniqueRecipes, plannedMeal) => {
-      const uniqueRecipe = uniqueRecipes[plannedMeal.recipe];
-      if (uniqueRecipe) {
-        uniqueRecipe.quantity += plannedMeal.quantity;
-      } else {
-        uniqueRecipes[plannedMeal.recipe] = { ...plannedMeal };
-      }
-      return uniqueRecipes;
-    }, {})
-  );
-};
-
-const assembleRecipeTree = (
-  plannedMeals: PlannedMealWithRecipe[],
-  recipeData: Map<string, RecipeGraphData>
-) => {};
-
-export function buildShoppingList(
-  plannedMeals: PlannedMealWithRecipe[],
-  recipeData: Map<string, RecipeGraphData>
-): AggregatedProduct[] {
-  const aggregated = new Map<string, AggregatedProduct>();
-  console.log("=== Building Shopping List ===");
-  console.log(combineSameRecipes(plannedMeals));
-  console.log(`Processing ${plannedMeals.length} recipes`);
-
-  plannedMeals.forEach((plannedMeal, recipeId) => {
-    const data = recipeData.get(plannedMeal.recipe);
-    if (data) {
-      const recipeName = data.recipe.name;
-      console.log(`\nRecipe: ${recipeName}`);
-      console.log(`  Product nodes: ${data.productNodes.length}`);
-      console.log(`  Steps: ${data.steps.length}`);
-      console.log(`  Product→Step edges: ${data.productToStepEdges.length}`);
-      console.log(`  Step→Product edges: ${data.stepToProductEdges.length}`);
-
-      // Build set of product node IDs that are inputs (source of product_to_step edges)
-      const inputNodeIds = new Set(
-        data.productToStepEdges.map((e) => e.source)
-      );
-      console.log(`  Input node IDs: ${Array.from(inputNodeIds).join(", ")}`);
-
-      data.productNodes.forEach((node) => {
-        console.log(`  Checking node ${node.id}:`);
-        console.log(`    - Is input: ${inputNodeIds.has(node.id)}`);
-        console.log(`    - Product expanded: ${!!node.expand?.product}`);
-
-        // Skip if this node is not an input (not connected to any step as source)
-        if (!inputNodeIds.has(node.id)) {
-          console.log(`    - SKIPPED: Not an input node`);
-          return;
-        }
-
-        const product = node.expand?.product;
-        if (!product) {
-          console.log(`    - SKIPPED: No product expansion`);
-          return;
-        }
-
-        console.log(`    - Product: ${product.name}, type: ${product.type}`);
-
-        // Only include raw products in shopping list
-        if (product.type !== "raw") {
-          console.log(`    - SKIPPED: Not a raw product`);
-          return;
-        }
-
-        const key = product.id;
-        const existing = aggregated.get(key);
-
-        if (existing) {
-          existing.totalQuantity += node.quantity || 0;
-          existing.sources.push({
-            recipeName,
-            quantity: node.quantity || 0,
-            unit: node.unit || "",
-          });
-          console.log(`    - ADDED to existing: ${product.name}`);
-        } else {
-          aggregated.set(key, {
-            productId: product.id,
-            productName: product.name,
-            productType: product.type,
-            isPantry: product.pantry || false,
-            totalQuantity: node.quantity || 0,
-            unit: node.unit || "",
-            storeName: product.expand?.store?.name,
-            sectionName: product.expand?.section?.name,
-            sources: [
-              {
-                recipeName,
-                quantity: node.quantity || 0,
-                unit: node.unit || "",
-              },
-            ],
-          });
-          console.log(`    - CREATED new entry: ${product.name}`);
-        }
-      });
-    }
-  });
-
-  const result = Array.from(aggregated.values());
-  console.log(`\nShopping list total: ${result.length} items`);
-  return result;
-}
-
-/**
  * Groups shopping list by store, then by section.
  */
 export function groupShoppingList(items: AggregatedProduct[]): {
@@ -293,209 +181,6 @@ export function groupShoppingList(items: AggregatedProduct[]): {
   });
 
   return { byStore, pantryItems };
-}
-
-/**
- * Builds list of batch prep steps.
- *
- * Logic:
- * 1. Collect all prep steps (step_type === 'prep')
- * 2. Collect all batch assembly steps (step_type === 'assembly' && timing === 'batch')
- * 3. For each step, find inputs (products with edges TO this step)
- * 4. For each step, find outputs (products with edges FROM this step)
- */
-export function buildBatchPrepList(
-  plannedMeals: PlannedMealWithRecipe[],
-  recipeData: Map<string, RecipeGraphData>
-): AggregatedStep[] {
-  const steps: AggregatedStep[] = [];
-
-  console.log("=== Building Batch Prep List ===");
-
-  plannedMeals.forEach((plannedMeal) => {
-    const data = recipeData.get(plannedMeal.recipe);
-    if (data) {
-      const recipeName = data.recipe.name;
-
-      const aggregatedPrepSteps = {};
-      data.steps.forEach((step) => {
-        // Only include prep steps and batch assembly steps
-
-        const isPrepStep = step.step_type === "prep";
-        const isAssemblyStep =
-          step.step_type === "assembly" && step.timing === "batch";
-        if (!isPrepStep && !isAssemblyStep) {
-          return;
-        }
-
-        console.log(
-          `\nStep: ${step.name} (${step.step_type}/${step.timing || "n/a"})`
-        );
-        if (isPrepStep) {
-          const inputEdges = data.productToStepEdges.filter(
-            (e) => e.target === step.id
-          );
-          const inputs = inputEdges.map((e) => {
-            const node = data.productNodes.find((n) => n.id === e.source);
-            return {
-              productName: node?.expand?.product?.name || "Unknown",
-              quantity: node?.quantity,
-              unit: node?.unit,
-              id: node?.expand?.product?.id,
-            };
-          });
-          console.log(
-            `  Inputs: ${inputs.map((i) => i.productName).join(", ")}`
-          );
-
-          // Find outputs: products where there's an edge step→product
-          const outputEdges = data.stepToProductEdges.filter(
-            (e) => e.source === step.id
-          );
-          const outputs = outputEdges.map((e) => {
-            const node = data.productNodes.find((n) => n.id === e.target);
-            return {
-              productName: node?.expand?.product?.name || "Unknown",
-              quantity: node?.quantity,
-              unit: node?.unit,
-              mealDestination: node?.meal_destination,
-              id: node?.id,
-            };
-          });
-          console.log(
-            `  Outputs: ${outputs.map((o) => o.productName).join(", ")}`
-          );
-
-          const aggregateProductQuantities = (aggregatedInputs, input) => {
-            const savedInput = aggregatedInputs[input.id as string];
-            if (savedInput) {
-              aggregatedInputs.quantity = input.quantity + savedInput.quantity;
-            } else {
-              aggregatedInputs[input.id as string] = input;
-            }
-
-            return aggregatedInputs;
-          };
-
-          inputs.reduce(aggregateProductQuantities, {});
-        }
-
-        if (isAssemblyStep) {
-          // Find inputs: products where there's an edge product→step
-          const inputEdges = data.productToStepEdges.filter(
-            (e) => e.target === step.id
-          );
-          const inputs = inputEdges.map((e) => {
-            const node = data.productNodes.find((n) => n.id === e.source);
-            return {
-              productName: node?.expand?.product?.name || "Unknown",
-              quantity: node?.quantity,
-              unit: node?.unit,
-            };
-          });
-          console.log(
-            `  Inputs: ${inputs.map((i) => i.productName).join(", ")}`
-          );
-
-          // Find outputs: products where there's an edge step→product
-          const outputEdges = data.stepToProductEdges.filter(
-            (e) => e.source === step.id
-          );
-          const outputs = outputEdges.map((e) => {
-            const node = data.productNodes.find((n) => n.id === e.target);
-            return {
-              productName: node?.expand?.product?.name || "Unknown",
-              quantity: node?.quantity,
-              unit: node?.unit,
-              mealDestination: node?.meal_destination,
-            };
-          });
-          console.log(
-            `  Outputs: ${outputs.map((o) => o.productName).join(", ")}`
-          );
-
-          steps.push({
-            stepId: step.id,
-            name: step.name,
-            stepType: step.step_type,
-            timing: step.timing,
-            recipeName,
-            inputs,
-            outputs,
-          });
-        }
-      });
-    }
-  });
-
-  console.log(`\nBatch prep total: ${steps.length} steps`);
-  return steps;
-}
-
-/**
- * Builds list of items that will be stored in fridge/freezer after prep.
- *
- * Logic:
- * 1. Find all product nodes that are OUTPUTS (have edges coming FROM steps)
- * 2. Filter to only STORED products
- */
-export function buildStoredItemsList(
-  plannedMeals: PlannedMealWithRecipe[],
-  recipeData: Map<string, RecipeGraphData>
-): StoredItem[] {
-  const items: StoredItem[] = [];
-
-  console.log("=== Building Stored Items List ===");
-
-  plannedMeals.forEach((plannedMeal) => {
-    const data = recipeData.get(plannedMeal.recipe);
-    if (data) {
-      const recipeName = data.recipe.name;
-
-      // Build set of product node IDs that are outputs (target of step_to_product edges)
-      const outputNodeIds = new Set(
-        data.stepToProductEdges.map((e) => e.target)
-      );
-      console.log(`\nRecipe: ${recipeName}`);
-      console.log(`  Output node IDs: ${Array.from(outputNodeIds).join(", ")}`);
-
-      data.productNodes.forEach((node) => {
-        // Skip if not an output
-        if (!outputNodeIds.has(node.id)) {
-          return;
-        }
-
-        const product = node.expand?.product;
-        if (!product) {
-          console.log(`  Node ${node.id}: No product expansion`);
-          return;
-        }
-
-        console.log(
-          `  Node ${node.id}: ${product.name}, type: ${product.type}`
-        );
-
-        // Only include stored products
-        if (product.type !== "stored") {
-          return;
-        }
-
-        items.push({
-          productName: product.name,
-          storageLocation: product.storage_location || "fridge",
-          containerTypeName: product.expand?.container_type?.name,
-          mealDestination: node.meal_destination,
-          quantity: node.quantity,
-          unit: node.unit,
-          recipeName,
-        });
-        console.log(`    - ADDED: ${product.name}`);
-      });
-    }
-  });
-
-  console.log(`\nStored items total: ${items.length}`);
-  return items;
 }
 
 /**
@@ -655,32 +340,69 @@ export function buildProductFlowGraph(
       const product = node.expand?.product;
       if (!product) return;
 
-      const productId = product.id;
-      const quantity = (node.quantity || 0) * mealCount;
+      const quantity = node.quantity || 0;
 
-      // Aggregate product by ID
-      const existing = products.get(productId);
-      if (existing) {
-        existing.totalQuantity += quantity;
-        // Check if this recipe is already in sources
-        const existingSource = existing.mealSources.find(
-          (s) => s.recipeName === recipeName
-        );
-        if (existingSource) {
-          existingSource.count += mealCount;
-          existingSource.quantity += quantity;
-        } else {
-          existing.mealSources.push({ recipeName, quantity, count: mealCount });
+      // For stored products, create separate nodes for each instance
+      // For raw/transient products, aggregate them
+      if (product.type === "stored") {
+        // quantity = number of containers per meal
+        const numContainers = quantity || 1;
+        const totalInstances = numContainers * mealCount;
+
+        // Create a separate node for each container instance
+        for (let i = 0; i < totalInstances; i++) {
+          const productKey = `${product.id}-${
+            node.meal_destination || "unnamed"
+          }-${plannedMeal.id}-${i}`;
+          products.set(productKey, {
+            productId: productKey,
+            productName: node.meal_destination
+              ? `${product.name} (${node.meal_destination}) #${i + 1}`
+              : `${product.name} #${i + 1}`,
+            productType: product.type,
+            totalQuantity: 1, // Each instance represents 1 container
+            unit: node.unit || "",
+            mealSources: [{ recipeName, quantity: 1, count: 1 }],
+            storageLocation: product.storage_location,
+          });
         }
       } else {
-        products.set(productId, {
-          productId,
-          productName: product.name,
-          productType: product.type,
-          totalQuantity: quantity,
-          unit: node.unit || "",
-          mealSources: [{ recipeName, quantity, count: mealCount }],
-        });
+        // Aggregate raw and transient products
+        const productKey = product.id;
+        const totalQuantity = quantity * mealCount;
+
+        const existing = products.get(productKey);
+        if (existing) {
+          existing.totalQuantity += totalQuantity;
+          const existingSource = existing.mealSources.find(
+            (s) => s.recipeName === recipeName
+          );
+          if (existingSource) {
+            existingSource.count += mealCount;
+            existingSource.quantity += totalQuantity;
+          } else {
+            existing.mealSources.push({
+              recipeName,
+              quantity: totalQuantity,
+              count: mealCount,
+            });
+          }
+        } else {
+          products.set(productKey, {
+            productId: productKey,
+            productName: product.name,
+            productType: product.type,
+            totalQuantity: totalQuantity,
+            unit: node.unit || "",
+            mealSources: [
+              { recipeName, quantity: totalQuantity, count: mealCount },
+            ],
+            isPantry: product.pantry,
+            trackQuantity: product.track_quantity,
+            storeName: product.expand?.store?.name,
+            sectionName: product.expand?.section?.name,
+          });
+        }
       }
     });
 
@@ -792,23 +514,73 @@ export function buildProductFlowGraph(
 
       // Track flows: products → step
       inputs.forEach((input) => {
-        if (
-          !productToStepFlows.find(
-            (f) => f.productId === input.productId && f.stepId === stepId
-          )
-        ) {
-          productToStepFlows.push({ productId: input.productId, stepId });
+        const inputNode = data.productNodes.find(
+          (n) => n.expand?.product?.id === input.productId
+        );
+        const inputProduct = inputNode?.expand?.product;
+
+        if (inputProduct?.type === "stored") {
+          // For stored products, create edges to all container instances
+          const numContainers = inputNode?.quantity || 1;
+          const totalInstances = numContainers * mealCount;
+          for (let i = 0; i < totalInstances; i++) {
+            const inputKey = `${input.productId}-${
+              inputNode?.meal_destination || "unnamed"
+            }-${plannedMeal.id}-${i}`;
+            if (
+              !productToStepFlows.find(
+                (f) => f.productId === inputKey && f.stepId === stepId
+              )
+            ) {
+              productToStepFlows.push({ productId: inputKey, stepId });
+            }
+          }
+        } else {
+          // For raw/transient products, use the aggregated key
+          const inputKey = input.productId;
+          if (
+            !productToStepFlows.find(
+              (f) => f.productId === inputKey && f.stepId === stepId
+            )
+          ) {
+            productToStepFlows.push({ productId: inputKey, stepId });
+          }
         }
       });
 
       // Track flows: step → products
       outputs.forEach((output) => {
-        if (
-          !stepToProductFlows.find(
-            (f) => f.stepId === stepId && f.productId === output.productId
-          )
-        ) {
-          stepToProductFlows.push({ stepId, productId: output.productId });
+        const outputNode = data.productNodes.find(
+          (n) => n.expand?.product?.id === output.productId
+        );
+        const outputProduct = outputNode?.expand?.product;
+
+        if (outputProduct?.type === "stored") {
+          // For stored products, create edges from step to all container instances
+          const numContainers = outputNode?.quantity || 1;
+          const totalInstances = numContainers * mealCount;
+          for (let i = 0; i < totalInstances; i++) {
+            const outputKey = `${output.productId}-${
+              outputNode?.meal_destination || "unnamed"
+            }-${plannedMeal.id}-${i}`;
+            if (
+              !stepToProductFlows.find(
+                (f) => f.stepId === stepId && f.productId === outputKey
+              )
+            ) {
+              stepToProductFlows.push({ stepId, productId: outputKey });
+            }
+          }
+        } else {
+          // For raw/transient products, use the aggregated key
+          const outputKey = output.productId;
+          if (
+            !stepToProductFlows.find(
+              (f) => f.stepId === stepId && f.productId === outputKey
+            )
+          ) {
+            stepToProductFlows.push({ stepId, productId: outputKey });
+          }
         }
       });
     });
@@ -825,4 +597,108 @@ export function buildProductFlowGraph(
     productToStepFlows,
     stepToProductFlows,
   };
+}
+
+/**
+ * Build shopping list from the product flow graph
+ * Only includes raw products (ingredients to buy)
+ */
+export function buildShoppingListFromFlow(
+  flowGraph: ProductFlowGraphData
+): AggregatedProduct[] {
+  const shoppingItems: AggregatedProduct[] = [];
+
+  flowGraph.products.forEach((product) => {
+    if (product.productType === "raw") {
+      shoppingItems.push({
+        productId: product.productId,
+        productName: product.productName,
+        productType: product.productType,
+        isPantry: product.isPantry || false,
+        trackQuantity: product.trackQuantity,
+        totalQuantity: product.totalQuantity,
+        unit: product.unit,
+        storeName: product.storeName,
+        sectionName: product.sectionName,
+        sources: product.mealSources.map((s) => ({
+          recipeName: s.recipeName,
+          quantity: s.quantity,
+          unit: product.unit,
+        })),
+      });
+    }
+  });
+
+  return shoppingItems;
+}
+
+/**
+ * Build batch prep list from the product flow graph
+ * Includes all prep and batch assembly steps
+ */
+export function buildBatchPrepListFromFlow(
+  flowGraph: ProductFlowGraphData
+): AggregatedStep[] {
+  const prepSteps: AggregatedStep[] = [];
+
+  flowGraph.steps.forEach((step) => {
+    // Use the first step name as the primary name
+    const primaryStepName = step.stepNames[0];
+
+    prepSteps.push({
+      stepId: step.stepId,
+      name:
+        step.stepNames.length > 1
+          ? `${primaryStepName} (+ ${step.stepNames.length - 1} variants)`
+          : primaryStepName,
+      stepType: step.stepType,
+      timing: step.stepType === "assembly" ? "batch" : undefined,
+      recipeName: step.recipeSources
+        .map((s) => `${s.count}x ${s.recipeName}`)
+        .join(", "),
+      inputs: step.inputs.map((i) => ({
+        productName: i.productName,
+        quantity: i.quantity,
+        unit: i.unit,
+      })),
+      outputs: step.outputs.map((o) => ({
+        productName: o.productName,
+        quantity: o.quantity,
+        unit: o.unit,
+      })),
+    });
+  });
+
+  return prepSteps;
+}
+
+/**
+ * Build stored items list from the product flow graph
+ * Only includes stored products (outputs that go to fridge/freezer)
+ */
+export function buildStoredItemsListFromFlow(
+  flowGraph: ProductFlowGraphData
+): StoredItem[] {
+  const storedItems: StoredItem[] = [];
+
+  flowGraph.products.forEach((product) => {
+    if (product.productType === "stored") {
+      // Extract meal destination from product name if it's in parentheses
+      const mealDestMatch = product.productName.match(/\(([^)]+)\)$/);
+      const mealDestination = mealDestMatch ? mealDestMatch[1] : undefined;
+      const cleanName = product.productName.replace(/\s*\([^)]+\)$/, "");
+
+      storedItems.push({
+        productName: cleanName,
+        storageLocation: product.storageLocation || "fridge",
+        mealDestination,
+        quantity: product.totalQuantity,
+        unit: product.unit,
+        recipeName: product.mealSources.map((s) => s.recipeName).join(", "),
+        containerTypeName: product.unit, // unit is now the container type
+      });
+    }
+  });
+
+  return storedItems;
 }

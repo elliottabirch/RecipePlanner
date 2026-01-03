@@ -48,12 +48,12 @@ import "@xyflow/react/dist/style.css";
 import dagre from "dagre";
 import { getAll, collections } from "../lib/api";
 import {
-  buildShoppingList,
   groupShoppingList,
-  buildBatchPrepList,
-  buildStoredItemsList,
   buildPullLists,
   buildProductFlowGraph,
+  buildShoppingListFromFlow,
+  buildBatchPrepListFromFlow,
+  buildStoredItemsListFromFlow,
   type RecipeGraphData,
   type PlannedMealWithRecipe,
 } from "../lib/aggregation";
@@ -216,29 +216,31 @@ export default function Outputs() {
     loadPlanData();
   }, [selectedPlanId]);
 
-  // Compute aggregated data using the aggregation module
-  const shoppingList = useMemo(
-    () => buildShoppingList(plannedMeals, recipeData),
+  // Build the product flow graph as the single source of truth
+  const productFlowGraph = useMemo(
+    () => buildProductFlowGraph(plannedMeals, recipeData),
     [plannedMeals, recipeData]
+  );
+
+  // Derive all other aggregations from the flow graph
+  const shoppingList = useMemo(
+    () => buildShoppingListFromFlow(productFlowGraph),
+    [productFlowGraph]
   );
   const groupedShoppingList = useMemo(
     () => groupShoppingList(shoppingList),
     [shoppingList]
   );
   const batchPrepSteps = useMemo(
-    () => buildBatchPrepList(plannedMeals, recipeData),
-    [plannedMeals, recipeData]
+    () => buildBatchPrepListFromFlow(productFlowGraph),
+    [productFlowGraph]
   );
   const storedItems = useMemo(
-    () => buildStoredItemsList(plannedMeals, recipeData),
-    [plannedMeals, recipeData]
+    () => buildStoredItemsListFromFlow(productFlowGraph),
+    [productFlowGraph]
   );
   const pullLists = useMemo(
     () => buildPullLists(plannedMeals, recipeData),
-    [plannedMeals, recipeData]
-  );
-  const productFlowGraph = useMemo(
-    () => buildProductFlowGraph(plannedMeals, recipeData),
     [plannedMeals, recipeData]
   );
 
@@ -572,6 +574,7 @@ export default function Outputs() {
                       <List dense>
                         {groupedShoppingList.pantryItems.map((item) => {
                           const key = `pantry-${item.productId}`;
+                          const showQuantity = item.trackQuantity;
                           return (
                             <ListItem key={item.productId} disablePadding>
                               <ListItemIcon sx={{ minWidth: 36 }}>
@@ -592,7 +595,16 @@ export default function Outputs() {
                                     }}
                                   >
                                     {item.productName}
+                                    {showQuantity &&
+                                      ` — ${item.totalQuantity} ${item.unit}`}
                                   </span>
+                                }
+                                secondary={
+                                  showQuantity
+                                    ? item.sources
+                                        .map((s) => s.recipeName)
+                                        .join(", ")
+                                    : undefined
                                 }
                               />
                             </ListItem>

@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Button,
-  TextField,
   IconButton,
   Dialog,
   DialogTitle,
@@ -19,20 +18,25 @@ import {
   TableHead,
   TableRow,
   Chip,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  FormControlLabel,
-  Checkbox,
-} from '@mui/material';
+  TextField,
+  InputAdornment,
+} from "@mui/material";
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-} from '@mui/icons-material';
-import { getAll, create, update, remove, collections } from '../../lib/api';
-import type { Product, ProductType, StorageLocation, Store, Section, ContainerType } from '../../lib/types';
+  Search as SearchIcon,
+  Clear as ClearIcon,
+} from "@mui/icons-material";
+import { getAll, create, update, remove, collections } from "../../lib/api";
+import type {
+  Product,
+  ProductType,
+  Store,
+  Section,
+  ContainerType,
+} from "../../lib/types";
+import ProductForm, { useProductForm } from "../../components/ProductForm";
 
 interface ProductExpanded extends Product {
   expand?: {
@@ -43,21 +47,22 @@ interface ProductExpanded extends Product {
 }
 
 const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
-  raw: 'Raw Ingredient',
-  transient: 'Transient',
-  stored: 'Stored',
+  raw: "Raw Ingredient",
+  transient: "Transient",
+  stored: "Stored",
 };
 
 const PRODUCT_TYPE_COLORS: Record<ProductType, string> = {
-  raw: '#4caf50',
-  transient: '#ff9800',
-  stored: '#2196f3',
+  raw: "#4caf50",
+  transient: "#ff9800",
+  stored: "#2196f3",
 };
 
 export default function Products() {
   const [items, setItems] = useState<ProductExpanded[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Lookup data for dropdowns
   const [stores, setStores] = useState<Store[]>([]);
@@ -69,30 +74,36 @@ export default function Products() {
   const [editingItem, setEditingItem] = useState<ProductExpanded | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Form fields
-  const [name, setName] = useState('');
-  const [type, setType] = useState<ProductType>('raw');
-  const [pantry, setPantry] = useState(false);
-  const [storeId, setStoreId] = useState('');
-  const [sectionId, setSectionId] = useState('');
-  const [storageLocation, setStorageLocation] = useState<StorageLocation | ''>('');
-  const [containerTypeId, setContainerTypeId] = useState('');
+  // Form state
+  const productForm = useProductForm();
 
   // Delete confirmation
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<ProductExpanded | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<ProductExpanded | null>(
+    null
+  );
+
+  // Filter items based on search query
+  const filteredItems = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return items;
+    }
+
+    const query = searchQuery.toLowerCase();
+    return items.filter((item) => item.name.toLowerCase().includes(query));
+  }, [items, searchQuery]);
 
   const loadItems = async () => {
     try {
       setLoading(true);
       setError(null);
       const records = await getAll<ProductExpanded>(collections.products, {
-        sort: 'name',
-        expand: 'store,section,container_type',
+        sort: "name",
+        expand: "store,section,container_type",
       });
       setItems(records);
     } catch (err) {
-      setError('Failed to load products');
+      setError("Failed to load products");
       console.error(err);
     } finally {
       setLoading(false);
@@ -102,15 +113,15 @@ export default function Products() {
   const loadLookupData = async () => {
     try {
       const [storesData, sectionsData, containerTypesData] = await Promise.all([
-        getAll<Store>(collections.stores, { sort: 'name' }),
-        getAll<Section>(collections.sections, { sort: 'name' }),
-        getAll<ContainerType>(collections.containerTypes, { sort: 'name' }),
+        getAll<Store>(collections.stores, { sort: "name" }),
+        getAll<Section>(collections.sections, { sort: "name" }),
+        getAll<ContainerType>(collections.containerTypes, { sort: "name" }),
       ]);
       setStores(storesData);
       setSections(sectionsData);
       setContainerTypes(containerTypesData);
     } catch (err) {
-      console.error('Failed to load lookup data:', err);
+      console.error("Failed to load lookup data:", err);
     }
   };
 
@@ -119,29 +130,20 @@ export default function Products() {
     loadLookupData();
   }, []);
 
-  const resetForm = () => {
-    setName('');
-    setType('raw');
-    setPantry(false);
-    setStoreId('');
-    setSectionId('');
-    setStorageLocation('');
-    setContainerTypeId('');
-  };
-
   const handleOpenDialog = (item?: ProductExpanded) => {
     if (item) {
       setEditingItem(item);
-      setName(item.name);
-      setType(item.type);
-      setPantry(item.pantry || false);
-      setStoreId(item.store || '');
-      setSectionId(item.section || '');
-      setStorageLocation(item.storage_location || '');
-      setContainerTypeId(item.container_type || '');
+      productForm.setName(item.name);
+      productForm.setType(item.type);
+      productForm.setPantry(item.pantry || false);
+      productForm.setTrackQuantity(item.track_quantity || false);
+      productForm.setStoreId(item.store || "");
+      productForm.setSectionId(item.section || "");
+      productForm.setStorageLocation(item.storage_location || "");
+      productForm.setContainerTypeId(item.container_type || "");
     } else {
       setEditingItem(null);
-      resetForm();
+      productForm.resetForm();
     }
     setDialogOpen(true);
   };
@@ -149,42 +151,15 @@ export default function Products() {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setEditingItem(null);
-    resetForm();
+    productForm.resetForm();
   };
 
   const handleSave = async () => {
-    if (!name.trim()) return;
+    if (!productForm.isValid()) return;
 
     try {
       setSaving(true);
-      const data: Partial<Product> = {
-        name: name.trim(),
-        type,
-      };
-
-      // Add type-specific fields
-      if (type === 'raw') {
-        data.pantry = pantry;
-        data.store = storeId || undefined;
-        data.section = sectionId || undefined;
-        // Clear stored fields
-        data.storage_location = undefined;
-        data.container_type = undefined;
-      } else if (type === 'stored') {
-        data.storage_location = storageLocation || undefined;
-        data.container_type = containerTypeId || undefined;
-        // Clear raw fields
-        data.pantry = false;
-        data.store = undefined;
-        data.section = undefined;
-      } else {
-        // Transient - clear all type-specific fields
-        data.pantry = false;
-        data.store = undefined;
-        data.section = undefined;
-        data.storage_location = undefined;
-        data.container_type = undefined;
-      }
+      const data = productForm.getProductData();
 
       if (editingItem) {
         await update(collections.products, editingItem.id, data);
@@ -194,7 +169,7 @@ export default function Products() {
       handleCloseDialog();
       loadItems();
     } catch (err) {
-      setError('Failed to save product');
+      setError("Failed to save product");
       console.error(err);
     } finally {
       setSaving(false);
@@ -215,7 +190,7 @@ export default function Products() {
       setItemToDelete(null);
       loadItems();
     } catch (err) {
-      setError('Failed to delete product');
+      setError("Failed to delete product");
       console.error(err);
     }
   };
@@ -230,7 +205,12 @@ export default function Products() {
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={2}
+      >
         <Box>
           <Typography variant="h4" gutterBottom>
             Products
@@ -248,17 +228,56 @@ export default function Products() {
         </Button>
       </Box>
 
+      {/* Search Field */}
+      <Box mb={2}>
+        <TextField
+          placeholder="Search products..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          variant="outlined"
+          size="small"
+          sx={{ width: { xs: "100%", sm: 400 } }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+            endAdornment: searchQuery && (
+              <InputAdornment position="end">
+                <IconButton
+                  size="small"
+                  onClick={() => setSearchQuery("")}
+                  edge="end"
+                >
+                  <ClearIcon />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Box>
+
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
 
+      {/* Results Counter */}
+      {searchQuery && (
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Showing {filteredItems.length} of {items.length} products
+        </Typography>
+      )}
+
       <TableContainer component={Paper}>
-        {items.length === 0 ? (
+        {filteredItems.length === 0 ? (
           <Box p={3} textAlign="center">
             <Typography color="text.secondary">
-              No products yet. Add one to get started.
+              {searchQuery
+                ? "No products match your search"
+                : "No products yet. Add one to get started."}
             </Typography>
           </Box>
         ) : (
@@ -272,7 +291,7 @@ export default function Products() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {items.map((item) => (
+              {filteredItems.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>{item.name}</TableCell>
                   <TableCell>
@@ -281,16 +300,31 @@ export default function Products() {
                       size="small"
                       sx={{
                         backgroundColor: PRODUCT_TYPE_COLORS[item.type],
-                        color: 'white',
+                        color: "white",
                       }}
                     />
                   </TableCell>
                   <TableCell>
-                    {item.type === 'raw' && (
+                    {item.type === "raw" && (
                       <Box>
-                        {item.pantry && <Chip label="Pantry" size="small" sx={{ mr: 1 }} />}
+                        {item.pantry && (
+                          <Chip label="Pantry" size="small" sx={{ mr: 1 }} />
+                        )}
+                        {item.track_quantity && (
+                          <Chip
+                            label="Track Qty"
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                            sx={{ mr: 1 }}
+                          />
+                        )}
                         {item.expand?.store && (
-                          <Typography variant="body2" component="span" sx={{ mr: 1 }}>
+                          <Typography
+                            variant="body2"
+                            component="span"
+                            sx={{ mr: 1 }}
+                          >
                             Store: {item.expand.store.name}
                           </Typography>
                         )}
@@ -301,13 +335,13 @@ export default function Products() {
                         )}
                       </Box>
                     )}
-                    {item.type === 'stored' && (
+                    {item.type === "stored" && (
                       <Box>
                         {item.storage_location && (
                           <Chip
                             label={item.storage_location}
                             size="small"
-                            sx={{ mr: 1, textTransform: 'capitalize' }}
+                            sx={{ mr: 1, textTransform: "capitalize" }}
                           />
                         )}
                         {item.expand?.container_type && (
@@ -317,17 +351,23 @@ export default function Products() {
                         )}
                       </Box>
                     )}
-                    {item.type === 'transient' && (
+                    {item.type === "transient" && (
                       <Typography variant="body2" color="text.secondary">
                         —
                       </Typography>
                     )}
                   </TableCell>
                   <TableCell align="right">
-                    <IconButton onClick={() => handleOpenDialog(item)} size="small">
+                    <IconButton
+                      onClick={() => handleOpenDialog(item)}
+                      size="small"
+                    >
                       <EditIcon />
                     </IconButton>
-                    <IconButton onClick={() => handleDeleteClick(item)} size="small">
+                    <IconButton
+                      onClick={() => handleDeleteClick(item)}
+                      size="small"
+                    >
                       <DeleteIcon />
                     </IconButton>
                   </TableCell>
@@ -339,147 +379,54 @@ export default function Products() {
       </TableContainer>
 
       {/* Add/Edit Dialog */}
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>{editingItem ? 'Edit Product' : 'Add Product'}</DialogTitle>
+      <Dialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          {editingItem ? "Edit Product" : "Add Product"}
+        </DialogTitle>
         <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Name"
-            fullWidth
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            sx={{ mb: 2 }}
+          <ProductForm
+            stores={stores}
+            sections={sections}
+            containerTypes={containerTypes}
+            form={productForm}
           />
-
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Type</InputLabel>
-            <Select
-              value={type}
-              label="Type"
-              onChange={(e) => setType(e.target.value as ProductType)}
-            >
-              <MenuItem value="raw">Raw Ingredient</MenuItem>
-              <MenuItem value="transient">Transient</MenuItem>
-              <MenuItem value="stored">Stored</MenuItem>
-            </Select>
-          </FormControl>
-
-          {/* Raw-specific fields */}
-          {type === 'raw' && (
-            <>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={pantry}
-                    onChange={(e) => setPantry(e.target.checked)}
-                  />
-                }
-                label="Pantry item (already in stock, just verify)"
-                sx={{ mb: 2, display: 'block' }}
-              />
-
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>Store</InputLabel>
-                <Select
-                  value={storeId}
-                  label="Store"
-                  onChange={(e) => setStoreId(e.target.value)}
-                >
-                  <MenuItem value="">
-                    <em>None</em>
-                  </MenuItem>
-                  {stores.map((store) => (
-                    <MenuItem key={store.id} value={store.id}>
-                      {store.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>Section</InputLabel>
-                <Select
-                  value={sectionId}
-                  label="Section"
-                  onChange={(e) => setSectionId(e.target.value)}
-                >
-                  <MenuItem value="">
-                    <em>None</em>
-                  </MenuItem>
-                  {sections.map((section) => (
-                    <MenuItem key={section.id} value={section.id}>
-                      {section.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </>
-          )}
-
-          {/* Stored-specific fields */}
-          {type === 'stored' && (
-            <>
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>Storage Location</InputLabel>
-                <Select
-                  value={storageLocation}
-                  label="Storage Location"
-                  onChange={(e) => setStorageLocation(e.target.value as StorageLocation)}
-                >
-                  <MenuItem value="">
-                    <em>None</em>
-                  </MenuItem>
-                  <MenuItem value="fridge">Fridge</MenuItem>
-                  <MenuItem value="freezer">Freezer</MenuItem>
-                </Select>
-              </FormControl>
-
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>Container Type</InputLabel>
-                <Select
-                  value={containerTypeId}
-                  label="Container Type"
-                  onChange={(e) => setContainerTypeId(e.target.value)}
-                >
-                  <MenuItem value="">
-                    <em>None</em>
-                  </MenuItem>
-                  {containerTypes.map((ct) => (
-                    <MenuItem key={ct.id} value={ct.id}>
-                      {ct.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </>
-          )}
-
-          {type === 'transient' && (
-            <Typography color="text.secondary" sx={{ mt: 2 }}>
-              Transient products have no additional configuration. They exist only during prep.
-            </Typography>
-          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained" disabled={!name.trim() || saving}>
-            {saving ? 'Saving...' : 'Save'}
+          <Button
+            onClick={handleSave}
+            variant="contained"
+            disabled={!productForm.isValid() || saving}
+          >
+            {saving ? "Saving..." : "Save"}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
         <DialogTitle>Delete Product?</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete "{itemToDelete?.name}"? This action cannot be undone.
+            Are you sure you want to delete "{itemToDelete?.name}"? This action
+            cannot be undone.
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+          >
             Delete
           </Button>
         </DialogActions>

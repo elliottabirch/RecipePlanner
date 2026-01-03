@@ -7,12 +7,14 @@ import {
   useNodesState,
   useEdgesState,
   addEdge,
+  Position,
   type Connection,
   type Edge,
   type Node,
   BackgroundVariant,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import dagre from "dagre";
 import {
   Box,
   Button,
@@ -32,6 +34,7 @@ import {
   MenuItem,
   Chip,
   Autocomplete,
+  Divider,
 } from "@mui/material";
 import {
   ArrowBack as BackIcon,
@@ -51,12 +54,16 @@ import {
 import type {
   Recipe,
   Product,
+  ProductExpanded,
   RecipeProductNode,
   RecipeStep,
   RecipeTag,
   ProductToStepEdge,
   StepToProductEdge,
   Tag,
+  Store,
+  Section,
+  ContainerType,
 } from "../lib/types";
 import ProductNode, {
   type ProductNodeData,
@@ -66,6 +73,7 @@ import StepNode, {
   type StepNodeData,
   type StepNodeType,
 } from "../components/nodes/StepNode";
+import ProductForm, { useProductForm } from "../components/ProductForm";
 
 const nodeTypes = {
   product: ProductNode,
@@ -94,9 +102,12 @@ export default function RecipeEditor() {
   const [edges, setEdges, onEdgesChange] = useEdgesState<FlowEdge>([]);
 
   // Lookup data
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductExpanded[]>([]);
   const [allTags, setAllTags] = useState<Tag[]>([]);
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [sections, setSections] = useState<Section[]>([]);
+  const [containerTypes, setContainerTypes] = useState<ContainerType[]>([]);
 
   // Add product dialog
   const [productDialogOpen, setProductDialogOpen] = useState(false);
@@ -104,6 +115,15 @@ export default function RecipeEditor() {
   const [productQuantity, setProductQuantity] = useState<number | "">("");
   const [productUnit, setProductUnit] = useState("");
   const [productMealDestination, setProductMealDestination] = useState("");
+
+  // Inline product creation
+  const [creatingProduct, setCreatingProduct] = useState(false);
+  const productForm = useProductForm();
+  const [creatingProductLoading, setCreatingProductLoading] = useState(false);
+
+  // Edit product dialog
+  const [editProductDialogOpen, setEditProductDialogOpen] = useState(false);
+  const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
 
   // Add step dialog
   const [stepDialogOpen, setStepDialogOpen] = useState(false);
@@ -113,6 +133,9 @@ export default function RecipeEditor() {
     "batch"
   );
 
+  // Edit step dialog
+  const [editStepDialogOpen, setEditStepDialogOpen] = useState(false);
+
   // Track database IDs for nodes/edges
   const [nodeDbIds, setNodeDbIds] = useState<Record<string, string>>({});
 
@@ -121,16 +144,68 @@ export default function RecipeEditor() {
 
   const loadLookupData = async () => {
     try {
-      const [productsData, tagsData] = await Promise.all([
-        getAll<Product>(collections.products, { sort: "name" }),
+      const [
+        productsData,
+        tagsData,
+        storesData,
+        sectionsData,
+        containerTypesData,
+      ] = await Promise.all([
+        getAll<Product>(collections.products, {
+          sort: "name",
+          expand: "container_type",
+        }),
         getAll<Tag>(collections.tags, { sort: "name" }),
+        getAll<Store>(collections.stores, { sort: "name" }),
+        getAll<Section>(collections.sections, { sort: "name" }),
+        getAll<ContainerType>(collections.containerTypes, { sort: "name" }),
       ]);
       setProducts(productsData);
       setAllTags(tagsData);
+      setStores(storesData);
+      setSections(sectionsData);
+      setContainerTypes(containerTypesData);
     } catch (err) {
       console.error("Failed to load lookup data:", err);
     }
   };
+
+  // Auto-layout function using dagre
+  const applyAutoLayout = useCallback(
+    (nodes: FlowNode[], edges: FlowEdge[]) => {
+      const dagreGraph = new dagre.graphlib.Graph();
+      dagreGraph.setDefaultEdgeLabel(() => ({}));
+      dagreGraph.setGraph({ rankdir: "LR", nodesep: 80, ranksep: 150 });
+
+      // Add nodes to dagre
+      nodes.forEach((node) => {
+        dagreGraph.setNode(node.id, { width: 180, height: 100 });
+      });
+
+      // Add edges to dagre
+      edges.forEach((edge) => {
+        dagreGraph.setEdge(edge.source, edge.target);
+      });
+
+      // Calculate layout
+      dagre.layout(dagreGraph);
+
+      // Apply positions from dagre to nodes
+      return nodes.map((node) => {
+        const nodeWithPosition = dagreGraph.node(node.id);
+        return {
+          ...node,
+          sourcePosition: Position.Right,
+          targetPosition: Position.Left,
+          position: {
+            x: nodeWithPosition.x - 90,
+            y: nodeWithPosition.y - 50,
+          },
+        };
+      });
+    },
+    []
+  );
 
   const loadRecipe = async () => {
     if (!id) return;
@@ -190,7 +265,7 @@ export default function RecipeEditor() {
         flowNodes.push({
           id: nodeId,
           type: "product",
-          position: { x: pn.position_x || 0, y: pn.position_y || 0 },
+          position: { x: 0, y: 0 }, // Will be set by dagre
           data: {
             label: productData?.name || "Unknown Product",
             productId: pn.product,
@@ -208,7 +283,7 @@ export default function RecipeEditor() {
         flowNodes.push({
           id: nodeId,
           type: "step",
-          position: { x: step.position_x || 0, y: step.position_y || 0 },
+          position: { x: 0, y: 0 }, // Will be set by dagre
           data: {
             label: step.name,
             stepType: step.step_type,
@@ -217,7 +292,6 @@ export default function RecipeEditor() {
         } as StepNodeType);
       });
 
-      setNodes(flowNodes);
       setNodeDbIds(dbIds);
 
       // Convert to React Flow edges
@@ -241,6 +315,9 @@ export default function RecipeEditor() {
         });
       });
 
+      // Apply auto-layout
+      const layoutedNodes = applyAutoLayout(flowNodes, flowEdges);
+      setNodes(layoutedNodes);
       setEdges(flowEdges);
     } catch (err) {
       setError("Failed to load recipe");
@@ -272,10 +349,128 @@ export default function RecipeEditor() {
     setSelectedNode(null);
   }, []);
 
+  const handleEditNode = () => {
+    if (!selectedNode) return;
+
+    if (selectedNode.type === "product") {
+      const data = selectedNode.data as ProductNodeData;
+      const product = products.find((p) => p.id === data.productId);
+
+      if (product) {
+        setSelectedProduct(product);
+        setProductQuantity(data.quantity || "");
+        setProductUnit(data.unit || "");
+        setProductMealDestination(data.mealDestination || "");
+        setEditingNodeId(selectedNode.id);
+        setEditProductDialogOpen(true);
+      }
+    } else if (selectedNode.type === "step") {
+      const data = selectedNode.data as StepNodeData;
+      setStepName(data.label);
+      setStepType(data.stepType);
+      setStepTiming(data.timing || "batch");
+      setEditingNodeId(selectedNode.id);
+      setEditStepDialogOpen(true);
+    }
+  };
+
+  const handleSaveEditedProduct = () => {
+    if (!selectedProduct || !editingNodeId) return;
+
+    // For stored products, find the container type name from the expanded product
+    const productWithExpand = products.find((p) => p.id === selectedProduct.id);
+    const containerTypeName = productWithExpand?.expand?.container_type?.name;
+
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === editingNodeId) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              label: selectedProduct.name,
+              productId: selectedProduct.id,
+              productType: selectedProduct.type,
+              quantity: productQuantity || undefined,
+              unit:
+                selectedProduct.type === "stored"
+                  ? containerTypeName
+                  : productUnit || undefined,
+              mealDestination: productMealDestination || undefined,
+            },
+          };
+        }
+        return node;
+      })
+    );
+
+    setEditProductDialogOpen(false);
+    setEditingNodeId(null);
+    setSelectedProduct(null);
+    setProductQuantity("");
+    setProductUnit("");
+    setProductMealDestination("");
+    setSelectedNode(null);
+  };
+
+  const handleSaveEditedStep = () => {
+    if (!stepName.trim() || !editingNodeId) return;
+
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === editingNodeId) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              label: stepName.trim(),
+              stepType: stepType,
+              timing: stepType === "assembly" ? stepTiming : undefined,
+            },
+          };
+        }
+        return node;
+      })
+    );
+
+    setEditStepDialogOpen(false);
+    setEditingNodeId(null);
+    setStepName("");
+    setStepType("prep");
+    setStepTiming("batch");
+    setSelectedNode(null);
+  };
+
+  const handleCreateProduct = async () => {
+    if (!productForm.isValid()) return;
+
+    try {
+      setCreatingProductLoading(true);
+      const data = productForm.getProductData();
+      const newProduct = await create<Product>(collections.products, data);
+
+      // Refresh products and select the new one
+      await loadLookupData();
+      setSelectedProduct(newProduct);
+      setCreatingProduct(false);
+      productForm.resetForm();
+    } catch (err) {
+      console.error("Failed to create product:", err);
+      setError("Failed to create product");
+    } finally {
+      setCreatingProductLoading(false);
+    }
+  };
+
   const handleAddProduct = () => {
     if (!selectedProduct) return;
 
     const nodeId = `product-temp-${Date.now()}`;
+
+    // For stored products, find the container type name from the expanded product
+    const productWithExpand = products.find((p) => p.id === selectedProduct.id);
+    const containerTypeName = productWithExpand?.expand?.container_type?.name;
+
     const newNode: ProductNodeType = {
       id: nodeId,
       type: "product",
@@ -285,7 +480,10 @@ export default function RecipeEditor() {
         productId: selectedProduct.id,
         productType: selectedProduct.type,
         quantity: productQuantity || undefined,
-        unit: productUnit || undefined,
+        unit:
+          selectedProduct.type === "stored"
+            ? containerTypeName
+            : productUnit || undefined,
         mealDestination: productMealDestination || undefined,
       },
     };
@@ -296,6 +494,8 @@ export default function RecipeEditor() {
     setProductQuantity("");
     setProductUnit("");
     setProductMealDestination("");
+    setCreatingProduct(false);
+    productForm.resetForm();
   };
 
   const handleAddStep = () => {
@@ -586,14 +786,23 @@ export default function RecipeEditor() {
           </Button>
 
           {selectedNode && (
-            <Button
-              variant="outlined"
-              color="error"
-              startIcon={<DeleteIcon />}
-              onClick={handleDeleteNode}
-            >
-              Delete Node
-            </Button>
+            <>
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={handleEditNode}
+              >
+                Edit Node
+              </Button>
+              <Button
+                variant="outlined"
+                color="error"
+                startIcon={<DeleteIcon />}
+                onClick={handleDeleteNode}
+              >
+                Delete Node
+              </Button>
+            </>
           )}
 
           <Button
@@ -650,86 +859,185 @@ export default function RecipeEditor() {
       {/* Add Product Dialog */}
       <Dialog
         open={productDialogOpen}
-        onClose={() => setProductDialogOpen(false)}
+        onClose={() => {
+          setProductDialogOpen(false);
+          setCreatingProduct(false);
+          productForm.resetForm();
+        }}
         maxWidth="sm"
         fullWidth
       >
         <DialogTitle>Add Product Node</DialogTitle>
         <DialogContent>
-          <Autocomplete
-            options={products}
-            value={selectedProduct}
-            onChange={(_, newValue) => setSelectedProduct(newValue)}
-            getOptionLabel={(option) => option.name}
-            renderInput={(params) => (
-              <TextField {...params} label="Product" margin="dense" fullWidth />
-            )}
-            renderOption={(props, option) => (
-              <li {...props} key={option.id}>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Chip
-                    label={option.type}
-                    size="small"
-                    sx={{
-                      backgroundColor:
-                        option.type === "raw"
-                          ? "#4caf50"
-                          : option.type === "transient"
-                          ? "#ff9800"
-                          : "#2196f3",
-                      color: "white",
-                      fontSize: "0.7rem",
-                    }}
+          {!creatingProduct ? (
+            <>
+              <Box display="flex" gap={1} mb={2} mt={1}>
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  onClick={() => setCreatingProduct(true)}
+                  sx={{ textTransform: "none" }}
+                >
+                  + Create New Product
+                </Button>
+              </Box>
+              <Divider sx={{ mb: 2 }}>or select existing</Divider>
+              <Autocomplete
+                options={products}
+                value={selectedProduct}
+                onChange={(_, newValue) => setSelectedProduct(newValue)}
+                getOptionLabel={(option) => option.name}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Product"
+                    margin="dense"
+                    fullWidth
                   />
-                  {option.name}
-                </Box>
-              </li>
-            )}
-          />
+                )}
+                renderOption={(props, option) => (
+                  <li {...props} key={option.id}>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <Chip
+                        label={option.type}
+                        size="small"
+                        sx={{
+                          backgroundColor:
+                            option.type === "raw"
+                              ? "#4caf50"
+                              : option.type === "transient"
+                              ? "#ff9800"
+                              : "#2196f3",
+                          color: "white",
+                          fontSize: "0.7rem",
+                        }}
+                      />
+                      {option.name}
+                    </Box>
+                  </li>
+                )}
+              />
 
-          <Box display="flex" gap={2} mt={2}>
-            <TextField
-              label="Quantity"
-              type="number"
-              value={productQuantity}
-              onChange={(e) =>
-                setProductQuantity(e.target.value ? Number(e.target.value) : "")
-              }
-              size="small"
-              sx={{ width: 120 }}
-            />
-            <TextField
-              label="Unit"
-              value={productUnit}
-              onChange={(e) => setProductUnit(e.target.value)}
-              size="small"
-              sx={{ width: 120 }}
-              placeholder="cups, lbs, etc."
-            />
-          </Box>
+              {selectedProduct && (
+                <>
+                  <Box display="flex" gap={2} mt={2}>
+                    <TextField
+                      label={
+                        selectedProduct.type === "stored"
+                          ? "Number of Containers"
+                          : "Quantity"
+                      }
+                      type="number"
+                      value={productQuantity}
+                      onChange={(e) =>
+                        setProductQuantity(
+                          e.target.value ? Number(e.target.value) : ""
+                        )
+                      }
+                      size="small"
+                      sx={{
+                        width: selectedProduct.type === "stored" ? 200 : 120,
+                      }}
+                      helperText={
+                        selectedProduct.type === "stored"
+                          ? "How many containers to create"
+                          : undefined
+                      }
+                    />
+                    {selectedProduct.type !== "stored" && (
+                      <TextField
+                        label="Unit"
+                        value={productUnit}
+                        onChange={(e) => setProductUnit(e.target.value)}
+                        size="small"
+                        sx={{ width: 120 }}
+                        placeholder="cups, lbs, etc."
+                      />
+                    )}
+                  </Box>
 
-          {selectedProduct?.type === "stored" && (
-            <TextField
-              label="Meal Destination"
-              value={productMealDestination}
-              onChange={(e) => setProductMealDestination(e.target.value)}
-              fullWidth
-              margin="dense"
-              size="small"
-              placeholder="e.g., stir fry, salad"
-              helperText="Which meal this container goes to"
-            />
+                  {selectedProduct.type === "stored" && (
+                    <TextField
+                      label="Meal Destination"
+                      value={productMealDestination}
+                      onChange={(e) =>
+                        setProductMealDestination(e.target.value)
+                      }
+                      fullWidth
+                      margin="dense"
+                      size="small"
+                      placeholder="e.g., stir fry, salad"
+                      helperText="Which meal this container goes to"
+                    />
+                  )}
+                </>
+              )}
+            </>
+          ) : (
+            <Box>
+              <Typography
+                variant="subtitle2"
+                gutterBottom
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  mt: 1,
+                  mb: 2,
+                }}
+              >
+                📦 Create New Product
+              </Typography>
+
+              <ProductForm
+                stores={stores}
+                sections={sections}
+                containerTypes={containerTypes}
+                form={productForm}
+              />
+
+              <Button
+                onClick={handleCreateProduct}
+                variant="contained"
+                fullWidth
+                disabled={!productForm.isValid() || creatingProductLoading}
+                sx={{ mb: 2, mt: 2 }}
+              >
+                {creatingProductLoading ? "Creating..." : "Create Product"}
+              </Button>
+
+              <Button
+                onClick={() => {
+                  setCreatingProduct(false);
+                  productForm.resetForm();
+                }}
+                fullWidth
+                disabled={creatingProductLoading}
+              >
+                ← Back to Select Product
+              </Button>
+            </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setProductDialogOpen(false)}>Cancel</Button>
           <Button
-            onClick={handleAddProduct}
-            variant="contained"
-            disabled={!selectedProduct}
+            onClick={() => {
+              setProductDialogOpen(false);
+              setCreatingProduct(false);
+              productForm.resetForm();
+            }}
           >
-            Add
+            Cancel
           </Button>
+          {!creatingProduct && (
+            <Button
+              onClick={handleAddProduct}
+              variant="contained"
+              disabled={!selectedProduct}
+            >
+              Add to Recipe
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
 
@@ -792,6 +1100,200 @@ export default function RecipeEditor() {
             disabled={!stepName.trim()}
           >
             Add
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Product Dialog */}
+      <Dialog
+        open={editProductDialogOpen}
+        onClose={() => {
+          setEditProductDialogOpen(false);
+          setEditingNodeId(null);
+          setSelectedProduct(null);
+          setProductQuantity("");
+          setProductUnit("");
+          setProductMealDestination("");
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Edit Product Node</DialogTitle>
+        <DialogContent>
+          <Autocomplete
+            options={products}
+            value={selectedProduct}
+            onChange={(_, newValue) => setSelectedProduct(newValue)}
+            getOptionLabel={(option) => option.name}
+            renderInput={(params) => (
+              <TextField {...params} label="Product" margin="dense" fullWidth />
+            )}
+            renderOption={(props, option) => (
+              <li {...props} key={option.id}>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Chip
+                    label={option.type}
+                    size="small"
+                    sx={{
+                      backgroundColor:
+                        option.type === "raw"
+                          ? "#4caf50"
+                          : option.type === "transient"
+                          ? "#ff9800"
+                          : "#2196f3",
+                      color: "white",
+                      fontSize: "0.7rem",
+                    }}
+                  />
+                  {option.name}
+                </Box>
+              </li>
+            )}
+          />
+
+          <Box display="flex" gap={2} mt={2}>
+            <TextField
+              label={
+                selectedProduct?.type === "stored"
+                  ? "Number of Containers"
+                  : "Quantity"
+              }
+              type="number"
+              value={productQuantity}
+              onChange={(e) =>
+                setProductQuantity(e.target.value ? Number(e.target.value) : "")
+              }
+              size="small"
+              sx={{ width: selectedProduct?.type === "stored" ? 200 : 120 }}
+              helperText={
+                selectedProduct?.type === "stored"
+                  ? "How many containers to create"
+                  : undefined
+              }
+            />
+            {selectedProduct?.type !== "stored" && (
+              <TextField
+                label="Unit"
+                value={productUnit}
+                onChange={(e) => setProductUnit(e.target.value)}
+                size="small"
+                sx={{ width: 120 }}
+                placeholder="cups, lbs, etc."
+              />
+            )}
+          </Box>
+
+          {selectedProduct?.type === "stored" && (
+            <TextField
+              label="Meal Destination"
+              value={productMealDestination}
+              onChange={(e) => setProductMealDestination(e.target.value)}
+              fullWidth
+              margin="dense"
+              size="small"
+              placeholder="e.g., stir fry, salad"
+              helperText="Which meal this container goes to"
+            />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setEditProductDialogOpen(false);
+              setEditingNodeId(null);
+              setSelectedProduct(null);
+              setProductQuantity("");
+              setProductUnit("");
+              setProductMealDestination("");
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSaveEditedProduct}
+            variant="contained"
+            disabled={!selectedProduct}
+          >
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Step Dialog */}
+      <Dialog
+        open={editStepDialogOpen}
+        onClose={() => {
+          setEditStepDialogOpen(false);
+          setEditingNodeId(null);
+          setStepName("");
+          setStepType("prep");
+          setStepTiming("batch");
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Edit Step Node</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            label="Step Name"
+            value={stepName}
+            onChange={(e) => setStepName(e.target.value)}
+            fullWidth
+            margin="dense"
+            placeholder="e.g., Dice onions, Sauté vegetables"
+          />
+
+          <FormControl fullWidth margin="dense">
+            <InputLabel>Step Type</InputLabel>
+            <Select
+              value={stepType}
+              label="Step Type"
+              onChange={(e) =>
+                setStepType(e.target.value as "prep" | "assembly")
+              }
+            >
+              <MenuItem value="prep">Prep (raw ingredients only)</MenuItem>
+              <MenuItem value="assembly">Assembly</MenuItem>
+            </Select>
+          </FormControl>
+
+          {stepType === "assembly" && (
+            <FormControl fullWidth margin="dense">
+              <InputLabel>Timing</InputLabel>
+              <Select
+                value={stepTiming}
+                label="Timing"
+                onChange={(e) =>
+                  setStepTiming(e.target.value as "batch" | "just_in_time")
+                }
+              >
+                <MenuItem value="batch">Batch (prep day)</MenuItem>
+                <MenuItem value="just_in_time">
+                  Just-in-time (serve time)
+                </MenuItem>
+              </Select>
+            </FormControl>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setEditStepDialogOpen(false);
+              setEditingNodeId(null);
+              setStepName("");
+              setStepType("prep");
+              setStepTiming("batch");
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSaveEditedStep}
+            variant="contained"
+            disabled={!stepName.trim()}
+          >
+            Save
           </Button>
         </DialogActions>
       </Dialog>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -11,8 +11,6 @@ import {
   Paper,
   CircularProgress,
   Alert,
-  Card,
-  CardContent,
   IconButton,
   FormControl,
   InputLabel,
@@ -29,14 +27,24 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
-} from '@mui/icons-material';
-import { getAll, create, update, remove, collections } from '../lib/api';
-import type { WeeklyPlan, PlannedMeal, Recipe, MealSlot, Day } from '../lib/types';
+} from "@mui/icons-material";
+import { getAll, create, update, remove, collections } from "../lib/api";
+import type {
+  WeeklyPlan,
+  PlannedMeal,
+  Recipe,
+  MealSlot,
+  Day,
+  RecipeProductNode,
+  StepToProductEdge,
+  ProductToStepEdge,
+  Product,
+} from "../lib/types";
 
 interface PlannedMealExpanded extends PlannedMeal {
   expand?: {
@@ -44,72 +52,155 @@ interface PlannedMealExpanded extends PlannedMeal {
   };
 }
 
+interface RecipeWithOutputs extends Recipe {
+  outputs?: string; // Formatted output string
+}
+
 const DAYS: { value: Day; label: string }[] = [
-  { value: 'mon', label: 'Monday' },
-  { value: 'tue', label: 'Tuesday' },
-  { value: 'wed', label: 'Wednesday' },
-  { value: 'thu', label: 'Thursday' },
-  { value: 'fri', label: 'Friday' },
-  { value: 'sat', label: 'Saturday' },
-  { value: 'sun', label: 'Sunday' },
+  { value: "mon", label: "Monday" },
+  { value: "tue", label: "Tuesday" },
+  { value: "wed", label: "Wednesday" },
+  { value: "thu", label: "Thursday" },
+  { value: "fri", label: "Friday" },
+  { value: "sat", label: "Saturday" },
+  { value: "sun", label: "Sunday" },
 ];
 
 const MEAL_SLOTS: { value: MealSlot; label: string }[] = [
-  { value: 'breakfast', label: 'Breakfast' },
-  { value: 'lunch', label: 'Lunch' },
-  { value: 'dinner', label: 'Dinner' },
-  { value: 'snack', label: 'Snack' },
+  { value: "breakfast", label: "Breakfast" },
+  { value: "lunch", label: "Lunch" },
+  { value: "dinner", label: "Dinner" },
+  { value: "snack", label: "Snack" },
 ];
 
 const SLOT_COLORS: Record<MealSlot, string> = {
-  breakfast: '#ff9800',
-  lunch: '#4caf50',
-  dinner: '#2196f3',
-  snack: '#9c27b0',
+  breakfast: "#ff9800",
+  lunch: "#4caf50",
+  dinner: "#2196f3",
+  snack: "#9c27b0",
 };
 
 export default function WeeklyPlans() {
   const [plans, setPlans] = useState<WeeklyPlan[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<WeeklyPlan | null>(null);
   const [plannedMeals, setPlannedMeals] = useState<PlannedMealExpanded[]>([]);
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [recipes, setRecipes] = useState<RecipeWithOutputs[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // New plan dialog
   const [planDialogOpen, setPlanDialogOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<WeeklyPlan | null>(null);
-  const [planName, setPlanName] = useState('');
+  const [planName, setPlanName] = useState("");
   const [savingPlan, setSavingPlan] = useState(false);
 
   // Add meal dialog
   const [mealDialogOpen, setMealDialogOpen] = useState(false);
-  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
-  const [selectedSlot, setSelectedSlot] = useState<MealSlot>('dinner');
-  const [selectedDay, setSelectedDay] = useState<Day | ''>('');
-  const [mealQuantity, setMealQuantity] = useState<number | ''>(1);
+  const [selectedRecipe, setSelectedRecipe] =
+    useState<RecipeWithOutputs | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<MealSlot>("dinner");
+  const [selectedDay, setSelectedDay] = useState<Day | "">("");
+  const [mealQuantity, setMealQuantity] = useState<number | "">(1);
   const [savingMeal, setSavingMeal] = useState(false);
 
   // Delete confirmation
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<{ type: 'plan' | 'meal'; item: WeeklyPlan | PlannedMealExpanded } | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<{
+    type: "plan" | "meal";
+    item: WeeklyPlan | PlannedMealExpanded;
+  } | null>(null);
 
   const loadPlans = async () => {
     try {
       setLoading(true);
-      const [plansData, recipesData] = await Promise.all([
+      const [
+        plansData,
+        recipesData,
+        productNodesData,
+        stepToProductData,
+        productToStepData,
+        productsData,
+      ] = await Promise.all([
         getAll<WeeklyPlan>(collections.weeklyPlans),
-        getAll<Recipe>(collections.recipes, { sort: 'name' }),
+        getAll<Recipe>(collections.recipes, { sort: "name" }),
+        getAll<RecipeProductNode>(collections.recipeProductNodes, {
+          expand: "product",
+        }),
+        getAll<StepToProductEdge>(collections.stepToProductEdges),
+        getAll<ProductToStepEdge>(collections.productToStepEdges),
+        getAll<Product>(collections.products),
       ]);
       setPlans(plansData);
-      setRecipes(recipesData);
-      
+
+      // Build a map of products by ID for quick lookup
+      const productsMap = new Map(productsData.map((p) => [p.id, p]));
+
+      // For each recipe, calculate output information
+      const recipesWithOutputs: RecipeWithOutputs[] = recipesData.map(
+        (recipe) => {
+          // Find output nodes: those that are targets of step_to_product edges
+          const outputNodeIds = new Set(
+            stepToProductData
+              .filter((edge) => edge.recipe === recipe.id)
+              .map((edge) => edge.target)
+          );
+
+          // Find nodes that are inputs to steps (sources of product_to_step edges)
+          const inputNodeIds = new Set(
+            productToStepData
+              .filter((edge) => edge.recipe === recipe.id)
+              .map((edge) => edge.source)
+          );
+
+          // Get the terminal output product nodes for this recipe
+          // Terminal = output nodes that are NOT used as inputs to other steps
+          const outputNodes = productNodesData.filter((node) => {
+            if (node.recipe !== recipe.id || !outputNodeIds.has(node.id))
+              return false;
+
+            // Must NOT be an input to another step (terminal products)
+            if (inputNodeIds.has(node.id)) return false;
+
+            const product = productsMap.get(node.product);
+            // Only include stored products
+            return product && product.type === "stored";
+          });
+
+          // Format output string
+          let outputsStr = "";
+          if (outputNodes.length > 0) {
+            const outputParts = outputNodes
+              .map((node) => {
+                const product = productsMap.get(node.product);
+                if (!product) return null;
+
+                const qtyStr = node.quantity
+                  ? `${node.quantity} ${node.unit || ""}`
+                  : "";
+                return qtyStr
+                  ? `${qtyStr.trim()} ${product.name}`
+                  : product.name;
+              })
+              .filter(Boolean);
+
+            outputsStr = outputParts.join(", ");
+          }
+
+          return {
+            ...recipe,
+            outputs: outputsStr || undefined,
+          };
+        }
+      );
+
+      setRecipes(recipesWithOutputs);
+
       // Auto-select first plan if none selected
       if (plansData.length > 0 && !selectedPlan) {
         setSelectedPlan(plansData[0]);
       }
     } catch (err) {
-      setError('Failed to load plans');
+      setError("Failed to load plans");
       console.error(err);
     } finally {
       setLoading(false);
@@ -123,13 +214,16 @@ export default function WeeklyPlans() {
     }
 
     try {
-      const meals = await getAll<PlannedMealExpanded>(collections.plannedMeals, {
-        filter: `weekly_plan="${selectedPlan.id}"`,
-        expand: 'recipe',
-      });
+      const meals = await getAll<PlannedMealExpanded>(
+        collections.plannedMeals,
+        {
+          filter: `weekly_plan="${selectedPlan.id}"`,
+          expand: "recipe",
+        }
+      );
       setPlannedMeals(meals);
     } catch (err) {
-      console.error('Failed to load planned meals:', err);
+      console.error("Failed to load planned meals:", err);
     }
   };
 
@@ -144,10 +238,10 @@ export default function WeeklyPlans() {
   const handleOpenPlanDialog = (plan?: WeeklyPlan) => {
     if (plan) {
       setEditingPlan(plan);
-      setPlanName(plan.name || '');
+      setPlanName(plan.name || "");
     } else {
       setEditingPlan(null);
-      setPlanName('');
+      setPlanName("");
     }
     setPlanDialogOpen(true);
   };
@@ -158,10 +252,16 @@ export default function WeeklyPlans() {
     try {
       setSavingPlan(true);
       if (editingPlan) {
-        const updated = await update<WeeklyPlan>(collections.weeklyPlans, editingPlan.id, {
-          name: planName.trim(),
-        });
-        setPlans((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+        const updated = await update<WeeklyPlan>(
+          collections.weeklyPlans,
+          editingPlan.id,
+          {
+            name: planName.trim(),
+          }
+        );
+        setPlans((prev) =>
+          prev.map((p) => (p.id === updated.id ? updated : p))
+        );
         if (selectedPlan?.id === updated.id) {
           setSelectedPlan(updated);
         }
@@ -173,10 +273,10 @@ export default function WeeklyPlans() {
         setSelectedPlan(created);
       }
       setPlanDialogOpen(false);
-      setPlanName('');
+      setPlanName("");
       setEditingPlan(null);
     } catch (err) {
-      setError('Failed to save plan');
+      setError("Failed to save plan");
       console.error(err);
     } finally {
       setSavingPlan(false);
@@ -185,8 +285,8 @@ export default function WeeklyPlans() {
 
   const handleOpenMealDialog = () => {
     setSelectedRecipe(null);
-    setSelectedSlot('dinner');
-    setSelectedDay('');
+    setSelectedSlot("dinner");
+    setSelectedDay("");
     setMealQuantity(1);
     setMealDialogOpen(true);
   };
@@ -206,14 +306,17 @@ export default function WeeklyPlans() {
       setMealDialogOpen(false);
       loadPlannedMeals();
     } catch (err) {
-      setError('Failed to add meal');
+      setError("Failed to add meal");
       console.error(err);
     } finally {
       setSavingMeal(false);
     }
   };
 
-  const handleDeleteClick = (type: 'plan' | 'meal', item: WeeklyPlan | PlannedMealExpanded) => {
+  const handleDeleteClick = (
+    type: "plan" | "meal",
+    item: WeeklyPlan | PlannedMealExpanded
+  ) => {
     setItemToDelete({ type, item });
     setDeleteDialogOpen(true);
   };
@@ -222,11 +325,13 @@ export default function WeeklyPlans() {
     if (!itemToDelete) return;
 
     try {
-      if (itemToDelete.type === 'plan') {
+      if (itemToDelete.type === "plan") {
         await remove(collections.weeklyPlans, itemToDelete.item.id);
         setPlans((prev) => prev.filter((p) => p.id !== itemToDelete.item.id));
         if (selectedPlan?.id === itemToDelete.item.id) {
-          setSelectedPlan(plans.find((p) => p.id !== itemToDelete.item.id) || null);
+          setSelectedPlan(
+            plans.find((p) => p.id !== itemToDelete.item.id) || null
+          );
         }
       } else {
         await remove(collections.plannedMeals, itemToDelete.item.id);
@@ -235,7 +340,7 @@ export default function WeeklyPlans() {
       setDeleteDialogOpen(false);
       setItemToDelete(null);
     } catch (err) {
-      setError('Failed to delete');
+      setError("Failed to delete");
       console.error(err);
     }
   };
@@ -257,7 +362,12 @@ export default function WeeklyPlans() {
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={2}
+      >
         <Box>
           <Typography variant="h4" gutterBottom>
             Weekly Plans
@@ -300,11 +410,11 @@ export default function WeeklyPlans() {
                   onClick={() => setSelectedPlan(plan)}
                   sx={{ borderRadius: 1, mb: 0.5 }}
                 >
-                  <ListItemText 
-                    primary={plan.name || 'Unnamed Plan'} 
-                    sx={{ mr: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}
+                  <ListItemText
+                    primary={plan.name || "Unnamed Plan"}
+                    sx={{ mr: 1, overflow: "hidden", textOverflow: "ellipsis" }}
                   />
-                  <Box sx={{ display: 'flex', flexShrink: 0 }}>
+                  <Box sx={{ display: "flex", flexShrink: 0 }}>
                     <IconButton
                       size="small"
                       onClick={(e) => {
@@ -318,7 +428,7 @@ export default function WeeklyPlans() {
                       size="small"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDeleteClick('plan', plan);
+                        handleDeleteClick("plan", plan);
                       }}
                     >
                       <DeleteIcon fontSize="small" />
@@ -331,11 +441,18 @@ export default function WeeklyPlans() {
         </Paper>
 
         {/* Meal grid */}
-        <Paper sx={{ p: 2, flexGrow: 1, overflow: 'auto' }}>
+        <Paper sx={{ p: 2, flexGrow: 1, overflow: "auto" }}>
           {selectedPlan ? (
             <>
-              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="h6">{selectedPlan.name || 'Unnamed Plan'}</Typography>
+              <Box
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+                mb={2}
+              >
+                <Typography variant="h6">
+                  {selectedPlan.name || "Unnamed Plan"}
+                </Typography>
                 <Button
                   variant="outlined"
                   startIcon={<AddIcon />}
@@ -349,19 +466,27 @@ export default function WeeklyPlans() {
               {/* Week-spanning meals */}
               {weekSpanningMeals.length > 0 && (
                 <Box mb={2}>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    gutterBottom
+                  >
                     Week-spanning (grab anytime)
                   </Typography>
                   <Box display="flex" flexWrap="wrap" gap={1}>
                     {weekSpanningMeals.map((meal) => (
                       <Chip
                         key={meal.id}
-                        label={`${meal.expand?.recipe?.name || 'Unknown'} (${meal.meal_slot})`}
-                        onDelete={() => handleDeleteClick('meal', meal)}
+                        label={`${meal.expand?.recipe?.name || "Unknown"} (${
+                          meal.meal_slot
+                        })`}
+                        onDelete={() => handleDeleteClick("meal", meal)}
                         sx={{
                           backgroundColor: SLOT_COLORS[meal.meal_slot],
-                          color: 'white',
-                          '& .MuiChip-deleteIcon': { color: 'rgba(255,255,255,0.7)' },
+                          color: "white",
+                          "& .MuiChip-deleteIcon": {
+                            color: "rgba(255,255,255,0.7)",
+                          },
                         }}
                       />
                     ))}
@@ -374,9 +499,15 @@ export default function WeeklyPlans() {
                 <Table size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell sx={{ fontWeight: 'bold', width: 100 }}>Slot</TableCell>
+                      <TableCell sx={{ fontWeight: "bold", width: 100 }}>
+                        Slot
+                      </TableCell>
                       {DAYS.map((day) => (
-                        <TableCell key={day.value} align="center" sx={{ fontWeight: 'bold' }}>
+                        <TableCell
+                          key={day.value}
+                          align="center"
+                          sx={{ fontWeight: "bold" }}
+                        >
                           {day.label.slice(0, 3)}
                         </TableCell>
                       ))}
@@ -391,18 +522,22 @@ export default function WeeklyPlans() {
                             size="small"
                             sx={{
                               backgroundColor: SLOT_COLORS[slot.value],
-                              color: 'white',
+                              color: "white",
                             }}
                           />
                         </TableCell>
                         {DAYS.map((day) => {
-                          const meals = getMealsForDaySlot(day.value, slot.value);
+                          const meals = getMealsForDaySlot(
+                            day.value,
+                            slot.value
+                          );
                           return (
                             <TableCell
                               key={day.value}
                               sx={{
-                                verticalAlign: 'top',
-                                backgroundColor: meals.length > 0 ? 'action.hover' : 'inherit',
+                                verticalAlign: "top",
+                                backgroundColor:
+                                  meals.length > 0 ? "action.hover" : "inherit",
                                 minWidth: 100,
                                 p: 0.5,
                               }}
@@ -411,26 +546,37 @@ export default function WeeklyPlans() {
                                 <Box
                                   key={meal.id}
                                   sx={{
-                                    fontSize: '0.75rem',
+                                    fontSize: "0.75rem",
                                     p: 0.5,
                                     mb: 0.5,
                                     backgroundColor: SLOT_COLORS[slot.value],
-                                    color: 'white',
+                                    color: "white",
                                     borderRadius: 0.5,
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
                                     gap: 0.5,
                                   }}
                                 >
-                                  <Typography variant="caption" sx={{ color: 'inherit', lineHeight: 1.2 }}>
-                                    {meal.expand?.recipe?.name || '?'}
-                                    {meal.quantity && meal.quantity > 1 && ` (×${meal.quantity})`}
+                                  <Typography
+                                    variant="caption"
+                                    sx={{ color: "inherit", lineHeight: 1.2 }}
+                                  >
+                                    {meal.expand?.recipe?.name || "?"}
+                                    {meal.quantity &&
+                                      meal.quantity > 1 &&
+                                      ` (×${meal.quantity})`}
                                   </Typography>
                                   <IconButton
                                     size="small"
-                                    onClick={() => handleDeleteClick('meal', meal)}
-                                    sx={{ p: 0, color: 'rgba(255,255,255,0.7)', flexShrink: 0 }}
+                                    onClick={() =>
+                                      handleDeleteClick("meal", meal)
+                                    }
+                                    sx={{
+                                      p: 0,
+                                      color: "rgba(255,255,255,0.7)",
+                                      flexShrink: 0,
+                                    }}
                                   >
                                     <DeleteIcon sx={{ fontSize: 14 }} />
                                   </IconButton>
@@ -456,8 +602,13 @@ export default function WeeklyPlans() {
       </Box>
 
       {/* New/Edit Plan Dialog */}
-      <Dialog open={planDialogOpen} onClose={() => setPlanDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>{editingPlan ? 'Edit Plan' : 'New Plan'}</DialogTitle>
+      <Dialog
+        open={planDialogOpen}
+        onClose={() => setPlanDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>{editingPlan ? "Edit Plan" : "New Plan"}</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
@@ -468,7 +619,7 @@ export default function WeeklyPlans() {
             onChange={(e) => setPlanName(e.target.value)}
             placeholder="e.g., Week of Jan 6"
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && planName.trim()) {
+              if (e.key === "Enter" && planName.trim()) {
                 handleSavePlan();
               }
             }}
@@ -476,14 +627,23 @@ export default function WeeklyPlans() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setPlanDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleSavePlan} variant="contained" disabled={!planName.trim() || savingPlan}>
-            {savingPlan ? 'Saving...' : 'Save'}
+          <Button
+            onClick={handleSavePlan}
+            variant="contained"
+            disabled={!planName.trim() || savingPlan}
+          >
+            {savingPlan ? "Saving..." : "Save"}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Add Meal Dialog */}
-      <Dialog open={mealDialogOpen} onClose={() => setMealDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={mealDialogOpen}
+        onClose={() => setMealDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Add Meal</DialogTitle>
         <DialogContent>
           <Autocomplete
@@ -491,6 +651,18 @@ export default function WeeklyPlans() {
             value={selectedRecipe}
             onChange={(_, newValue) => setSelectedRecipe(newValue)}
             getOptionLabel={(option) => option.name}
+            renderOption={(props, option) => (
+              <li {...props}>
+                <Box>
+                  <Typography variant="body1">{option.name}</Typography>
+                  {option.outputs && (
+                    <Typography variant="caption" color="text.secondary">
+                      Makes: {option.outputs}
+                    </Typography>
+                  )}
+                </Box>
+              </li>
+            )}
             renderInput={(params) => (
               <TextField {...params} label="Recipe" margin="dense" fullWidth />
             )}
@@ -516,7 +688,7 @@ export default function WeeklyPlans() {
             <Select
               value={selectedDay}
               label="Day (optional)"
-              onChange={(e) => setSelectedDay(e.target.value as Day | '')}
+              onChange={(e) => setSelectedDay(e.target.value as Day | "")}
             >
               <MenuItem value="">
                 <em>Week-spanning (no specific day)</em>
@@ -533,7 +705,9 @@ export default function WeeklyPlans() {
             label="Quantity"
             type="number"
             value={mealQuantity}
-            onChange={(e) => setMealQuantity(e.target.value ? Number(e.target.value) : '')}
+            onChange={(e) =>
+              setMealQuantity(e.target.value ? Number(e.target.value) : "")
+            }
             fullWidth
             margin="dense"
             inputProps={{ min: 1 }}
@@ -542,27 +716,40 @@ export default function WeeklyPlans() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setMealDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleSaveMeal} variant="contained" disabled={!selectedRecipe || savingMeal}>
-            {savingMeal ? 'Adding...' : 'Add'}
+          <Button
+            onClick={handleSaveMeal}
+            variant="contained"
+            disabled={!selectedRecipe || savingMeal}
+          >
+            {savingMeal ? "Adding..." : "Add"}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
         <DialogTitle>
-          Delete {itemToDelete?.type === 'plan' ? 'Plan' : 'Meal'}?
+          Delete {itemToDelete?.type === "plan" ? "Plan" : "Meal"}?
         </DialogTitle>
         <DialogContent>
           <Typography>
-            {itemToDelete?.type === 'plan'
-              ? `Are you sure you want to delete "${(itemToDelete.item as WeeklyPlan).name || 'Unnamed Plan'}"? This will also delete all planned meals in this plan.`
+            {itemToDelete?.type === "plan"
+              ? `Are you sure you want to delete "${
+                  (itemToDelete.item as WeeklyPlan).name || "Unnamed Plan"
+                }"? This will also delete all planned meals in this plan.`
               : `Are you sure you want to remove this meal?`}
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+          >
             Delete
           </Button>
         </DialogActions>
