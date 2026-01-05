@@ -1,0 +1,3 @@
+save checked/unchecked state from shopping list so that we can go back and forth from the shopping list to the weekly recipes and we dont have to redo work
+
+come up with a better way to notate that some item's raw state is in the house, and hte way to replace is to manually make (garlic, chicken breast, etc)

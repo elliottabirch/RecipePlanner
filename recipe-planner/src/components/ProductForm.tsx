@@ -255,6 +255,7 @@ export default function ProductForm({
               </MenuItem>
               <MenuItem value="fridge">Fridge</MenuItem>
               <MenuItem value="freezer">Freezer</MenuItem>
+              <MenuItem value="dry">Dry Storage</MenuItem>
             </Select>
           </FormControl>
 

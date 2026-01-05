@@ -44,6 +44,8 @@ import type {
   StepToProductEdge,
   ProductToStepEdge,
   Product,
+  RecipeTag,
+  Tag,
 } from "../lib/types";
 
 interface PlannedMealExpanded extends PlannedMeal {
@@ -71,6 +73,7 @@ const MEAL_SLOTS: { value: MealSlot; label: string }[] = [
   { value: "lunch", label: "Lunch" },
   { value: "dinner", label: "Dinner" },
   { value: "snack", label: "Snack" },
+  { value: "micah", label: "Micah Meal" },
 ];
 
 const SLOT_COLORS: Record<MealSlot, string> = {
@@ -78,6 +81,7 @@ const SLOT_COLORS: Record<MealSlot, string> = {
   lunch: "#4caf50",
   dinner: "#2196f3",
   snack: "#9c27b0",
+  micah: "#00bcd4", // Teal/cyan color
 };
 
 export default function WeeklyPlans() {
@@ -85,6 +89,10 @@ export default function WeeklyPlans() {
   const [selectedPlan, setSelectedPlan] = useState<WeeklyPlan | null>(null);
   const [plannedMeals, setPlannedMeals] = useState<PlannedMealExpanded[]>([]);
   const [recipes, setRecipes] = useState<RecipeWithOutputs[]>([]);
+  const [recipeTags, setRecipeTags] = useState<Map<string, string[]>>(
+    new Map()
+  );
+  const [tagsById, setTagsById] = useState<Map<string, Tag>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -214,14 +222,30 @@ export default function WeeklyPlans() {
     }
 
     try {
-      const meals = await getAll<PlannedMealExpanded>(
-        collections.plannedMeals,
-        {
+      const [meals, allRecipeTags, tags] = await Promise.all([
+        getAll<PlannedMealExpanded>(collections.plannedMeals, {
           filter: `weekly_plan="${selectedPlan.id}"`,
           expand: "recipe",
-        }
-      );
+        }),
+        getAll<RecipeTag>(collections.recipeTags),
+        getAll<Tag>(collections.tags),
+      ]);
+
       setPlannedMeals(meals);
+
+      // Build recipe tags map
+      const recipeTagsMap = new Map<string, string[]>();
+      allRecipeTags.forEach((rt) => {
+        if (!recipeTagsMap.has(rt.recipe)) {
+          recipeTagsMap.set(rt.recipe, []);
+        }
+        recipeTagsMap.get(rt.recipe)!.push(rt.tag);
+      });
+      setRecipeTags(recipeTagsMap);
+
+      // Build tags by ID map
+      const tagsMap = new Map(tags.map((t) => [t.id, t]));
+      setTagsById(tagsMap);
     } catch (err) {
       console.error("Failed to load planned meals:", err);
     }
@@ -347,10 +371,15 @@ export default function WeeklyPlans() {
 
   // Group meals by day and slot
   const getMealsForDaySlot = (day: Day | null, slot: MealSlot) => {
-    return plannedMeals.filter((m) => m.day === day && m.meal_slot === slot);
+    return plannedMeals.filter(
+      (m) => m.day === day && m.meal_slot === slot && slot !== "micah"
+    );
   };
 
-  const weekSpanningMeals = plannedMeals.filter((m) => !m.day);
+  const weekSpanningMeals = plannedMeals.filter(
+    (m) => !m.day && m.meal_slot !== "micah"
+  );
+  const micahMeals = plannedMeals.filter((m) => m.meal_slot === "micah");
 
   if (loading) {
     return (
@@ -393,7 +422,15 @@ export default function WeeklyPlans() {
 
       <Box display="flex" gap={2}>
         {/* Plan selector */}
-        <Paper sx={{ p: 2, width: 280, flexShrink: 0 }}>
+        <Paper
+          sx={{
+            p: 2,
+            width: 280,
+            flexShrink: 0,
+            maxHeight: "calc(100vh - 200px)",
+            overflow: "auto",
+          }}
+        >
           <Typography variant="h6" gutterBottom>
             Plans
           </Typography>
@@ -439,6 +476,92 @@ export default function WeeklyPlans() {
             </List>
           )}
         </Paper>
+
+        {/* Micah Meals column */}
+        {selectedPlan && micahMeals.length > 0 && (
+          <Paper
+            sx={{
+              p: 2,
+              width: 280,
+              flexShrink: 0,
+              maxHeight: "calc(100vh - 200px)",
+              overflow: "auto",
+            }}
+          >
+            <Typography variant="h6" gutterBottom>
+              Micah Meals
+            </Typography>
+            {(() => {
+              // Group Micah meals by tag
+              const tagGroups = new Map<string, PlannedMealExpanded[]>();
+
+              micahMeals.forEach((meal) => {
+                const tags = recipeTags.get(meal.recipe) || [];
+                if (tags.length === 0) {
+                  // Add to "Untagged" group
+                  if (!tagGroups.has("untagged")) {
+                    tagGroups.set("untagged", []);
+                  }
+                  tagGroups.get("untagged")!.push(meal);
+                } else {
+                  // Add to each tag group
+                  tags.forEach((tagId) => {
+                    if (!tagGroups.has(tagId)) {
+                      tagGroups.set(tagId, []);
+                    }
+                    tagGroups.get(tagId)!.push(meal);
+                  });
+                }
+              });
+
+              return Array.from(tagGroups.entries()).map(([tagId, meals]) => {
+                const tagName =
+                  tagId === "untagged"
+                    ? "Untagged"
+                    : tagsById.get(tagId)?.name || "Unknown Tag";
+                const tagColor =
+                  tagId === "untagged"
+                    ? "#9e9e9e"
+                    : tagsById.get(tagId)?.color || "#00bcd4";
+
+                return (
+                  <Box key={tagId} mb={2}>
+                    <Typography
+                      variant="subtitle2"
+                      color="text.secondary"
+                      gutterBottom
+                      sx={{ fontWeight: "bold" }}
+                    >
+                      {tagName}
+                    </Typography>
+                    <Box display="flex" flexDirection="column" gap={0.5}>
+                      {meals.map((meal) => (
+                        <Chip
+                          key={meal.id}
+                          label={`${meal.expand?.recipe?.name || "Unknown"}${
+                            meal.quantity && meal.quantity > 1
+                              ? ` (×${meal.quantity})`
+                              : ""
+                          }`}
+                          onDelete={() => handleDeleteClick("meal", meal)}
+                          size="small"
+                          sx={{
+                            backgroundColor: tagColor,
+                            color: "white",
+                            justifyContent: "space-between",
+                            "& .MuiChip-deleteIcon": {
+                              color: "rgba(255,255,255,0.7)",
+                            },
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  </Box>
+                );
+              });
+            })()}
+          </Paper>
+        )}
 
         {/* Meal grid */}
         <Paper sx={{ p: 2, flexGrow: 1, overflow: "auto" }}>
@@ -514,79 +637,83 @@ export default function WeeklyPlans() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {MEAL_SLOTS.map((slot) => (
-                      <TableRow key={slot.value}>
-                        <TableCell>
-                          <Chip
-                            label={slot.label}
-                            size="small"
-                            sx={{
-                              backgroundColor: SLOT_COLORS[slot.value],
-                              color: "white",
-                            }}
-                          />
-                        </TableCell>
-                        {DAYS.map((day) => {
-                          const meals = getMealsForDaySlot(
-                            day.value,
-                            slot.value
-                          );
-                          return (
-                            <TableCell
-                              key={day.value}
+                    {MEAL_SLOTS.filter((s) => s.value !== "micah").map(
+                      (slot) => (
+                        <TableRow key={slot.value}>
+                          <TableCell>
+                            <Chip
+                              label={slot.label}
+                              size="small"
                               sx={{
-                                verticalAlign: "top",
-                                backgroundColor:
-                                  meals.length > 0 ? "action.hover" : "inherit",
-                                minWidth: 100,
-                                p: 0.5,
+                                backgroundColor: SLOT_COLORS[slot.value],
+                                color: "white",
                               }}
-                            >
-                              {meals.map((meal) => (
-                                <Box
-                                  key={meal.id}
-                                  sx={{
-                                    fontSize: "0.75rem",
-                                    p: 0.5,
-                                    mb: 0.5,
-                                    backgroundColor: SLOT_COLORS[slot.value],
-                                    color: "white",
-                                    borderRadius: 0.5,
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                    gap: 0.5,
-                                  }}
-                                >
-                                  <Typography
-                                    variant="caption"
-                                    sx={{ color: "inherit", lineHeight: 1.2 }}
-                                  >
-                                    {meal.expand?.recipe?.name || "?"}
-                                    {meal.quantity &&
-                                      meal.quantity > 1 &&
-                                      ` (×${meal.quantity})`}
-                                  </Typography>
-                                  <IconButton
-                                    size="small"
-                                    onClick={() =>
-                                      handleDeleteClick("meal", meal)
-                                    }
+                            />
+                          </TableCell>
+                          {DAYS.map((day) => {
+                            const meals = getMealsForDaySlot(
+                              day.value,
+                              slot.value
+                            );
+                            return (
+                              <TableCell
+                                key={day.value}
+                                sx={{
+                                  verticalAlign: "top",
+                                  backgroundColor:
+                                    meals.length > 0
+                                      ? "action.hover"
+                                      : "inherit",
+                                  minWidth: 100,
+                                  p: 0.5,
+                                }}
+                              >
+                                {meals.map((meal) => (
+                                  <Box
+                                    key={meal.id}
                                     sx={{
-                                      p: 0,
-                                      color: "rgba(255,255,255,0.7)",
-                                      flexShrink: 0,
+                                      fontSize: "0.75rem",
+                                      p: 0.5,
+                                      mb: 0.5,
+                                      backgroundColor: SLOT_COLORS[slot.value],
+                                      color: "white",
+                                      borderRadius: 0.5,
+                                      display: "flex",
+                                      justifyContent: "space-between",
+                                      alignItems: "center",
+                                      gap: 0.5,
                                     }}
                                   >
-                                    <DeleteIcon sx={{ fontSize: 14 }} />
-                                  </IconButton>
-                                </Box>
-                              ))}
-                            </TableCell>
-                          );
-                        })}
-                      </TableRow>
-                    ))}
+                                    <Typography
+                                      variant="caption"
+                                      sx={{ color: "inherit", lineHeight: 1.2 }}
+                                    >
+                                      {meal.expand?.recipe?.name || "?"}
+                                      {meal.quantity &&
+                                        meal.quantity > 1 &&
+                                        ` (×${meal.quantity})`}
+                                    </Typography>
+                                    <IconButton
+                                      size="small"
+                                      onClick={() =>
+                                        handleDeleteClick("meal", meal)
+                                      }
+                                      sx={{
+                                        p: 0,
+                                        color: "rgba(255,255,255,0.7)",
+                                        flexShrink: 0,
+                                      }}
+                                    >
+                                      <DeleteIcon sx={{ fontSize: 14 }} />
+                                    </IconButton>
+                                  </Box>
+                                ))}
+                              </TableCell>
+                            );
+                          })}
+                        </TableRow>
+                      )
+                    )}
                   </TableBody>
                 </Table>
               </TableContainer>

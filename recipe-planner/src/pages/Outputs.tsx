@@ -26,14 +26,19 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Button,
+  Snackbar,
 } from "@mui/material";
 import {
   ShoppingCart as ShoppingIcon,
   Kitchen as PrepIcon,
   KitchenOutlined as FridgeIcon,
+  Restaurant,
   Restaurant as PullIcon,
   CalendarMonth as CalendarIcon,
   AccountTree as FlowIcon,
+  ContentCopy as ContentCopyIcon,
+  Print as PrintIcon,
 } from "@mui/icons-material";
 import {
   ReactFlow,
@@ -54,6 +59,7 @@ import {
   buildShoppingListFromFlow,
   buildBatchPrepListFromFlow,
   buildStoredItemsListFromFlow,
+  buildMealContainersList,
   type RecipeGraphData,
   type PlannedMealWithRecipe,
 } from "../lib/aggregation";
@@ -65,7 +71,10 @@ import type {
   StepToProductEdge,
   MealSlot,
   Day,
+  RecipeTag,
+  Tag,
 } from "../lib/types";
+import { getAvailableProviders } from "../lib/listProviders";
 
 const DAYS: { value: Day; label: string }[] = [
   { value: "mon", label: "Monday" },
@@ -82,6 +91,7 @@ const MEAL_SLOTS: { value: MealSlot; label: string }[] = [
   { value: "lunch", label: "Lunch" },
   { value: "dinner", label: "Dinner" },
   { value: "snack", label: "Snack" },
+  { value: "micah", label: "Micah Meal" },
 ];
 
 const SLOT_COLORS: Record<MealSlot, string> = {
@@ -89,6 +99,7 @@ const SLOT_COLORS: Record<MealSlot, string> = {
   lunch: "#4caf50",
   dinner: "#2196f3",
   snack: "#9c27b0",
+  micah: "#00bcd4", // Teal/cyan color
 };
 
 export default function Outputs() {
@@ -104,9 +115,67 @@ export default function Outputs() {
   const [recipeData, setRecipeData] = useState<Map<string, RecipeGraphData>>(
     new Map()
   );
+  const [recipeTags, setRecipeTags] = useState<Map<string, string[]>>(
+    new Map()
+  );
+  const [tagsById, setTagsById] = useState<Map<string, Tag>>(new Map());
+  const [micahMealTagId, setMicahMealTagId] = useState<string>("");
 
   // Checkbox states
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
+
+  // Export state
+  const [exportSnackbar, setExportSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: "success" | "error";
+  }>({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+
+  // Handle print for batch prep list
+  const handlePrint = () => {
+    window.print();
+  };
+
+  // Handle export to list providers
+  const handleExport = async () => {
+    const providers = getAvailableProviders();
+
+    // For now, use the first available provider (Clipboard)
+    if (providers.length === 0) {
+      setExportSnackbar({
+        open: true,
+        message: "No export providers available",
+        severity: "error",
+      });
+      return;
+    }
+
+    const provider = providers[0];
+    // Use the filtered list that matches exactly what's visible in the UI
+    const result = await provider.export(
+      shoppingList,
+      filteredShoppingListForExport,
+      {
+        includeQuantities: true,
+        includeStores: true,
+        includeSections: true,
+        includeRecipes: false,
+        groupBy: "store",
+        format: "checklist",
+        title: "Shopping List",
+      }
+    );
+
+    setExportSnackbar({
+      open: true,
+      message: result.message || result.error || "Export completed",
+      severity: result.success ? "success" : "error",
+    });
+  };
 
   // Load plans on mount
   useEffect(() => {
@@ -135,6 +204,18 @@ export default function Outputs() {
       setLoadingData(true);
       setError(null);
       try {
+        // Load tags to find "micah meal" tag and build tags map
+        const tags = await getAll<Tag>(collections.tags);
+        const tagsMap = new Map(tags.map((t) => [t.id, t]));
+        setTagsById(tagsMap);
+
+        const micahTag = tags.find(
+          (t) => t.name.toLowerCase() === "micah meal"
+        );
+        if (micahTag) {
+          setMicahMealTagId(micahTag.id);
+        }
+
         // Load planned meals with recipe expansion
         const meals = await getAll<PlannedMealWithRecipe>(
           collections.plannedMeals,
@@ -151,6 +232,19 @@ export default function Outputs() {
         // Get unique recipe IDs
         const recipeIds = [...new Set(meals.map((m) => m.recipe))];
         console.log("Recipe IDs:", recipeIds);
+
+        // Load recipe tags for all recipes
+        const allRecipeTags = await getAll<RecipeTag>(collections.recipeTags, {
+          expand: "tag",
+        });
+        const recipeTagsMap = new Map<string, string[]>();
+        allRecipeTags.forEach((rt) => {
+          if (!recipeTagsMap.has(rt.recipe)) {
+            recipeTagsMap.set(rt.recipe, []);
+          }
+          recipeTagsMap.get(rt.recipe)!.push(rt.tag);
+        });
+        setRecipeTags(recipeTagsMap);
 
         // Load full graph data for each recipe
         const recipeDataMap = new Map<string, RecipeGraphData>();
@@ -231,9 +325,43 @@ export default function Outputs() {
     () => groupShoppingList(shoppingList),
     [shoppingList]
   );
+
+  // Create a filtered version of the shopping list for export
+  // Uses the same filtering logic as the UI (lines 637-647)
+  const filteredShoppingListForExport = useMemo(() => {
+    const filteredByStore = new Map<string, Map<string, typeof shoppingList>>();
+
+    groupedShoppingList.byStore.forEach((sections, storeName) => {
+      const filteredSections = new Map<string, typeof shoppingList>();
+
+      sections.forEach((items, sectionName) => {
+        // Apply same filtering logic as the UI
+        const visibleItems = items.filter((item) => {
+          if (item.isPantry) {
+            const pantryKey = `pantry-${item.productId}`;
+            return !checkedItems.has(pantryKey);
+          }
+          return true;
+        });
+
+        if (visibleItems.length > 0) {
+          filteredSections.set(sectionName, visibleItems);
+        }
+      });
+
+      if (filteredSections.size > 0) {
+        filteredByStore.set(storeName, filteredSections);
+      }
+    });
+
+    return {
+      byStore: filteredByStore,
+      pantryItems: [], // Don't include the separate pantry check section
+    };
+  }, [groupedShoppingList, checkedItems]);
   const batchPrepSteps = useMemo(
-    () => buildBatchPrepListFromFlow(productFlowGraph),
-    [productFlowGraph]
+    () => buildBatchPrepListFromFlow(productFlowGraph, recipeData),
+    [productFlowGraph, recipeData]
   );
   const storedItems = useMemo(
     () => buildStoredItemsListFromFlow(productFlowGraph),
@@ -243,6 +371,33 @@ export default function Outputs() {
     () => buildPullLists(plannedMeals, recipeData),
     [plannedMeals, recipeData]
   );
+  const mealContainers = useMemo(
+    () => buildMealContainersList(productFlowGraph),
+    [productFlowGraph]
+  );
+
+  // Filter containers for Micah meals
+  const micahMealContainers = useMemo(() => {
+    if (!micahMealTagId) return [];
+    return mealContainers.filter((meal) => {
+      // Find the recipe ID from planned meals
+      const plannedMeal = plannedMeals.find(
+        (pm) => pm.expand?.recipe?.name === meal.recipeName
+      );
+      if (!plannedMeal) return false;
+
+      // Check if this recipe has the micah meal tag
+      const tags = recipeTags.get(plannedMeal.recipe) || [];
+      return tags.includes(micahMealTagId);
+    });
+  }, [mealContainers, micahMealTagId, recipeTags, plannedMeals]);
+
+  // Check if a planned meal is a Micah meal
+  const isMicahMeal = (meal: PlannedMealWithRecipe) => {
+    if (!micahMealTagId) return false;
+    const tags = recipeTags.get(meal.recipe) || [];
+    return tags.includes(micahMealTagId);
+  };
 
   // Build ReactFlow nodes and edges from the flow graph with dagre layout
   const { flowNodes, flowEdges } = useMemo(() => {
@@ -412,349 +567,260 @@ export default function Outputs() {
   }
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        height: "calc(100vh - 112px)",
-        width: "100%",
-        maxWidth: "100%",
-      }}
-    >
+    <>
+      <style>
+        {`
+          @media print {
+            /* Hide navigation elements */
+            .no-print {
+              display: none !important;
+            }
+            
+            /* Override container height constraints for print */
+            body, html, #root {
+              height: auto !important;
+              overflow: visible !important;
+            }
+            
+            /* Make main container visible and remove height constraints */
+            .print-container {
+              height: auto !important;
+              overflow: visible !important;
+              display: block !important;
+            }
+            
+            /* Reset page styling for print */
+            #batch-prep-list {
+              box-shadow: none !important;
+              border: none !important;
+              margin: 0 !important;
+              padding: 20px !important;
+              height: auto !important;
+              overflow: visible !important;
+            }
+            
+            /* Ensure Paper component is visible */
+            .MuiPaper-root {
+              box-shadow: none !important;
+              background: white !important;
+            }
+            
+            /* Ensure checkboxes are visible in print */
+            input[type="checkbox"] {
+              appearance: auto;
+              -webkit-appearance: checkbox;
+            }
+            
+            /* Page break control */
+            .MuiListItem-root {
+              page-break-inside: avoid;
+            }
+            
+            /* Ensure list is visible */
+            .MuiList-root {
+              height: auto !important;
+              overflow: visible !important;
+            }
+          }
+        `}
+      </style>
       <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={2}
-        flexShrink={0}
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          height: "calc(100vh - 112px)",
+          width: "100%",
+          maxWidth: "100%",
+        }}
+        className="print-container"
       >
-        <Box>
-          <Typography variant="h4" gutterBottom>
-            Outputs
-          </Typography>
-          <Typography color="text.secondary" gutterBottom>
-            Generated shopping lists, prep lists, and calendars
-          </Typography>
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          mb={2}
+          flexShrink={0}
+        >
+          <Box>
+            <Typography variant="h4" gutterBottom>
+              Outputs
+            </Typography>
+            <Typography color="text.secondary" gutterBottom>
+              Generated shopping lists, prep lists, and calendars
+            </Typography>
+          </Box>
+
+          <FormControl sx={{ minWidth: 250 }}>
+            <InputLabel>Weekly Plan</InputLabel>
+            <Select
+              value={selectedPlanId}
+              label="Weekly Plan"
+              onChange={(e) => setSelectedPlanId(e.target.value)}
+            >
+              {plans.map((plan) => (
+                <MenuItem key={plan.id} value={plan.id}>
+                  {plan.name || "Unnamed Plan"}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Box>
 
-        <FormControl sx={{ minWidth: 250 }}>
-          <InputLabel>Weekly Plan</InputLabel>
-          <Select
-            value={selectedPlanId}
-            label="Weekly Plan"
-            onChange={(e) => setSelectedPlanId(e.target.value)}
-          >
-            {plans.map((plan) => (
-              <MenuItem key={plan.id} value={plan.id}>
-                {plan.name || "Unnamed Plan"}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Box>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
-
-      {!selectedPlanId ? (
-        <Paper sx={{ p: 4, textAlign: "center" }}>
-          <Typography color="text.secondary">
-            Select a weekly plan to generate outputs
-          </Typography>
-        </Paper>
-      ) : loadingData ? (
-        <Box display="flex" justifyContent="center" p={4}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <>
-          <Paper sx={{ mb: 2 }}>
-            <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}>
-              <Tab icon={<ShoppingIcon />} label="Shopping List" />
-              <Tab icon={<PrepIcon />} label="Batch Prep" />
-              <Tab icon={<FridgeIcon />} label="Fridge/Freezer" />
-              <Tab icon={<PullIcon />} label="Pull Lists" />
-              <Tab icon={<CalendarIcon />} label="Weekly View" />
-              <Tab icon={<FlowIcon />} label="Product Flow" />
-            </Tabs>
+        {!selectedPlanId ? (
+          <Paper sx={{ p: 4, textAlign: "center" }}>
+            <Typography color="text.secondary">
+              Select a weekly plan to generate outputs
+            </Typography>
           </Paper>
+        ) : loadingData ? (
+          <Box display="flex" justifyContent="center" p={4}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <>
+            <Paper sx={{ mb: 2 }}>
+              <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}>
+                <Tab icon={<ShoppingIcon />} label="Shopping List" />
+                <Tab icon={<PrepIcon />} label="Batch Prep" />
+                <Tab icon={<FridgeIcon />} label="Fridge/Freezer" />
+                <Tab icon={<Restaurant />} label="Meal Containers" />
+                <Tab icon={<Restaurant />} label="Micah's Meals" />
+                <Tab icon={<PullIcon />} label="Pull Lists" />
+                <Tab icon={<CalendarIcon />} label="Weekly View" />
+                <Tab icon={<FlowIcon />} label="Product Flow" />
+              </Tabs>
+            </Paper>
 
-          {/* Shopping List Tab */}
-          {activeTab === 0 && (
-            <Paper sx={{ p: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                Shopping List
-              </Typography>
+            {/* Shopping List Tab */}
+            {activeTab === 0 && (
+              <Paper sx={{ p: 2 }}>
+                <Box
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  mb={2}
+                >
+                  <Typography variant="h6">Shopping List</Typography>
+                  {shoppingList.length > 0 && (
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={handleExport}
+                      startIcon={<ContentCopyIcon />}
+                    >
+                      Copy to Clipboard
+                    </Button>
+                  )}
+                </Box>
 
-              {shoppingList.length === 0 ? (
-                <Typography color="text.secondary">
-                  No items to shop for. Make sure your recipes have raw product
-                  nodes connected to steps.
-                </Typography>
-              ) : (
-                <>
-                  {Array.from(groupedShoppingList.byStore.entries()).map(
-                    ([storeName, sections]) => (
-                      <Box key={storeName} mb={3}>
+                {shoppingList.length === 0 ? (
+                  <Typography color="text.secondary">
+                    No items to shop for. Make sure your recipes have raw
+                    product nodes connected to steps.
+                  </Typography>
+                ) : (
+                  <>
+                    {Array.from(groupedShoppingList.byStore.entries()).map(
+                      ([storeName, sections]) => (
+                        <Box key={storeName} mb={3}>
+                          <Typography
+                            variant="subtitle1"
+                            fontWeight="bold"
+                            sx={{ mb: 1 }}
+                          >
+                            {storeName}
+                          </Typography>
+                          {Array.from(sections.entries()).map(
+                            ([sectionName, items]) => {
+                              // Filter out pantry items checked in the pantry section
+                              const visibleItems = items.filter((item) => {
+                                if (item.isPantry) {
+                                  const pantryKey = `pantry-${item.productId}`;
+                                  return !checkedItems.has(pantryKey);
+                                }
+                                return true;
+                              });
+
+                              if (visibleItems.length === 0) return null;
+
+                              return (
+                                <Box key={sectionName} ml={2} mb={2}>
+                                  <Typography
+                                    variant="subtitle2"
+                                    color="text.secondary"
+                                    gutterBottom
+                                  >
+                                    {sectionName}
+                                  </Typography>
+                                  <List dense>
+                                    {visibleItems.map((item) => {
+                                      const key = `shop-${item.productId}`;
+                                      return (
+                                        <ListItem
+                                          key={item.productId}
+                                          disablePadding
+                                        >
+                                          <ListItemIcon sx={{ minWidth: 36 }}>
+                                            <Checkbox
+                                              edge="start"
+                                              checked={checkedItems.has(key)}
+                                              onChange={() =>
+                                                toggleChecked(key)
+                                              }
+                                              size="small"
+                                            />
+                                          </ListItemIcon>
+                                          <ListItemText
+                                            primary={
+                                              <span
+                                                style={{
+                                                  textDecoration:
+                                                    checkedItems.has(key)
+                                                      ? "line-through"
+                                                      : "none",
+                                                }}
+                                              >
+                                                {item.productName} —{" "}
+                                                {item.totalQuantity} {item.unit}
+                                              </span>
+                                            }
+                                            secondary={item.sources
+                                              .map((s) => s.recipeName)
+                                              .join(", ")}
+                                          />
+                                        </ListItem>
+                                      );
+                                    })}
+                                  </List>
+                                </Box>
+                              );
+                            }
+                          )}
+                        </Box>
+                      )
+                    )}
+
+                    {groupedShoppingList.pantryItems.length > 0 && (
+                      <Box>
                         <Typography
                           variant="subtitle1"
                           fontWeight="bold"
                           sx={{ mb: 1 }}
                         >
-                          {storeName}
-                        </Typography>
-                        {Array.from(sections.entries()).map(
-                          ([sectionName, items]) => (
-                            <Box key={sectionName} ml={2} mb={2}>
-                              <Typography
-                                variant="subtitle2"
-                                color="text.secondary"
-                                gutterBottom
-                              >
-                                {sectionName}
-                              </Typography>
-                              <List dense>
-                                {items.map((item) => {
-                                  const key = `shop-${item.productId}`;
-                                  return (
-                                    <ListItem
-                                      key={item.productId}
-                                      disablePadding
-                                    >
-                                      <ListItemIcon sx={{ minWidth: 36 }}>
-                                        <Checkbox
-                                          edge="start"
-                                          checked={checkedItems.has(key)}
-                                          onChange={() => toggleChecked(key)}
-                                          size="small"
-                                        />
-                                      </ListItemIcon>
-                                      <ListItemText
-                                        primary={
-                                          <span
-                                            style={{
-                                              textDecoration: checkedItems.has(
-                                                key
-                                              )
-                                                ? "line-through"
-                                                : "none",
-                                            }}
-                                          >
-                                            {item.productName} —{" "}
-                                            {item.totalQuantity} {item.unit}
-                                          </span>
-                                        }
-                                        secondary={item.sources
-                                          .map((s) => s.recipeName)
-                                          .join(", ")}
-                                      />
-                                    </ListItem>
-                                  );
-                                })}
-                              </List>
-                            </Box>
-                          )
-                        )}
-                      </Box>
-                    )
-                  )}
-
-                  {groupedShoppingList.pantryItems.length > 0 && (
-                    <Box>
-                      <Typography
-                        variant="subtitle1"
-                        fontWeight="bold"
-                        sx={{ mb: 1 }}
-                      >
-                        Pantry Check
-                      </Typography>
-                      <List dense>
-                        {groupedShoppingList.pantryItems.map((item) => {
-                          const key = `pantry-${item.productId}`;
-                          const showQuantity = item.trackQuantity;
-                          return (
-                            <ListItem key={item.productId} disablePadding>
-                              <ListItemIcon sx={{ minWidth: 36 }}>
-                                <Checkbox
-                                  edge="start"
-                                  checked={checkedItems.has(key)}
-                                  onChange={() => toggleChecked(key)}
-                                  size="small"
-                                />
-                              </ListItemIcon>
-                              <ListItemText
-                                primary={
-                                  <span
-                                    style={{
-                                      textDecoration: checkedItems.has(key)
-                                        ? "line-through"
-                                        : "none",
-                                    }}
-                                  >
-                                    {item.productName}
-                                    {showQuantity &&
-                                      ` — ${item.totalQuantity} ${item.unit}`}
-                                  </span>
-                                }
-                                secondary={
-                                  showQuantity
-                                    ? item.sources
-                                        .map((s) => s.recipeName)
-                                        .join(", ")
-                                    : undefined
-                                }
-                              />
-                            </ListItem>
-                          );
-                        })}
-                      </List>
-                    </Box>
-                  )}
-                </>
-              )}
-            </Paper>
-          )}
-
-          {/* Batch Prep Tab */}
-          {activeTab === 1 && (
-            <Paper sx={{ p: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                Batch Prep List
-              </Typography>
-
-              {batchPrepSteps.length === 0 ? (
-                <Typography color="text.secondary">
-                  No prep steps. Make sure your recipes have prep or batch
-                  assembly steps.
-                </Typography>
-              ) : (
-                <List>
-                  {batchPrepSteps.map((step, idx) => {
-                    const key = `prep-${step.stepId}`;
-                    return (
-                      <ListItem
-                        key={step.stepId}
-                        disablePadding
-                        sx={{ mb: 2, display: "block" }}
-                      >
-                        <Box display="flex" alignItems="flex-start">
-                          <Checkbox
-                            checked={checkedItems.has(key)}
-                            onChange={() => toggleChecked(key)}
-                            sx={{ mt: -0.5 }}
-                          />
-                          <Box flex={1}>
-                            <Typography
-                              fontWeight="medium"
-                              sx={{
-                                textDecoration: checkedItems.has(key)
-                                  ? "line-through"
-                                  : "none",
-                              }}
-                            >
-                              {step.name}
-                              <Chip
-                                label={step.stepType}
-                                size="small"
-                                sx={{ ml: 1 }}
-                                color={
-                                  step.stepType === "prep"
-                                    ? "secondary"
-                                    : "error"
-                                }
-                              />
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              Inputs:{" "}
-                              {step.inputs.length > 0
-                                ? step.inputs
-                                    .map(
-                                      (i) =>
-                                        `${i.productName}${
-                                          i.quantity
-                                            ? ` (${i.quantity} ${i.unit})`
-                                            : ""
-                                        }`
-                                    )
-                                    .join(", ")
-                                : "None"}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              Outputs:{" "}
-                              {step.outputs.length > 0
-                                ? step.outputs
-                                    .map(
-                                      (o) =>
-                                        `${o.productName}${
-                                          o.quantity
-                                            ? ` (${o.quantity} ${o.unit})`
-                                            : ""
-                                        }${
-                                          o.mealDestination
-                                            ? ` → ${o.mealDestination}`
-                                            : ""
-                                        }`
-                                    )
-                                    .join(", ")
-                                : "None"}
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                            >
-                              From: {step.recipeName}
-                            </Typography>
-                          </Box>
-                        </Box>
-                        {idx < batchPrepSteps.length - 1 && (
-                          <Divider sx={{ mt: 2 }} />
-                        )}
-                      </ListItem>
-                    );
-                  })}
-                </List>
-              )}
-            </Paper>
-          )}
-
-          {/* Fridge/Freezer Tab */}
-          {activeTab === 2 && (
-            <Paper sx={{ p: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                Fridge/Freezer Contents After Prep
-              </Typography>
-
-              {storedItems.length === 0 ? (
-                <Typography color="text.secondary">
-                  No stored items. Make sure your recipes have stored product
-                  nodes as outputs from steps.
-                </Typography>
-              ) : (
-                <>
-                  {(["fridge", "freezer"] as const).map((location) => {
-                    const items = storedItems.filter(
-                      (i) => i.storageLocation === location
-                    );
-                    if (items.length === 0) return null;
-
-                    return (
-                      <Box key={location} mb={3}>
-                        <Typography
-                          variant="subtitle1"
-                          fontWeight="bold"
-                          textTransform="uppercase"
-                          gutterBottom
-                        >
-                          {location}
+                          Pantry Check
                         </Typography>
                         <List dense>
-                          {items.map((item, idx) => {
-                            const key = `stored-${location}-${idx}`;
+                          {groupedShoppingList.pantryItems.map((item) => {
+                            const key = `pantry-${item.productId}`;
+                            const showQuantity = item.trackQuantity;
                             return (
-                              <ListItem key={idx} disablePadding>
+                              <ListItem key={item.productId} disablePadding>
                                 <ListItemIcon sx={{ minWidth: 36 }}>
                                   <Checkbox
                                     edge="start"
@@ -773,24 +839,16 @@ export default function Outputs() {
                                       }}
                                     >
                                       {item.productName}
-                                      {item.quantity &&
-                                        ` — ${item.quantity} ${item.unit}`}
+                                      {showQuantity &&
+                                        ` — ${item.totalQuantity} ${item.unit}`}
                                     </span>
                                   }
                                   secondary={
-                                    <>
-                                      {item.containerTypeName &&
-                                        `Container: ${item.containerTypeName}`}
-                                      {item.containerTypeName &&
-                                        item.mealDestination &&
-                                        " • "}
-                                      {item.mealDestination &&
-                                        `For: ${item.mealDestination}`}
-                                      {(item.containerTypeName ||
-                                        item.mealDestination) &&
-                                        " • "}
-                                      From: {item.recipeName}
-                                    </>
+                                    showQuantity
+                                      ? item.sources
+                                          .map((s) => s.recipeName)
+                                          .join(", ")
+                                      : undefined
                                   }
                                 />
                               </ListItem>
@@ -798,53 +856,456 @@ export default function Outputs() {
                           })}
                         </List>
                       </Box>
-                    );
-                  })}
-                </>
-              )}
-            </Paper>
-          )}
+                    )}
+                  </>
+                )}
+              </Paper>
+            )}
 
-          {/* Pull Lists Tab */}
-          {activeTab === 3 && (
-            <Paper sx={{ p: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                Just-in-Time Pull Lists
-              </Typography>
+            {/* Batch Prep Tab */}
+            {activeTab === 1 && (
+              <Paper sx={{ p: 2 }} id="batch-prep-list">
+                <Box
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  mb={2}
+                  className="no-print"
+                >
+                  <Typography variant="h6">Batch Prep List</Typography>
+                  {batchPrepSteps.length > 0 && (
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={handlePrint}
+                      startIcon={<PrintIcon />}
+                    >
+                      Print
+                    </Button>
+                  )}
+                </Box>
 
-              {pullLists.length === 0 ? (
-                <Typography color="text.secondary">
-                  No just-in-time meals. Make sure your recipes have assembly
-                  steps with timing set to "just_in_time".
+                {batchPrepSteps.length === 0 ? (
+                  <Typography color="text.secondary">
+                    No prep steps. Make sure your recipes have prep or batch
+                    assembly steps.
+                  </Typography>
+                ) : (
+                  <List>
+                    {batchPrepSteps.map((step, idx) => {
+                      const key = `prep-${step.stepId}`;
+                      return (
+                        <ListItem
+                          key={step.stepId}
+                          disablePadding
+                          sx={{ mb: 2, display: "block" }}
+                        >
+                          <Box display="flex" alignItems="flex-start">
+                            <Checkbox
+                              checked={checkedItems.has(key)}
+                              onChange={() => toggleChecked(key)}
+                              sx={{ mt: -0.5 }}
+                            />
+                            <Box flex={1}>
+                              <Typography
+                                fontWeight="medium"
+                                sx={{
+                                  textDecoration: checkedItems.has(key)
+                                    ? "line-through"
+                                    : "none",
+                                }}
+                              >
+                                {step.name}
+                                <Chip
+                                  label={step.stepType}
+                                  size="small"
+                                  sx={{ ml: 1 }}
+                                  color={
+                                    step.stepType === "prep"
+                                      ? "secondary"
+                                      : "error"
+                                  }
+                                />
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                Inputs:{" "}
+                                {step.inputs.length > 0
+                                  ? step.inputs
+                                      .map(
+                                        (i) =>
+                                          `${i.productName}${
+                                            i.quantity
+                                              ? ` (${i.quantity} ${i.unit})`
+                                              : ""
+                                          }`
+                                      )
+                                      .join(", ")
+                                  : "None"}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                Outputs:{" "}
+                                {step.outputs.length > 0
+                                  ? step.outputs
+                                      .map(
+                                        (o) =>
+                                          `${o.productName}${
+                                            o.quantity
+                                              ? ` (${o.quantity} ${o.unit})`
+                                              : ""
+                                          }${
+                                            o.mealDestination
+                                              ? ` → ${o.mealDestination}`
+                                              : ""
+                                          }`
+                                      )
+                                      .join(", ")
+                                  : "None"}
+                              </Typography>
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                From: {step.recipeName}
+                              </Typography>
+                            </Box>
+                          </Box>
+                          {idx < batchPrepSteps.length - 1 && (
+                            <Divider sx={{ mt: 2 }} />
+                          )}
+                        </ListItem>
+                      );
+                    })}
+                  </List>
+                )}
+              </Paper>
+            )}
+
+            {/* Fridge/Freezer Tab */}
+            {activeTab === 2 && (
+              <Paper sx={{ p: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  Fridge/Freezer Contents After Prep
                 </Typography>
-              ) : (
-                pullLists.map((pullList, idx) => {
-                  const dayLabel =
-                    DAYS.find((d) => d.value === pullList.day)?.label ||
-                    pullList.day;
-                  const slotLabel =
-                    MEAL_SLOTS.find((s) => s.value === pullList.slot)?.label ||
-                    pullList.slot;
 
-                  return (
+                {storedItems.length === 0 ? (
+                  <Typography color="text.secondary">
+                    No stored items. Make sure your recipes have stored product
+                    nodes as outputs from steps.
+                  </Typography>
+                ) : (
+                  <>
+                    {(["fridge", "freezer", "dry"] as const).map((location) => {
+                      const items = storedItems.filter(
+                        (i) => i.storageLocation === location
+                      );
+                      if (items.length === 0) return null;
+
+                      return (
+                        <Box key={location} mb={3}>
+                          <Typography
+                            variant="subtitle1"
+                            fontWeight="bold"
+                            textTransform="uppercase"
+                            gutterBottom
+                          >
+                            {location === "dry" ? "Dry Storage" : location}
+                          </Typography>
+                          <List dense>
+                            {items.map((item, idx) => {
+                              const key = `stored-${location}-${idx}`;
+                              return (
+                                <ListItem key={idx} disablePadding>
+                                  <ListItemIcon sx={{ minWidth: 36 }}>
+                                    <Checkbox
+                                      edge="start"
+                                      checked={checkedItems.has(key)}
+                                      onChange={() => toggleChecked(key)}
+                                      size="small"
+                                    />
+                                  </ListItemIcon>
+                                  <ListItemText
+                                    primary={
+                                      <span
+                                        style={{
+                                          textDecoration: checkedItems.has(key)
+                                            ? "line-through"
+                                            : "none",
+                                        }}
+                                      >
+                                        {item.productName}
+                                        {item.quantity &&
+                                          ` — ${item.quantity} ${item.unit}`}
+                                      </span>
+                                    }
+                                    secondary={
+                                      <>
+                                        {item.containerTypeName &&
+                                          `Container: ${item.containerTypeName}`}
+                                        {item.containerTypeName &&
+                                          item.mealDestination &&
+                                          " • "}
+                                        {item.mealDestination &&
+                                          `For: ${item.mealDestination}`}
+                                        {(item.containerTypeName ||
+                                          item.mealDestination) &&
+                                          " • "}
+                                        From: {item.recipeName}
+                                      </>
+                                    }
+                                  />
+                                </ListItem>
+                              );
+                            })}
+                          </List>
+                        </Box>
+                      );
+                    })}
+                  </>
+                )}
+              </Paper>
+            )}
+
+            {/* Meal Containers Tab */}
+            {activeTab === 3 && (
+              <Paper sx={{ p: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  Meal Containers
+                </Typography>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Quick reference for which containers belong to which meals
+                </Typography>
+
+                {mealContainers.length === 0 ? (
+                  <Typography color="text.secondary">
+                    No meal containers. Make sure your recipes have stored
+                    products with meal destinations specified.
+                  </Typography>
+                ) : (
+                  mealContainers.map((meal, idx) => (
                     <Card key={idx} variant="outlined" sx={{ mb: 2 }}>
                       <CardContent>
-                        <Box display="flex" alignItems="center" gap={1} mb={1}>
-                          <Chip
-                            label={slotLabel}
-                            size="small"
-                            sx={{
-                              backgroundColor: SLOT_COLORS[pullList.slot],
-                              color: "white",
-                            }}
-                          />
-                          <Typography variant="subtitle1" fontWeight="bold">
-                            {dayLabel}: {pullList.recipeName}
-                          </Typography>
-                        </Box>
+                        <Typography variant="h6" gutterBottom>
+                          {meal.recipeName}
+                        </Typography>
 
-                        {(["fridge", "freezer", "pantry"] as const).map(
-                          (storage) => {
+                        {/* Group by storage location */}
+                        {(["fridge", "freezer", "dry"] as const).map(
+                          (location) => {
+                            const containers = meal.containers.filter(
+                              (c) => c.storageLocation === location
+                            );
+                            if (containers.length === 0) return null;
+
+                            return (
+                              <Box key={location} mb={2}>
+                                <Typography
+                                  variant="subtitle2"
+                                  color="text.secondary"
+                                  textTransform="uppercase"
+                                  gutterBottom
+                                >
+                                  In {location}:
+                                </Typography>
+                                <List dense disablePadding>
+                                  {containers.map((container, containerIdx) => {
+                                    const key = `meal-container-${idx}-${location}-${containerIdx}`;
+                                    return (
+                                      <ListItem
+                                        key={containerIdx}
+                                        disablePadding
+                                        sx={{ ml: 2 }}
+                                      >
+                                        <ListItemIcon sx={{ minWidth: 32 }}>
+                                          <Checkbox
+                                            edge="start"
+                                            checked={checkedItems.has(key)}
+                                            onChange={() => toggleChecked(key)}
+                                            size="small"
+                                          />
+                                        </ListItemIcon>
+                                        <ListItemText
+                                          primary={
+                                            <Typography
+                                              variant="body2"
+                                              sx={{
+                                                textDecoration:
+                                                  checkedItems.has(key)
+                                                    ? "line-through"
+                                                    : "none",
+                                              }}
+                                            >
+                                              {container.quantity &&
+                                                `${container.quantity}× `}
+                                              {container.productName}
+                                              {container.containerTypeName &&
+                                                ` (${container.containerTypeName})`}
+                                            </Typography>
+                                          }
+                                        />
+                                      </ListItem>
+                                    );
+                                  })}
+                                </List>
+                              </Box>
+                            );
+                          }
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </Paper>
+            )}
+
+            {/* Micah's Meals Tab */}
+            {activeTab === 4 && (
+              <Paper sx={{ p: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  Micah's Meals
+                </Typography>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  All containers for meals tagged as "Micah Meal"
+                </Typography>
+
+                {micahMealContainers.length === 0 ? (
+                  <Typography color="text.secondary">
+                    No Micah meals found. Tag recipes with "Micah Meal" to see
+                    them here.
+                  </Typography>
+                ) : (
+                  micahMealContainers.map((meal, idx) => (
+                    <Card
+                      key={idx}
+                      variant="outlined"
+                      sx={{ mb: 2, borderColor: "#9c27b0", borderWidth: 2 }}
+                    >
+                      <CardContent>
+                        <Typography variant="h6" gutterBottom color="primary">
+                          {meal.recipeName}
+                        </Typography>
+
+                        {/* Group by storage location */}
+                        {(["fridge", "freezer", "dry"] as const).map(
+                          (location) => {
+                            const containers = meal.containers.filter(
+                              (c) => c.storageLocation === location
+                            );
+                            if (containers.length === 0) return null;
+
+                            return (
+                              <Box key={location} mb={2}>
+                                <Typography
+                                  variant="subtitle2"
+                                  color="text.secondary"
+                                  textTransform="uppercase"
+                                  gutterBottom
+                                >
+                                  In {location}:
+                                </Typography>
+                                <List dense disablePadding>
+                                  {containers.map((container, containerIdx) => {
+                                    const key = `micah-container-${idx}-${location}-${containerIdx}`;
+                                    return (
+                                      <ListItem
+                                        key={containerIdx}
+                                        disablePadding
+                                        sx={{ ml: 2 }}
+                                      >
+                                        <ListItemIcon sx={{ minWidth: 32 }}>
+                                          <Checkbox
+                                            edge="start"
+                                            checked={checkedItems.has(key)}
+                                            onChange={() => toggleChecked(key)}
+                                            size="small"
+                                          />
+                                        </ListItemIcon>
+                                        <ListItemText
+                                          primary={
+                                            <Typography
+                                              variant="body2"
+                                              sx={{
+                                                textDecoration:
+                                                  checkedItems.has(key)
+                                                    ? "line-through"
+                                                    : "none",
+                                                fontWeight: "bold",
+                                              }}
+                                            >
+                                              {container.quantity &&
+                                                `${container.quantity}× `}
+                                              {container.productName}
+                                              {container.containerTypeName &&
+                                                ` (${container.containerTypeName})`}
+                                            </Typography>
+                                          }
+                                        />
+                                      </ListItem>
+                                    );
+                                  })}
+                                </List>
+                              </Box>
+                            );
+                          }
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </Paper>
+            )}
+
+            {/* Pull Lists Tab */}
+            {activeTab === 5 && (
+              <Paper sx={{ p: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  Just-in-Time Pull Lists
+                </Typography>
+
+                {pullLists.length === 0 ? (
+                  <Typography color="text.secondary">
+                    No just-in-time meals. Make sure your recipes have assembly
+                    steps with timing set to "just_in_time".
+                  </Typography>
+                ) : (
+                  pullLists.map((pullList, idx) => {
+                    const dayLabel =
+                      DAYS.find((d) => d.value === pullList.day)?.label ||
+                      pullList.day;
+                    const slotLabel =
+                      MEAL_SLOTS.find((s) => s.value === pullList.slot)
+                        ?.label || pullList.slot;
+
+                    return (
+                      <Card key={idx} variant="outlined" sx={{ mb: 2 }}>
+                        <CardContent>
+                          <Box
+                            display="flex"
+                            alignItems="center"
+                            gap={1}
+                            mb={1}
+                          >
+                            <Chip
+                              label={slotLabel}
+                              size="small"
+                              sx={{
+                                backgroundColor: SLOT_COLORS[pullList.slot],
+                                color: "white",
+                              }}
+                            />
+                            <Typography variant="subtitle1" fontWeight="bold">
+                              {dayLabel}: {pullList.recipeName}
+                            </Typography>
+                          </Box>
+
+                          {(
+                            ["fridge", "freezer", "pantry", "dry"] as const
+                          ).map((storage) => {
                             const items = pullList.items.filter(
                               (i) => i.fromStorage === storage
                             );
@@ -897,257 +1358,391 @@ export default function Outputs() {
                                 </List>
                               </Box>
                             );
-                          }
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })
-              )}
-            </Paper>
-          )}
+                          })}
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+                )}
+              </Paper>
+            )}
 
-          {/* Weekly View Tab */}
-          {activeTab === 4 && (
-            <Paper sx={{ p: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                Weekly Calendar
-              </Typography>
+            {/* Weekly View Tab */}
+            {activeTab === 6 && (
+              <Paper sx={{ p: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  Weekly Calendar
+                </Typography>
 
-              {/* Week-spanning meals */}
-              {plannedMeals.filter((m) => !m.day).length > 0 && (
-                <Box mb={2}>
-                  <Typography
-                    variant="subtitle2"
-                    color="text.secondary"
-                    gutterBottom
-                  >
-                    Week-spanning (grab anytime)
-                  </Typography>
-                  <Box display="flex" flexWrap="wrap" gap={1}>
-                    {plannedMeals
-                      .filter((m) => !m.day)
-                      .map((meal) => (
-                        <Chip
-                          key={meal.id}
-                          label={`${meal.expand?.recipe?.name || "Unknown"} (${
-                            meal.meal_slot
-                          })`}
-                          sx={{
-                            backgroundColor: SLOT_COLORS[meal.meal_slot],
-                            color: "white",
-                          }}
-                        />
-                      ))}
-                  </Box>
-                </Box>
-              )}
-
-              <TableContainer>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: "bold", width: 100 }}>
-                        Slot
-                      </TableCell>
-                      {DAYS.map((day) => (
-                        <TableCell
-                          key={day.value}
-                          align="center"
-                          sx={{ fontWeight: "bold" }}
-                        >
-                          {day.label.slice(0, 3)}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {MEAL_SLOTS.map((slot) => (
-                      <TableRow key={slot.value}>
-                        <TableCell>
+                {/* Week-spanning meals */}
+                {plannedMeals.filter((m) => !m.day).length > 0 && (
+                  <Box mb={2}>
+                    <Typography
+                      variant="subtitle2"
+                      color="text.secondary"
+                      gutterBottom
+                    >
+                      Week-spanning (grab anytime)
+                    </Typography>
+                    <Box display="flex" flexWrap="wrap" gap={1}>
+                      {plannedMeals
+                        .filter((m) => !m.day && m.meal_slot !== "micah")
+                        .map((meal) => (
                           <Chip
-                            label={slot.label}
-                            size="small"
+                            key={meal.id}
+                            label={`${
+                              meal.expand?.recipe?.name || "Unknown"
+                            } (${meal.meal_slot})`}
                             sx={{
-                              backgroundColor: SLOT_COLORS[slot.value],
+                              backgroundColor: SLOT_COLORS[meal.meal_slot],
                               color: "white",
                             }}
                           />
+                        ))}
+                    </Box>
+                  </Box>
+                )}
+
+                <TableContainer>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: "bold", width: 100 }}>
+                          Slot
                         </TableCell>
-                        {DAYS.map((day) => {
-                          const meals = plannedMeals.filter(
-                            (m) =>
-                              m.day === day.value && m.meal_slot === slot.value
-                          );
-                          return (
-                            <TableCell
-                              key={day.value}
-                              sx={{
-                                verticalAlign: "top",
-                                backgroundColor:
-                                  meals.length > 0 ? "action.hover" : "inherit",
-                                minWidth: 100,
-                                p: 0.5,
-                              }}
-                            >
-                              {meals.map((meal) => (
-                                <Box
-                                  key={meal.id}
+                        {DAYS.map((day) => (
+                          <TableCell
+                            key={day.value}
+                            align="center"
+                            sx={{ fontWeight: "bold" }}
+                          >
+                            {day.label.slice(0, 3)}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {MEAL_SLOTS.filter((s) => s.value !== "micah").map(
+                        (slot) => (
+                          <TableRow key={slot.value}>
+                            <TableCell>
+                              <Chip
+                                label={slot.label}
+                                size="small"
+                                sx={{
+                                  backgroundColor: SLOT_COLORS[slot.value],
+                                  color: "white",
+                                }}
+                              />
+                            </TableCell>
+                            {DAYS.map((day) => {
+                              const meals = plannedMeals.filter(
+                                (m) =>
+                                  m.day === day.value &&
+                                  m.meal_slot === slot.value &&
+                                  slot.value !== "micah"
+                              );
+                              return (
+                                <TableCell
+                                  key={day.value}
                                   sx={{
-                                    fontSize: "0.75rem",
+                                    verticalAlign: "top",
+                                    backgroundColor:
+                                      meals.length > 0
+                                        ? "action.hover"
+                                        : "inherit",
+                                    minWidth: 100,
                                     p: 0.5,
-                                    mb: 0.5,
-                                    backgroundColor: SLOT_COLORS[slot.value],
-                                    color: "white",
-                                    borderRadius: 0.5,
                                   }}
                                 >
-                                  <Typography
-                                    variant="caption"
-                                    sx={{ color: "inherit" }}
-                                  >
-                                    {meal.expand?.recipe?.name || "?"}
-                                    {meal.quantity &&
-                                      meal.quantity > 1 &&
-                                      ` (×${meal.quantity})`}
-                                  </Typography>
-                                </Box>
-                              ))}
-                            </TableCell>
+                                  {meals.map((meal) => {
+                                    const isMicah = isMicahMeal(meal);
+                                    return (
+                                      <Box
+                                        key={meal.id}
+                                        sx={{
+                                          fontSize: "0.75rem",
+                                          p: 0.5,
+                                          mb: 0.5,
+                                          backgroundColor:
+                                            SLOT_COLORS[slot.value],
+                                          color: "white",
+                                          borderRadius: 0.5,
+                                          border: isMicah
+                                            ? "2px solid #9c27b0"
+                                            : "none",
+                                          boxShadow: isMicah
+                                            ? "0 0 8px rgba(156, 39, 176, 0.6)"
+                                            : "none",
+                                        }}
+                                      >
+                                        <Typography
+                                          variant="caption"
+                                          sx={{
+                                            color: "inherit",
+                                            fontWeight: isMicah
+                                              ? "bold"
+                                              : "normal",
+                                          }}
+                                        >
+                                          {isMicah && "⭐ "}
+                                          {meal.expand?.recipe?.name || "?"}
+                                          {meal.quantity &&
+                                            meal.quantity > 1 &&
+                                            ` (×${meal.quantity})`}
+                                        </Typography>
+                                      </Box>
+                                    );
+                                  })}
+                                </TableCell>
+                              );
+                            })}
+                          </TableRow>
+                        )
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+
+                {/* Micah meals grouped by tag */}
+                {plannedMeals.filter((m) => m.meal_slot === "micah").length >
+                  0 && (
+                  <Box mt={3}>
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight="bold"
+                      gutterBottom
+                    >
+                      Micah Meals (by tag)
+                    </Typography>
+                    {(() => {
+                      // Group Micah meals by tag
+                      const micahMeals = plannedMeals.filter(
+                        (m) => m.meal_slot === "micah"
+                      );
+                      const tagGroups = new Map<
+                        string,
+                        PlannedMealWithRecipe[]
+                      >();
+
+                      micahMeals.forEach((meal) => {
+                        const tags = recipeTags.get(meal.recipe) || [];
+                        if (tags.length === 0) {
+                          // Add to "Untagged" group
+                          if (!tagGroups.has("untagged")) {
+                            tagGroups.set("untagged", []);
+                          }
+                          tagGroups.get("untagged")!.push(meal);
+                        } else {
+                          // Add to each tag group
+                          tags.forEach((tagId) => {
+                            if (!tagGroups.has(tagId)) {
+                              tagGroups.set(tagId, []);
+                            }
+                            tagGroups.get(tagId)!.push(meal);
+                          });
+                        }
+                      });
+
+                      return Array.from(tagGroups.entries()).map(
+                        ([tagId, meals]) => {
+                          const tagName =
+                            tagId === "untagged"
+                              ? "Untagged"
+                              : tagsById.get(tagId)?.name || "Unknown Tag";
+                          const tagColor =
+                            tagId === "untagged"
+                              ? "#9e9e9e"
+                              : tagsById.get(tagId)?.color || "#00bcd4";
+
+                          return (
+                            <Box key={tagId} mb={2}>
+                              <Typography
+                                variant="subtitle2"
+                                color="text.secondary"
+                                gutterBottom
+                              >
+                                {tagName}:
+                              </Typography>
+                              <Box
+                                display="flex"
+                                flexWrap="wrap"
+                                gap={1}
+                                ml={2}
+                              >
+                                {meals.map((meal) => (
+                                  <Chip
+                                    key={`${tagId}-${meal.id}`}
+                                    label={`${
+                                      meal.expand?.recipe?.name || "Unknown"
+                                    }${
+                                      meal.quantity && meal.quantity > 1
+                                        ? ` (×${meal.quantity})`
+                                        : ""
+                                    }`}
+                                    sx={{
+                                      backgroundColor: tagColor,
+                                      color: "white",
+                                    }}
+                                  />
+                                ))}
+                              </Box>
+                            </Box>
                           );
-                        })}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Paper>
-          )}
+                        }
+                      );
+                    })()}
+                  </Box>
+                )}
+              </Paper>
+            )}
 
-          {/* Product Flow Tab */}
-          {activeTab === 5 && (
-            <Paper
-              sx={{
-                p: 2,
-                display: "flex",
-                flexDirection: "column",
-                flexGrow: 1,
-                minHeight: 0,
-              }}
-            >
-              <Typography variant="h6" gutterBottom>
-                Product Flow Graph
-              </Typography>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Shows how products flow through processing steps. Products with
-                the same ID are consolidated with aggregated quantities and meal
-                counts. Steps with the same input/output signature are combined.
-              </Typography>
+            {/* Product Flow Tab */}
+            {activeTab === 7 && (
+              <Paper
+                sx={{
+                  p: 2,
+                  display: "flex",
+                  flexDirection: "column",
+                  flexGrow: 1,
+                  minHeight: 0,
+                }}
+              >
+                <Typography variant="h6" gutterBottom>
+                  Product Flow Graph
+                </Typography>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Shows how products flow through processing steps. Products
+                  with the same ID are consolidated with aggregated quantities
+                  and meal counts. Steps with the same input/output signature
+                  are combined.
+                </Typography>
 
-              {flowNodes.length === 0 ? (
-                <Box
-                  display="flex"
-                  justifyContent="center"
-                  alignItems="center"
-                  flexGrow={1}
-                >
-                  <Typography color="text.secondary">
-                    No product flow data. Make sure your recipes have prep or
-                    batch assembly steps.
-                  </Typography>
-                </Box>
-              ) : (
-                <Box
-                  sx={{
-                    flexGrow: 1,
-                    border: "1px solid #e0e0e0",
-                    borderRadius: 1,
-                    minHeight: 0,
-                  }}
-                >
-                  <ReactFlow
-                    nodes={flowNodes}
-                    edges={flowEdges}
-                    fitView
-                    attributionPosition="bottom-right"
+                {flowNodes.length === 0 ? (
+                  <Box
+                    display="flex"
+                    justifyContent="center"
+                    alignItems="center"
+                    flexGrow={1}
                   >
-                    <Controls />
-                    <Background
-                      variant={BackgroundVariant.Dots}
-                      gap={12}
-                      size={1}
-                    />
-                  </ReactFlow>
-                </Box>
-              )}
+                    <Typography color="text.secondary">
+                      No product flow data. Make sure your recipes have prep or
+                      batch assembly steps.
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Box
+                    sx={{
+                      flexGrow: 1,
+                      border: "1px solid #e0e0e0",
+                      borderRadius: 1,
+                      minHeight: 0,
+                    }}
+                  >
+                    <ReactFlow
+                      nodes={flowNodes}
+                      edges={flowEdges}
+                      fitView
+                      attributionPosition="bottom-right"
+                    >
+                      <Controls />
+                      <Background
+                        variant={BackgroundVariant.Dots}
+                        gap={12}
+                        size={1}
+                      />
+                    </ReactFlow>
+                  </Box>
+                )}
 
-              {/* Legend */}
-              <Box mt={2} display="flex" gap={3} flexWrap="wrap">
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Box
-                    sx={{
-                      width: 16,
-                      height: 16,
-                      backgroundColor: "#e8f5e9",
-                      border: "2px solid #4caf50",
-                      borderRadius: "4px",
-                    }}
-                  />
-                  <Typography variant="caption">Raw Products</Typography>
+                {/* Legend */}
+                <Box mt={2} display="flex" gap={3} flexWrap="wrap">
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Box
+                      sx={{
+                        width: 16,
+                        height: 16,
+                        backgroundColor: "#e8f5e9",
+                        border: "2px solid #4caf50",
+                        borderRadius: "4px",
+                      }}
+                    />
+                    <Typography variant="caption">Raw Products</Typography>
+                  </Box>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Box
+                      sx={{
+                        width: 16,
+                        height: 16,
+                        backgroundColor: "#fff3e0",
+                        border: "2px solid #ff9800",
+                        borderRadius: "4px",
+                      }}
+                    />
+                    <Typography variant="caption">
+                      Transient Products
+                    </Typography>
+                  </Box>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Box
+                      sx={{
+                        width: 16,
+                        height: 16,
+                        backgroundColor: "#e3f2fd",
+                        border: "2px solid #2196f3",
+                        borderRadius: "4px",
+                      }}
+                    />
+                    <Typography variant="caption">Stored Products</Typography>
+                  </Box>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Box
+                      sx={{
+                        width: 16,
+                        height: 16,
+                        backgroundColor: "#f3e5f5",
+                        border: "2px solid #9c27b0",
+                        borderRadius: "4px",
+                      }}
+                    />
+                    <Typography variant="caption">Prep Steps</Typography>
+                  </Box>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Box
+                      sx={{
+                        width: 16,
+                        height: 16,
+                        backgroundColor: "#ffebee",
+                        border: "2px solid #f44336",
+                        borderRadius: "4px",
+                      }}
+                    />
+                    <Typography variant="caption">Assembly Steps</Typography>
+                  </Box>
                 </Box>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Box
-                    sx={{
-                      width: 16,
-                      height: 16,
-                      backgroundColor: "#fff3e0",
-                      border: "2px solid #ff9800",
-                      borderRadius: "4px",
-                    }}
-                  />
-                  <Typography variant="caption">Transient Products</Typography>
-                </Box>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Box
-                    sx={{
-                      width: 16,
-                      height: 16,
-                      backgroundColor: "#e3f2fd",
-                      border: "2px solid #2196f3",
-                      borderRadius: "4px",
-                    }}
-                  />
-                  <Typography variant="caption">Stored Products</Typography>
-                </Box>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Box
-                    sx={{
-                      width: 16,
-                      height: 16,
-                      backgroundColor: "#f3e5f5",
-                      border: "2px solid #9c27b0",
-                      borderRadius: "4px",
-                    }}
-                  />
-                  <Typography variant="caption">Prep Steps</Typography>
-                </Box>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Box
-                    sx={{
-                      width: 16,
-                      height: 16,
-                      backgroundColor: "#ffebee",
-                      border: "2px solid #f44336",
-                      borderRadius: "4px",
-                    }}
-                  />
-                  <Typography variant="caption">Assembly Steps</Typography>
-                </Box>
-              </Box>
-            </Paper>
-          )}
-        </>
-      )}
-    </Box>
+              </Paper>
+            )}
+          </>
+        )}
+
+        {/* Export Feedback Snackbar */}
+        <Snackbar
+          open={exportSnackbar.open}
+          autoHideDuration={4000}
+          onClose={() => setExportSnackbar({ ...exportSnackbar, open: false })}
+          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        >
+          <Alert
+            onClose={() =>
+              setExportSnackbar({ ...exportSnackbar, open: false })
+            }
+            severity={exportSnackbar.severity}
+            sx={{ width: "100%" }}
+          >
+            {exportSnackbar.message}
+          </Alert>
+        </Snackbar>
+      </Box>
+    </>
   );
 }

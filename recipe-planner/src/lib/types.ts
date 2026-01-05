@@ -27,7 +27,7 @@ export interface Tag extends BaseRecord {
 
 // Products
 export type ProductType = "raw" | "transient" | "stored";
-export type StorageLocation = "fridge" | "freezer";
+export type StorageLocation = "fridge" | "freezer" | "dry";
 
 export interface Product extends BaseRecord {
   name: string;
@@ -92,7 +92,7 @@ export interface WeeklyPlan extends BaseRecord {
   name?: string;
 }
 
-export type MealSlot = "breakfast" | "lunch" | "dinner" | "snack";
+export type MealSlot = "breakfast" | "lunch" | "dinner" | "snack" | "micah";
 export type Day = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 
 export interface PlannedMeal extends BaseRecord {

@@ -47,7 +47,7 @@ export interface AggregatedStep {
 
 export interface StoredItem {
   productName: string;
-  storageLocation: "fridge" | "freezer";
+  storageLocation: "fridge" | "freezer" | "dry";
   containerTypeName?: string;
   mealDestination?: string;
   quantity?: number;
@@ -60,7 +60,7 @@ export interface PullListItem {
   quantity?: number;
   unit?: string;
   containerTypeName?: string;
-  fromStorage: "fridge" | "freezer" | "pantry";
+  fromStorage: "fridge" | "freezer" | "pantry" | "dry";
 }
 
 export interface PullListMeal {
@@ -68,6 +68,17 @@ export interface PullListMeal {
   slot: MealSlot;
   recipeName: string;
   items: PullListItem[];
+}
+
+export interface MealContainer {
+  recipeName: string;
+  containers: {
+    productName: string;
+    containerTypeName?: string;
+    storageLocation: "fridge" | "freezer" | "dry";
+    quantity?: number;
+    unit?: string;
+  }[];
 }
 
 // ============================================================================
@@ -87,7 +98,7 @@ export interface AggregatedFlowProduct {
   trackQuantity?: boolean;
   storeName?: string;
   sectionName?: string;
-  storageLocation?: "fridge" | "freezer";
+  storageLocation?: "fridge" | "freezer" | "dry";
 }
 
 export interface AggregatedFlowStep {
@@ -152,6 +163,7 @@ export interface PlannedMealWithRecipe extends PlannedMeal {
 
 /**
  * Groups shopping list by store, then by section.
+ * Pantry items appear in BOTH their store/section groups AND the separate pantry list.
  */
 export function groupShoppingList(items: AggregatedProduct[]): {
   byStore: Map<string, Map<string, AggregatedProduct[]>>;
@@ -161,11 +173,12 @@ export function groupShoppingList(items: AggregatedProduct[]): {
   const pantryItems: AggregatedProduct[] = [];
 
   items.forEach((item) => {
+    // Add pantry items to the separate pantry list
     if (item.isPantry) {
       pantryItems.push(item);
-      return;
     }
 
+    // Add ALL items (including pantry) to their store/section groups
     const storeName = item.storeName || "Other";
     const sectionName = item.sectionName || "Other";
 
@@ -248,7 +261,7 @@ export function buildPullLists(
         console.log(`    Input: ${product.name} (${product.type})`);
 
         // Determine where to pull from
-        let fromStorage: "fridge" | "freezer" | "pantry";
+        let fromStorage: "fridge" | "freezer" | "pantry" | "dry";
         if (product.type === "stored") {
           fromStorage = product.storage_location || "fridge";
         } else if (product.type === "raw" && product.pantry) {
@@ -635,13 +648,45 @@ export function buildShoppingListFromFlow(
 /**
  * Build batch prep list from the product flow graph
  * Includes all prep and batch assembly steps
+ * Excludes steps where outputs have container type "original packaging"
+ * Sorted by: 1) step type (prep first, then assembly), 2) input products (alphabetically)
  */
 export function buildBatchPrepListFromFlow(
-  flowGraph: ProductFlowGraphData
+  flowGraph: ProductFlowGraphData,
+  recipeData: Map<string, RecipeGraphData>
 ): AggregatedStep[] {
   const prepSteps: AggregatedStep[] = [];
 
+  // Helper to check if any output has "original packaging" container type
+  const hasOriginalPackagingOutput = (step: AggregatedFlowStep): boolean => {
+    // For each output product, check if it has "original packaging" container type
+    for (const output of step.outputs) {
+      // Check in all recipes that use this step
+      for (const [, data] of recipeData) {
+        const productNode = data.productNodes.find(
+          (n) => n.expand?.product?.id === output.productId
+        );
+        if (productNode) {
+          const containerTypeName =
+            productNode.expand?.product?.expand?.container_type?.name;
+          if (
+            containerTypeName?.toLowerCase() === "original packaging" ||
+            containerTypeName?.toLowerCase() === "original-packaging"
+          ) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  };
+
   flowGraph.steps.forEach((step) => {
+    // Skip steps with "original packaging" outputs
+    if (hasOriginalPackagingOutput(step)) {
+      return;
+    }
+
     // Use the first step name as the primary name
     const primaryStepName = step.stepNames[0];
 
@@ -667,6 +712,41 @@ export function buildBatchPrepListFromFlow(
         unit: o.unit,
       })),
     });
+  });
+
+  // Sort the prep steps:
+  // 1. First by step type: "prep" comes before "assembly"
+  // 2. Then by output product type: non-stored outputs before stored outputs
+  // 3. Finally by input products (alphabetically by first input)
+  prepSteps.sort((a, b) => {
+    // Primary sort: step type (prep before assembly)
+    if (a.stepType !== b.stepType) {
+      return a.stepType === "prep" ? -1 : 1;
+    }
+
+    // Secondary sort: by output product type (non-stored before stored)
+    // Check if step outputs contain stored products
+    const aHasStoredOutput = flowGraph.steps
+      .get(a.stepId)
+      ?.outputs.some((output) => {
+        const product = flowGraph.products.get(output.productId);
+        return product?.productType === "stored";
+      });
+    const bHasStoredOutput = flowGraph.steps
+      .get(b.stepId)
+      ?.outputs.some((output) => {
+        const product = flowGraph.products.get(output.productId);
+        return product?.productType === "stored";
+      });
+
+    if (aHasStoredOutput !== bHasStoredOutput) {
+      return aHasStoredOutput ? 1 : -1; // Stored outputs come last
+    }
+
+    // Tertiary sort: by first input product name (alphabetically)
+    const aFirstInput = a.inputs[0]?.productName || "";
+    const bFirstInput = b.inputs[0]?.productName || "";
+    return aFirstInput.localeCompare(bFirstInput);
   });
 
   return prepSteps;
@@ -701,4 +781,71 @@ export function buildStoredItemsListFromFlow(
   });
 
   return storedItems;
+}
+
+/**
+ * Build meal containers list - groups stored items by parent recipe
+ * This helps users quickly find which containers belong to which recipes/meals
+ */
+export function buildMealContainersList(
+  flowGraph: ProductFlowGraphData
+): MealContainer[] {
+  // Track unique product types within each recipe to aggregate properly
+  const recipeProductMap = new Map<
+    string,
+    Map<
+      string,
+      {
+        productName: string;
+        containerTypeName?: string;
+        storageLocation: "fridge" | "freezer" | "dry";
+        quantity: number;
+      }
+    >
+  >();
+
+  flowGraph.products.forEach((product) => {
+    if (product.productType === "stored") {
+      // Group by recipe name (parent recipe)
+      product.mealSources.forEach((source) => {
+        const recipeName = source.recipeName;
+        const cleanName = product.productName.replace(
+          /\s*\([^)]+\)\s*#\d+/,
+          ""
+        );
+
+        if (!recipeProductMap.has(recipeName)) {
+          recipeProductMap.set(recipeName, new Map());
+        }
+
+        const productsInRecipe = recipeProductMap.get(recipeName)!;
+        const productKey = `${cleanName}-${product.storageLocation}-${product.unit}`;
+
+        if (productsInRecipe.has(productKey)) {
+          // Aggregate quantity for same product
+          const existing = productsInRecipe.get(productKey)!;
+          existing.quantity += product.totalQuantity;
+        } else {
+          // Add new product
+          productsInRecipe.set(productKey, {
+            productName: cleanName,
+            containerTypeName: product.unit, // unit is the container type
+            storageLocation: product.storageLocation || "fridge",
+            quantity: product.totalQuantity,
+          });
+        }
+      });
+    }
+  });
+
+  // Convert map to array format
+  const result: MealContainer[] = [];
+  recipeProductMap.forEach((productsMap, recipeName) => {
+    result.push({
+      recipeName,
+      containers: Array.from(productsMap.values()),
+    });
+  });
+
+  return result.sort((a, b) => a.recipeName.localeCompare(b.recipeName));
 }

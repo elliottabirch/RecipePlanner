@@ -64,7 +64,6 @@ export default function Layout() {
   };
 
   const isActive = (path: string) => location.pathname === path;
-  const isRegistryActive = location.pathname.startsWith("/registries");
 
   const drawerContent = (
     <Box>
