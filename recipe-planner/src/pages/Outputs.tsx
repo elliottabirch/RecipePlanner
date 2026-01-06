@@ -79,6 +79,7 @@ import type {
 } from "../lib/types";
 import { getAvailableProviders } from "../lib/listProviders";
 import { DAYS, MEAL_SLOTS, SLOT_COLORS } from "../constants/mealPlanning";
+import { FridgeFreezerTab, MealContainersTab } from "../components/outputs";
 
 export default function Outputs() {
   const [plans, setPlans] = useState<WeeklyPlan[]>([]);
@@ -951,82 +952,11 @@ export default function Outputs() {
                 <Typography variant="h6" gutterBottom>
                   Fridge/Freezer Contents After Prep
                 </Typography>
-
-                {storedItems.length === 0 ? (
-                  <Typography color="text.secondary">
-                    No stored items. Make sure your recipes have stored product
-                    nodes as outputs from steps.
-                  </Typography>
-                ) : (
-                  <>
-                    {(["fridge", "freezer", "dry"] as const).map((location) => {
-                      const items = storedItems.filter(
-                        (i) => i.storageLocation === location
-                      );
-                      if (items.length === 0) return null;
-
-                      return (
-                        <Box key={location} mb={3}>
-                          <Typography
-                            variant="subtitle1"
-                            fontWeight="bold"
-                            textTransform="uppercase"
-                            gutterBottom
-                          >
-                            {location === "dry" ? "Dry Storage" : location}
-                          </Typography>
-                          <List dense>
-                            {items.map((item, idx) => {
-                              const key = `stored-${location}-${idx}`;
-                              return (
-                                <ListItem key={idx} disablePadding>
-                                  <ListItemIcon sx={{ minWidth: 36 }}>
-                                    <Checkbox
-                                      edge="start"
-                                      checked={checkedItems.has(key)}
-                                      onChange={() => toggleChecked(key)}
-                                      size="small"
-                                    />
-                                  </ListItemIcon>
-                                  <ListItemText
-                                    primary={
-                                      <span
-                                        style={{
-                                          textDecoration: checkedItems.has(key)
-                                            ? "line-through"
-                                            : "none",
-                                        }}
-                                      >
-                                        {item.productName}
-                                        {item.quantity &&
-                                          ` — ${item.quantity} ${item.unit}`}
-                                      </span>
-                                    }
-                                    secondary={
-                                      <>
-                                        {item.containerTypeName &&
-                                          `Container: ${item.containerTypeName}`}
-                                        {item.containerTypeName &&
-                                          item.mealDestination &&
-                                          " • "}
-                                        {item.mealDestination &&
-                                          `For: ${item.mealDestination}`}
-                                        {(item.containerTypeName ||
-                                          item.mealDestination) &&
-                                          " • "}
-                                        From: {item.recipeName}
-                                      </>
-                                    }
-                                  />
-                                </ListItem>
-                              );
-                            })}
-                          </List>
-                        </Box>
-                      );
-                    })}
-                  </>
-                )}
+                <FridgeFreezerTab
+                  storedItems={storedItems}
+                  checkedItems={checkedItems}
+                  onToggleChecked={toggleChecked}
+                />
               </Paper>
             )}
 
@@ -1039,86 +969,11 @@ export default function Outputs() {
                 <Typography variant="body2" color="text.secondary" gutterBottom>
                   Quick reference for which containers belong to which meals
                 </Typography>
-
-                {mealContainers.length === 0 ? (
-                  <Typography color="text.secondary">
-                    No meal containers. Make sure your recipes have stored
-                    products with meal destinations specified.
-                  </Typography>
-                ) : (
-                  mealContainers.map((meal, idx) => (
-                    <Card key={idx} variant="outlined" sx={{ mb: 2 }}>
-                      <CardContent>
-                        <Typography variant="h6" gutterBottom>
-                          {meal.recipeName}
-                        </Typography>
-
-                        {/* Group by storage location */}
-                        {(["fridge", "freezer", "dry"] as const).map(
-                          (location) => {
-                            const containers = meal.containers.filter(
-                              (c) => c.storageLocation === location
-                            );
-                            if (containers.length === 0) return null;
-
-                            return (
-                              <Box key={location} mb={2}>
-                                <Typography
-                                  variant="subtitle2"
-                                  color="text.secondary"
-                                  textTransform="uppercase"
-                                  gutterBottom
-                                >
-                                  In {location}:
-                                </Typography>
-                                <List dense disablePadding>
-                                  {containers.map((container, containerIdx) => {
-                                    const key = `meal-container-${idx}-${location}-${containerIdx}`;
-                                    return (
-                                      <ListItem
-                                        key={containerIdx}
-                                        disablePadding
-                                        sx={{ ml: 2 }}
-                                      >
-                                        <ListItemIcon sx={{ minWidth: 32 }}>
-                                          <Checkbox
-                                            edge="start"
-                                            checked={checkedItems.has(key)}
-                                            onChange={() => toggleChecked(key)}
-                                            size="small"
-                                          />
-                                        </ListItemIcon>
-                                        <ListItemText
-                                          primary={
-                                            <Typography
-                                              variant="body2"
-                                              sx={{
-                                                textDecoration:
-                                                  checkedItems.has(key)
-                                                    ? "line-through"
-                                                    : "none",
-                                              }}
-                                            >
-                                              {container.quantity &&
-                                                `${container.quantity}× `}
-                                              {container.productName}
-                                              {container.containerTypeName &&
-                                                ` (${container.containerTypeName})`}
-                                            </Typography>
-                                          }
-                                        />
-                                      </ListItem>
-                                    );
-                                  })}
-                                </List>
-                              </Box>
-                            );
-                          }
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
+                <MealContainersTab
+                  mealContainers={mealContainers}
+                  checkedItems={checkedItems}
+                  onToggleChecked={toggleChecked}
+                />
               </Paper>
             )}
 
