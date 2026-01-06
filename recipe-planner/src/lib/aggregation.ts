@@ -1,4 +1,11 @@
-import type { Product, InventoryItemExpanded } from "./types";
+import {
+  ProductType,
+  StorageLocation,
+  StepType,
+  Timing,
+  type Product,
+  type InventoryItemExpanded,
+} from "./types";
 
 // Re-export types from aggregation module
 export type {
@@ -209,7 +216,7 @@ export function buildShoppingListFromFlow(
   const shoppingItems: AggregatedProduct[] = [];
 
   flowGraph.products.forEach((product) => {
-    if (product.productType === "raw") {
+    if (product.productType === ProductType.Raw) {
       shoppingItems.push({
         productId: product.productId,
         productName: product.productName,
@@ -265,7 +272,7 @@ export function buildBatchPrepListFromFlow(
           ? `${primaryStepName} (+ ${step.stepNames.length - 1} variants)`
           : primaryStepName,
       stepType: step.stepType,
-      timing: step.stepType === "assembly" ? "batch" : undefined,
+      timing: step.stepType === StepType.Assembly ? Timing.Batch : undefined,
       recipeName: step.recipeSources
         .map((s) => `${s.count}x ${s.recipeName}`)
         .join(", "),
@@ -296,7 +303,7 @@ export function buildStoredItemsListFromFlow(
   const storedItems: StoredItem[] = [];
 
   flowGraph.products.forEach((product) => {
-    if (product.productType === "stored") {
+    if (product.productType === ProductType.Stored) {
       // Extract meal destination using utility
       const { cleanName, destination } = extractMealDestination(
         product.productName
@@ -304,7 +311,7 @@ export function buildStoredItemsListFromFlow(
 
       storedItems.push({
         productName: cleanName,
-        storageLocation: product.storageLocation || "fridge",
+        storageLocation: product.storageLocation || StorageLocation.Fridge,
         mealDestination: destination,
         quantity: product.totalQuantity,
         unit: product.unit,
@@ -332,14 +339,14 @@ export function buildMealContainersList(
       {
         productName: string;
         containerTypeName?: string;
-        storageLocation: "fridge" | "freezer" | "dry";
+        storageLocation: StorageLocation;
         quantity: number;
       }
     >
   >();
 
   flowGraph.products.forEach((product) => {
-    if (product.productType === "stored") {
+    if (product.productType === ProductType.Stored) {
       // Group by recipe name (parent recipe)
       product.mealSources.forEach((source) => {
         const recipeName = source.recipeName;
@@ -364,7 +371,7 @@ export function buildMealContainersList(
           productsInRecipe.set(productKey, {
             productName: cleanName,
             containerTypeName: product.unit, // unit is the container type
-            storageLocation: product.storageLocation || "fridge",
+            storageLocation: product.storageLocation || StorageLocation.Fridge,
             quantity: product.totalQuantity,
           });
         }
@@ -439,7 +446,7 @@ export function checkInventoryStock(
   recipeDataMap.forEach((data) => {
     data.productNodes.forEach((node) => {
       const product = node.expand?.product;
-      if (product?.type === "inventory") {
+      if (product?.type === ProductType.Inventory) {
         const inStock = stockMap.get(product.id) ?? false;
         warnings.push({
           recipeId: data.recipe.id,

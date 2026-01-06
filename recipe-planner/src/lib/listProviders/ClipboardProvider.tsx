@@ -26,7 +26,7 @@ export class ClipboardProvider implements ListProvider {
   }
 
   async export(
-    items: ShoppingListItem[],
+    _items: ShoppingListItem[],
     grouped: GroupedShoppingList,
     options: ExportOptions = {}
   ): Promise<ExportResult> {
@@ -35,10 +35,10 @@ export class ClipboardProvider implements ListProvider {
       // - Simple tab-delimited structure
       // - Store name, then items indented with tabs
       // - No pantry items
-      const mergedOptions = {
+      const mergedOptions: ExportOptions = {
         ...DEFAULT_EXPORT_OPTIONS,
         ...options,
-        format: "plain", // Will use formatForGoogleKeep as default
+        format: "plain" as const, // Will use formatForGoogleKeep as default
         includeStores: true,
         includeSections: false, // No sections for simplicity
         includeRecipes: false,

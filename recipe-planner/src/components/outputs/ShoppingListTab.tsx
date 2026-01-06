@@ -3,6 +3,11 @@ import { ContentCopy as ContentCopyIcon } from "@mui/icons-material";
 import type { AggregatedProduct } from "../../lib/aggregation";
 import { CheckableListItem } from "../CheckableListItem";
 import { EmptyState } from "../EmptyState";
+import {
+  UI_TEXT,
+  getPantryCheckboxKey,
+  getShoppingCheckboxKey,
+} from "../../constants/outputs";
 
 interface GroupedShoppingList {
   byStore: Map<string, Map<string, AggregatedProduct[]>>;
@@ -27,9 +32,7 @@ export function ShoppingListTab({
     groupedShoppingList.pantryItems.length > 0;
 
   if (!hasItems) {
-    return (
-      <EmptyState message="No items to shop for. Make sure your recipes have raw product nodes connected to steps." />
-    );
+    return <EmptyState message={UI_TEXT.noShoppingItems} />;
   }
 
   return (
@@ -40,14 +43,14 @@ export function ShoppingListTab({
         alignItems="center"
         mb={2}
       >
-        <Typography variant="h6">Shopping List</Typography>
+        <Typography variant="h6">{UI_TEXT.shoppingListTitle}</Typography>
         <Button
           variant="contained"
           color="primary"
           onClick={onExport}
           startIcon={<ContentCopyIcon />}
         >
-          Copy to Clipboard
+          {UI_TEXT.copyToClipboard}
         </Button>
       </Box>
 
@@ -62,7 +65,7 @@ export function ShoppingListTab({
               // Filter out pantry items checked in the pantry section
               const visibleItems = items.filter((item) => {
                 if (item.isPantry) {
-                  const pantryKey = `pantry-${item.productId}`;
+                  const pantryKey = getPantryCheckboxKey(item.productId);
                   return !checkedItems.has(pantryKey);
                 }
                 return true;
@@ -81,7 +84,7 @@ export function ShoppingListTab({
                   </Typography>
                   <List dense>
                     {visibleItems.map((item) => {
-                      const key = `shop-${item.productId}`;
+                      const key = getShoppingCheckboxKey(item.productId);
                       const primary = `${item.productName} — ${item.totalQuantity} ${item.unit}`;
                       const secondary = item.sources
                         .map((s) => s.recipeName)
@@ -111,11 +114,11 @@ export function ShoppingListTab({
       {groupedShoppingList.pantryItems.length > 0 && (
         <Box>
           <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>
-            Pantry Check
+            {UI_TEXT.pantryCheckTitle}
           </Typography>
           <List dense>
             {groupedShoppingList.pantryItems.map((item) => {
-              const key = `pantry-${item.productId}`;
+              const key = getPantryCheckboxKey(item.productId);
               const showQuantity = item.trackQuantity;
               const primary = showQuantity
                 ? `${item.productName} — ${item.totalQuantity} ${item.unit}`

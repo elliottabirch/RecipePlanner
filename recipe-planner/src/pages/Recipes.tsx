@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Button,
@@ -19,16 +19,16 @@ import {
   Grid,
   Chip,
   InputAdornment,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Search as SearchIcon,
   Restaurant as RecipeIcon,
-} from '@mui/icons-material';
-import { getAll, create, remove, collections } from '../lib/api';
-import type { Recipe, Tag } from '../lib/types';
+} from "@mui/icons-material";
+import { getAll, create, remove, collections } from "../lib/api";
+import type { Recipe, RecipeTag, Tag } from "../lib/types";
 
 export default function Recipes() {
   const navigate = useNavigate();
@@ -36,11 +36,11 @@ export default function Recipes() {
   const [recipeTags, setRecipeTags] = useState<Record<string, Tag[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
   // New recipe dialog
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [newName, setNewName] = useState('');
+  const [newName, setNewName] = useState("");
   const [saving, setSaving] = useState(false);
 
   // Delete confirmation
@@ -51,13 +51,10 @@ export default function Recipes() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const [recipes, recipeTagsData] = await Promise.all([
-        getAll<Recipe>(collections.recipes, { sort: 'name' }),
-        getAll<{ recipe: string; tag: string; expand?: { tag?: Tag } }>(
-          collections.recipeTags,
-          { expand: 'tag' }
-        ),
+        getAll<Recipe>(collections.recipes, { sort: "name" }),
+        getAll<RecipeTag>(collections.recipeTags, { expand: "tag" }),
       ]);
 
       setItems(recipes);
@@ -74,7 +71,7 @@ export default function Recipes() {
       });
       setRecipeTags(tagsByRecipe);
     } catch (err) {
-      setError('Failed to load recipes');
+      setError("Failed to load recipes");
       console.error(err);
     } finally {
       setLoading(false);
@@ -94,10 +91,10 @@ export default function Recipes() {
         name: newName.trim(),
       });
       setDialogOpen(false);
-      setNewName('');
+      setNewName("");
       navigate(`/recipes/${recipe.id}`);
     } catch (err) {
-      setError('Failed to create recipe');
+      setError("Failed to create recipe");
       console.error(err);
     } finally {
       setSaving(false);
@@ -118,7 +115,7 @@ export default function Recipes() {
       setItemToDelete(null);
       loadItems();
     } catch (err) {
-      setError('Failed to delete recipe');
+      setError("Failed to delete recipe");
       console.error(err);
     }
   };
@@ -137,7 +134,12 @@ export default function Recipes() {
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={2}
+      >
         <Box>
           <Typography variant="h4" gutterBottom>
             Recipes
@@ -177,12 +179,12 @@ export default function Recipes() {
       />
 
       {filteredItems.length === 0 ? (
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
-          <RecipeIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+        <Paper sx={{ p: 4, textAlign: "center" }}>
+          <RecipeIcon sx={{ fontSize: 64, color: "text.secondary", mb: 2 }} />
           <Typography color="text.secondary">
             {searchQuery
-              ? 'No recipes match your search'
-              : 'No recipes yet. Create one to get started.'}
+              ? "No recipes match your search"
+              : "No recipes yet. Create one to get started."}
           </Typography>
         </Paper>
       ) : (
@@ -200,11 +202,11 @@ export default function Recipes() {
                       color="text.secondary"
                       sx={{
                         mb: 1,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        display: '-webkit-box',
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        display: "-webkit-box",
                         WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
+                        WebkitBoxOrient: "vertical",
                       }}
                     >
                       {item.notes}
@@ -218,8 +220,8 @@ export default function Recipes() {
                           label={tag.name}
                           size="small"
                           sx={{
-                            backgroundColor: tag.color || '#2196f3',
-                            color: 'white',
+                            backgroundColor: tag.color || "#2196f3",
+                            color: "white",
                           }}
                         />
                       ))}
@@ -237,7 +239,7 @@ export default function Recipes() {
                   <IconButton
                     size="small"
                     onClick={() => handleDeleteClick(item)}
-                    sx={{ ml: 'auto' }}
+                    sx={{ ml: "auto" }}
                   >
                     <DeleteIcon />
                   </IconButton>
@@ -249,7 +251,12 @@ export default function Recipes() {
       )}
 
       {/* New Recipe Dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>New Recipe</DialogTitle>
         <DialogContent>
           <TextField
@@ -260,7 +267,7 @@ export default function Recipes() {
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && newName.trim()) {
+              if (e.key === "Enter" && newName.trim()) {
                 handleCreateRecipe();
               }
             }}
@@ -273,23 +280,31 @@ export default function Recipes() {
             variant="contained"
             disabled={!newName.trim() || saving}
           >
-            {saving ? 'Creating...' : 'Create'}
+            {saving ? "Creating..." : "Create"}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
         <DialogTitle>Delete Recipe?</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete "{itemToDelete?.name}"? This will also delete all
-            associated steps and product nodes. This action cannot be undone.
+            Are you sure you want to delete "{itemToDelete?.name}"? This will
+            also delete all associated steps and product nodes. This action
+            cannot be undone.
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+          >
             Delete
           </Button>
         </DialogActions>

@@ -10,13 +10,13 @@ import {
   Typography,
   Box,
 } from "@mui/material";
-import type {
-  Product,
+import {
   ProductType,
   StorageLocation,
-  Store,
-  Section,
-  ContainerType,
+  type Product,
+  type Store,
+  type Section,
+  type ContainerType,
 } from "../lib/types";
 
 interface ProductFormProps {
@@ -44,7 +44,9 @@ export interface ProductFormValues {
 
 export function useProductForm(initialValues?: Partial<ProductFormValues>) {
   const [name, setName] = useState(initialValues?.name || "");
-  const [type, setType] = useState<ProductType>(initialValues?.type || "raw");
+  const [type, setType] = useState<ProductType>(
+    initialValues?.type || ProductType.Raw
+  );
   const [pantry, setPantry] = useState(initialValues?.pantry || false);
   const [trackQuantity, setTrackQuantity] = useState(
     initialValues?.trackQuantity || false
@@ -66,7 +68,7 @@ export function useProductForm(initialValues?: Partial<ProductFormValues>) {
 
   const resetForm = () => {
     setName("");
-    setType("raw");
+    setType(ProductType.Raw);
     setPantry(false);
     setTrackQuantity(false);
     setStoreId("");
@@ -97,7 +99,7 @@ export function useProductForm(initialValues?: Partial<ProductFormValues>) {
     };
 
     // Add type-specific fields
-    if (type === "raw") {
+    if (type === ProductType.Raw) {
       data.pantry = pantry;
       data.track_quantity = pantry && trackQuantity ? true : false;
       data.store = storeId || undefined;
@@ -107,7 +109,7 @@ export function useProductForm(initialValues?: Partial<ProductFormValues>) {
       data.container_type = undefined;
       data.ready_to_eat = undefined;
       data.meal_slot = undefined;
-    } else if (type === "stored") {
+    } else if (type === ProductType.Stored) {
       data.storage_location = storageLocation || undefined;
       data.container_type = containerTypeId || undefined;
       // Clear other type fields
@@ -117,7 +119,7 @@ export function useProductForm(initialValues?: Partial<ProductFormValues>) {
       data.section = undefined;
       data.ready_to_eat = undefined;
       data.meal_slot = undefined;
-    } else if (type === "inventory") {
+    } else if (type === ProductType.Inventory) {
       data.ready_to_eat = readyToEat;
       data.meal_slot =
         readyToEat && mealSlot ? (mealSlot as "snack" | "meal") : undefined;
@@ -200,15 +202,15 @@ export default function ProductForm({
           label="Type"
           onChange={(e) => form.setType(e.target.value as ProductType)}
         >
-          <MenuItem value="raw">Raw Ingredient</MenuItem>
-          <MenuItem value="transient">Transient</MenuItem>
-          <MenuItem value="stored">Stored</MenuItem>
-          <MenuItem value="inventory">Inventory</MenuItem>
+          <MenuItem value={ProductType.Raw}>Raw Ingredient</MenuItem>
+          <MenuItem value={ProductType.Transient}>Transient</MenuItem>
+          <MenuItem value={ProductType.Stored}>Stored</MenuItem>
+          <MenuItem value={ProductType.Inventory}>Inventory</MenuItem>
         </Select>
       </FormControl>
 
       {/* Raw-specific fields */}
-      {form.type === "raw" && (
+      {form.type === ProductType.Raw && (
         <>
           <FormControlLabel
             control={
@@ -273,7 +275,7 @@ export default function ProductForm({
       )}
 
       {/* Stored-specific fields */}
-      {form.type === "stored" && (
+      {form.type === ProductType.Stored && (
         <>
           <FormControl fullWidth sx={{ mb: 2 }}>
             <InputLabel>Storage Location</InputLabel>
@@ -287,9 +289,9 @@ export default function ProductForm({
               <MenuItem value="">
                 <em>None</em>
               </MenuItem>
-              <MenuItem value="fridge">Fridge</MenuItem>
-              <MenuItem value="freezer">Freezer</MenuItem>
-              <MenuItem value="dry">Dry Storage</MenuItem>
+              <MenuItem value={StorageLocation.Fridge}>Fridge</MenuItem>
+              <MenuItem value={StorageLocation.Freezer}>Freezer</MenuItem>
+              <MenuItem value={StorageLocation.Dry}>Dry Storage</MenuItem>
             </Select>
           </FormControl>
 
@@ -314,7 +316,7 @@ export default function ProductForm({
       )}
 
       {/* Inventory-specific fields */}
-      {form.type === "inventory" && (
+      {form.type === ProductType.Inventory && (
         <>
           <FormControlLabel
             control={
@@ -358,9 +360,9 @@ export default function ProductForm({
               <MenuItem value="">
                 <em>None</em>
               </MenuItem>
-              <MenuItem value="fridge">Fridge</MenuItem>
-              <MenuItem value="freezer">Freezer</MenuItem>
-              <MenuItem value="dry">Dry Storage</MenuItem>
+              <MenuItem value={StorageLocation.Fridge}>Fridge</MenuItem>
+              <MenuItem value={StorageLocation.Freezer}>Freezer</MenuItem>
+              <MenuItem value={StorageLocation.Dry}>Dry Storage</MenuItem>
             </Select>
           </FormControl>
 
@@ -370,7 +372,7 @@ export default function ProductForm({
         </>
       )}
 
-      {form.type === "transient" && (
+      {form.type === ProductType.Transient && (
         <Typography color="text.secondary" sx={{ mt: 2 }}>
           Transient products have no additional configuration. They exist only
           during prep.

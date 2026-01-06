@@ -60,6 +60,21 @@ import {
   WeeklyViewTab,
   ProductFlowTab,
 } from "../components/outputs";
+import {
+  OutputTab,
+  OUTPUT_TAB_LABELS,
+  UI_TEXT,
+  ERROR_MESSAGES,
+  WellKnownTag,
+  findWellKnownTag,
+  DEFAULT_EXPORT_OPTIONS,
+  getPantryCheckboxKey,
+  PRODUCT_NODE_COLORS,
+  STEP_NODE_COLORS,
+  NODE_STYLE,
+  EDGE_STYLE,
+  GRAPH_LAYOUT_CONFIG,
+} from "../constants/outputs";
 
 export default function Outputs() {
   const [plans, setPlans] = useState<WeeklyPlan[]>([]);
@@ -110,7 +125,7 @@ export default function Outputs() {
     if (providers.length === 0) {
       setExportSnackbar({
         open: true,
-        message: "No export providers available",
+        message: ERROR_MESSAGES.noExportProviders,
         severity: "error",
       });
       return;
@@ -121,20 +136,12 @@ export default function Outputs() {
     const result = await provider.export(
       shoppingList,
       filteredShoppingListForExport,
-      {
-        includeQuantities: true,
-        includeStores: true,
-        includeSections: true,
-        includeRecipes: false,
-        groupBy: "store",
-        format: "checklist",
-        title: "Shopping List",
-      }
+      DEFAULT_EXPORT_OPTIONS
     );
 
     setExportSnackbar({
       open: true,
-      message: result.message || result.error || "Export completed",
+      message: result.message || result.error || UI_TEXT.exportSuccess,
       severity: result.success ? "success" : "error",
     });
   };
@@ -149,7 +156,7 @@ export default function Outputs() {
           setSelectedPlanId(plansData[0].id);
         }
       } catch {
-        setError("Failed to load plans");
+        setError(ERROR_MESSAGES.failedToLoadPlans);
       } finally {
         setLoading(false);
       }
@@ -165,13 +172,13 @@ export default function Outputs() {
       setLoadingData(true);
       setError(null);
       try {
-        // Load tags to find "micah meal" tag and build tags map
+        // Load tags to find well-known tags and build tags map
         const tags = await getAll<Tag>(collections.tags);
         const tagsMap = new Map(tags.map((t) => [t.id, t]));
         setTagsById(tagsMap);
 
-        const micahTag = tags.find(
-          (t) => t.name.toLowerCase() === "micah meal"
+        const micahTag = tags.find((t) =>
+          findWellKnownTag(t.name, WellKnownTag.MicahMeal)
         );
         if (micahTag) {
           setMicahMealTagId(micahTag.id);
@@ -257,7 +264,7 @@ export default function Outputs() {
 
         setRecipeData(recipeDataMap);
       } catch {
-        setError("Failed to load plan data");
+        setError(ERROR_MESSAGES.failedToLoadPlanData);
       } finally {
         setLoadingData(false);
       }
@@ -294,7 +301,7 @@ export default function Outputs() {
         // Apply same filtering logic as the UI
         const visibleItems = items.filter((item) => {
           if (item.isPantry) {
-            const pantryKey = `pantry-${item.productId}`;
+            const pantryKey = getPantryCheckboxKey(item.productId);
             return !checkedItems.has(pantryKey);
           }
           return true;
@@ -377,6 +384,8 @@ export default function Outputs() {
         .map((s) => `${s.count}x ${s.recipeName}`)
         .join(", ");
 
+      const colors = PRODUCT_NODE_COLORS[product.productType];
+
       nodes.push({
         id: `product-${productId}`,
         type: "default",
@@ -401,22 +410,12 @@ export default function Outputs() {
           ),
         },
         style: {
-          background:
-            product.productType === "raw"
-              ? "#e8f5e9"
-              : product.productType === "transient"
-              ? "#fff3e0"
-              : "#e3f2fd",
-          border: "2px solid",
-          borderColor:
-            product.productType === "raw"
-              ? "#4caf50"
-              : product.productType === "transient"
-              ? "#ff9800"
-              : "#2196f3",
-          borderRadius: "8px",
-          padding: 0,
-          width: 220,
+          background: colors.background,
+          border: `${NODE_STYLE.borderWidth}px solid`,
+          borderColor: colors.border,
+          borderRadius: `${NODE_STYLE.borderRadius}px`,
+          padding: NODE_STYLE.padding,
+          width: NODE_STYLE.width,
         },
       });
     });
@@ -426,6 +425,8 @@ export default function Outputs() {
       const recipeInfo = step.recipeSources
         .map((s) => `${s.count}x ${s.stepName} (${s.recipeName})`)
         .join(", ");
+
+      const colors = STEP_NODE_COLORS[step.stepType];
 
       nodes.push({
         id: `step-${stepId}`,
@@ -448,12 +449,12 @@ export default function Outputs() {
           ),
         },
         style: {
-          background: step.stepType === "prep" ? "#f3e5f5" : "#ffebee",
-          border: "2px solid",
-          borderColor: step.stepType === "prep" ? "#9c27b0" : "#f44336",
-          borderRadius: "8px",
-          padding: 0,
-          width: 220,
+          background: colors.background,
+          border: `${NODE_STYLE.borderWidth}px solid`,
+          borderColor: colors.border,
+          borderRadius: `${NODE_STYLE.borderRadius}px`,
+          padding: NODE_STYLE.padding,
+          width: NODE_STYLE.width,
         },
       });
     });
@@ -464,8 +465,8 @@ export default function Outputs() {
         id: `e-${productId}-${stepId}`,
         source: `product-${productId}`,
         target: `step-${stepId}`,
-        animated: true,
-        style: { stroke: "#888" },
+        animated: EDGE_STYLE.animated,
+        style: { stroke: EDGE_STYLE.stroke },
       });
     });
 
@@ -475,19 +476,22 @@ export default function Outputs() {
         id: `e-${stepId}-${productId}`,
         source: `step-${stepId}`,
         target: `product-${productId}`,
-        animated: true,
-        style: { stroke: "#888" },
+        animated: EDGE_STYLE.animated,
+        style: { stroke: EDGE_STYLE.stroke },
       });
     });
 
     // Use dagre to automatically layout the graph
     const dagreGraph = new dagre.graphlib.Graph();
     dagreGraph.setDefaultEdgeLabel(() => ({}));
-    dagreGraph.setGraph({ rankdir: "LR", nodesep: 80, ranksep: 150 });
+    dagreGraph.setGraph(GRAPH_LAYOUT_CONFIG);
 
     // Add nodes to dagre
     nodes.forEach((node) => {
-      dagreGraph.setNode(node.id, { width: 220, height: 120 });
+      dagreGraph.setNode(node.id, {
+        width: NODE_STYLE.width,
+        height: NODE_STYLE.height,
+      });
     });
 
     // Add edges to dagre
@@ -504,8 +508,8 @@ export default function Outputs() {
       return {
         ...node,
         position: {
-          x: nodeWithPosition.x - 110, // Center the node (width/2)
-          y: nodeWithPosition.y - 60, // Center the node (height/2)
+          x: nodeWithPosition.x - NODE_STYLE.width / 2,
+          y: nodeWithPosition.y - NODE_STYLE.height / 2,
         },
       };
     });
@@ -554,23 +558,23 @@ export default function Outputs() {
         >
           <Box>
             <Typography variant="h4" gutterBottom>
-              Outputs
+              {UI_TEXT.pageTitle}
             </Typography>
             <Typography color="text.secondary" gutterBottom>
-              Generated shopping lists, prep lists, and calendars
+              {UI_TEXT.pageDescription}
             </Typography>
           </Box>
 
           <FormControl sx={{ minWidth: 250 }}>
-            <InputLabel>Weekly Plan</InputLabel>
+            <InputLabel>{UI_TEXT.weeklyPlanLabel}</InputLabel>
             <Select
               value={selectedPlanId}
-              label="Weekly Plan"
+              label={UI_TEXT.weeklyPlanLabel}
               onChange={(e) => setSelectedPlanId(e.target.value)}
             >
               {plans.map((plan) => (
                 <MenuItem key={plan.id} value={plan.id}>
-                  {plan.name || "Unnamed Plan"}
+                  {plan.name || UI_TEXT.unnamedPlan}
                 </MenuItem>
               ))}
             </Select>
@@ -587,7 +591,7 @@ export default function Outputs() {
         {stockWarnings.some((w) => !w.inStock) && (
           <Alert severity="warning" sx={{ mb: 2 }}>
             <Typography variant="subtitle2" gutterBottom fontWeight="bold">
-              ⚠️ Out of Stock Items:
+              {UI_TEXT.outOfStockWarning}
             </Typography>
             {stockWarnings
               .filter((w) => !w.inStock)
@@ -602,7 +606,7 @@ export default function Outputs() {
         {!selectedPlanId ? (
           <Paper sx={{ p: 4, textAlign: "center" }}>
             <Typography color="text.secondary">
-              Select a weekly plan to generate outputs
+              {UI_TEXT.selectPlanPrompt}
             </Typography>
           </Paper>
         ) : loadingData ? (
@@ -613,19 +617,43 @@ export default function Outputs() {
           <>
             <Paper sx={{ mb: 2 }}>
               <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}>
-                <Tab icon={<ShoppingIcon />} label="Shopping List" />
-                <Tab icon={<PrepIcon />} label="Batch Prep" />
-                <Tab icon={<FridgeIcon />} label="Fridge/Freezer" />
-                <Tab icon={<Restaurant />} label="Meal Containers" />
-                <Tab icon={<Restaurant />} label="Micah's Meals" />
-                <Tab icon={<PullIcon />} label="Pull Lists" />
-                <Tab icon={<CalendarIcon />} label="Weekly View" />
-                <Tab icon={<FlowIcon />} label="Product Flow" />
+                <Tab
+                  icon={<ShoppingIcon />}
+                  label={OUTPUT_TAB_LABELS[OutputTab.ShoppingList]}
+                />
+                <Tab
+                  icon={<PrepIcon />}
+                  label={OUTPUT_TAB_LABELS[OutputTab.BatchPrep]}
+                />
+                <Tab
+                  icon={<FridgeIcon />}
+                  label={OUTPUT_TAB_LABELS[OutputTab.FridgeFreezer]}
+                />
+                <Tab
+                  icon={<Restaurant />}
+                  label={OUTPUT_TAB_LABELS[OutputTab.MealContainers]}
+                />
+                <Tab
+                  icon={<Restaurant />}
+                  label={OUTPUT_TAB_LABELS[OutputTab.MicahMeals]}
+                />
+                <Tab
+                  icon={<PullIcon />}
+                  label={OUTPUT_TAB_LABELS[OutputTab.PullLists]}
+                />
+                <Tab
+                  icon={<CalendarIcon />}
+                  label={OUTPUT_TAB_LABELS[OutputTab.WeeklyView]}
+                />
+                <Tab
+                  icon={<FlowIcon />}
+                  label={OUTPUT_TAB_LABELS[OutputTab.ProductFlow]}
+                />
               </Tabs>
             </Paper>
 
             {/* Shopping List Tab */}
-            {activeTab === 0 && (
+            {activeTab === OutputTab.ShoppingList && (
               <Paper sx={{ p: 2 }}>
                 <ShoppingListTab
                   groupedShoppingList={groupedShoppingList}
@@ -637,7 +665,7 @@ export default function Outputs() {
             )}
 
             {/* Batch Prep Tab */}
-            {activeTab === 1 && (
+            {activeTab === OutputTab.BatchPrep && (
               <Paper sx={{ p: 2 }} id="batch-prep-list">
                 <BatchPrepTab
                   batchPrepSteps={batchPrepSteps}
@@ -649,10 +677,10 @@ export default function Outputs() {
             )}
 
             {/* Fridge/Freezer Tab */}
-            {activeTab === 2 && (
+            {activeTab === OutputTab.FridgeFreezer && (
               <Paper sx={{ p: 2 }}>
                 <Typography variant="h6" gutterBottom>
-                  Fridge/Freezer Contents After Prep
+                  {UI_TEXT.fridgeFreezerTitle}
                 </Typography>
                 <FridgeFreezerTab
                   storedItems={storedItems}
@@ -663,13 +691,13 @@ export default function Outputs() {
             )}
 
             {/* Meal Containers Tab */}
-            {activeTab === 3 && (
+            {activeTab === OutputTab.MealContainers && (
               <Paper sx={{ p: 2 }}>
                 <Typography variant="h6" gutterBottom>
-                  Meal Containers
+                  {UI_TEXT.mealContainersTitle}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Quick reference for which containers belong to which meals
+                  {UI_TEXT.mealContainersDescription}
                 </Typography>
                 <MealContainersTab
                   mealContainers={mealContainers}
@@ -680,13 +708,13 @@ export default function Outputs() {
             )}
 
             {/* Micah's Meals Tab */}
-            {activeTab === 4 && (
+            {activeTab === OutputTab.MicahMeals && (
               <Paper sx={{ p: 2 }}>
                 <Typography variant="h6" gutterBottom>
-                  Micah's Meals
+                  {UI_TEXT.micahMealsTitle}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                  All containers for meals tagged as "Micah Meal"
+                  {UI_TEXT.micahMealsDescription}
                 </Typography>
                 <MicahMealsTab
                   micahMealContainers={micahMealContainers}
@@ -697,10 +725,10 @@ export default function Outputs() {
             )}
 
             {/* Pull Lists Tab */}
-            {activeTab === 5 && (
+            {activeTab === OutputTab.PullLists && (
               <Paper sx={{ p: 2 }}>
                 <Typography variant="h6" gutterBottom>
-                  Just-in-Time Pull Lists
+                  {UI_TEXT.pullListsTitle}
                 </Typography>
                 <PullListsTab
                   pullLists={pullLists}
@@ -711,7 +739,7 @@ export default function Outputs() {
             )}
 
             {/* Weekly View Tab */}
-            {activeTab === 6 && (
+            {activeTab === OutputTab.WeeklyView && (
               <Paper sx={{ p: 2 }}>
                 <WeeklyViewTab
                   plannedMeals={plannedMeals}
@@ -725,7 +753,7 @@ export default function Outputs() {
             )}
 
             {/* Product Flow Tab */}
-            {activeTab === 7 && (
+            {activeTab === OutputTab.ProductFlow && (
               <Paper
                 sx={{
                   p: 2,

@@ -26,8 +26,18 @@ export interface Tag extends BaseRecord {
 }
 
 // Products
-export type ProductType = "raw" | "transient" | "stored" | "inventory";
-export type StorageLocation = "fridge" | "freezer" | "dry";
+export enum ProductType {
+  Raw = "raw",
+  Transient = "transient",
+  Stored = "stored",
+  Inventory = "inventory",
+}
+
+export enum StorageLocation {
+  Fridge = "fridge",
+  Freezer = "freezer",
+  Dry = "dry",
+}
 
 export interface Product extends BaseRecord {
   name: string;
@@ -53,6 +63,9 @@ export interface Recipe extends BaseRecord {
 export interface RecipeTag extends BaseRecord {
   recipe: string; // relation ID
   tag: string; // relation ID
+  expand?: {
+    tag?: Tag;
+  };
 }
 
 // Recipe Graph Nodes
@@ -66,8 +79,15 @@ export interface RecipeProductNode extends BaseRecord {
   position_y?: number;
 }
 
-export type StepType = "prep" | "assembly";
-export type Timing = "batch" | "just_in_time";
+export enum StepType {
+  Prep = "prep",
+  Assembly = "assembly",
+}
+
+export enum Timing {
+  Batch = "batch",
+  JustInTime = "just_in_time",
+}
 
 export interface RecipeStep extends BaseRecord {
   recipe: string; // relation ID

@@ -11,6 +11,14 @@ import {
 import { Print as PrintIcon } from "@mui/icons-material";
 import type { AggregatedStep } from "../../lib/aggregation";
 import { EmptyState } from "../EmptyState";
+import {
+  UI_TEXT,
+  OUTPUT_TAB_LABELS,
+  OutputTab,
+  getBatchPrepCheckboxKey,
+  STEP_TYPE_LABELS,
+} from "../../constants/outputs";
+import { StepType } from "../../lib/types";
 
 interface BatchPrepTabProps {
   batchPrepSteps: AggregatedStep[];
@@ -26,9 +34,7 @@ export function BatchPrepTab({
   onPrint,
 }: BatchPrepTabProps) {
   if (batchPrepSteps.length === 0) {
-    return (
-      <EmptyState message="No prep steps. Make sure your recipes have prep or batch assembly steps." />
-    );
+    return <EmptyState message={UI_TEXT.noPrepSteps} />;
   }
 
   return (
@@ -40,20 +46,22 @@ export function BatchPrepTab({
         mb={2}
         className="no-print"
       >
-        <Typography variant="h6">Batch Prep List</Typography>
+        <Typography variant="h6">
+          {OUTPUT_TAB_LABELS[OutputTab.BatchPrep]}
+        </Typography>
         <Button
           variant="contained"
           color="primary"
           onClick={onPrint}
           startIcon={<PrintIcon />}
         >
-          Print
+          {UI_TEXT.printList}
         </Button>
       </Box>
 
       <List>
         {batchPrepSteps.map((step, idx) => {
-          const key = `prep-${step.stepId}`;
+          const key = getBatchPrepCheckboxKey(step.stepId);
           return (
             <ListItem
               key={step.stepId}
@@ -77,14 +85,18 @@ export function BatchPrepTab({
                   >
                     {step.name}
                     <Chip
-                      label={step.stepType}
+                      label={STEP_TYPE_LABELS[step.stepType]}
                       size="small"
                       sx={{ ml: 1 }}
-                      color={step.stepType === "prep" ? "secondary" : "error"}
+                      color={
+                        step.stepType === StepType.Assembly
+                          ? "secondary"
+                          : "error"
+                      }
                     />
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Inputs:{" "}
+                    {UI_TEXT.inputsLabel}{" "}
                     {step.inputs.length > 0
                       ? step.inputs
                           .map(
@@ -94,10 +106,10 @@ export function BatchPrepTab({
                               }`
                           )
                           .join(", ")
-                      : "None"}
+                      : UI_TEXT.noneLabel}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Outputs:{" "}
+                    {UI_TEXT.outputsLabel}{" "}
                     {step.outputs.length > 0
                       ? step.outputs
                           .map(
@@ -111,10 +123,10 @@ export function BatchPrepTab({
                               }`
                           )
                           .join(", ")
-                      : "None"}
+                      : UI_TEXT.noneLabel}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    From: {step.recipeName}
+                    {UI_TEXT.fromLabel} {step.recipeName}
                   </Typography>
                 </Box>
               </Box>

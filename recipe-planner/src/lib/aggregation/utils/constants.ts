@@ -1,4 +1,4 @@
-import type { StorageLocation, Day, MealSlot } from "../../types";
+import { StorageLocation, type Day, type MealSlot } from "../../types";
 
 // ============================================================================
 // Constants for aggregation operations
@@ -6,12 +6,12 @@ import type { StorageLocation, Day, MealSlot } from "../../types";
 
 /**
  * All possible storage locations
- * Type-checked to ensure it matches StorageLocation type
+ * Type-checked to ensure it matches StorageLocation enum
  */
 export const STORAGE_LOCATIONS: readonly StorageLocation[] = [
-  "fridge",
-  "freezer",
-  "dry",
+  StorageLocation.Fridge,
+  StorageLocation.Freezer,
+  StorageLocation.Dry,
 ] as const;
 
 /**

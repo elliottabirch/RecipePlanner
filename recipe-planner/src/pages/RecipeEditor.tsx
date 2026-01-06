@@ -51,19 +51,21 @@ import {
   remove,
   collections,
 } from "../lib/api";
-import type {
-  Recipe,
-  Product,
-  ProductExpanded,
-  RecipeProductNode,
-  RecipeStep,
-  RecipeTag,
-  ProductToStepEdge,
-  StepToProductEdge,
-  Tag,
-  Store,
-  Section,
-  ContainerType,
+import {
+  StepType,
+  Timing,
+  type Recipe,
+  type Product,
+  type ProductExpanded,
+  type RecipeProductNode,
+  type RecipeStep,
+  type RecipeTag,
+  type ProductToStepEdge,
+  type StepToProductEdge,
+  type Tag,
+  type Store,
+  type Section,
+  type ContainerType,
 } from "../lib/types";
 import ProductNode, {
   type ProductNodeData,
@@ -129,10 +131,8 @@ export default function RecipeEditor() {
   // Add step dialog
   const [stepDialogOpen, setStepDialogOpen] = useState(false);
   const [stepName, setStepName] = useState("");
-  const [stepType, setStepType] = useState<"prep" | "assembly">("prep");
-  const [stepTiming, setStepTiming] = useState<"batch" | "just_in_time">(
-    "batch"
-  );
+  const [stepType, setStepType] = useState<StepType>(StepType.Prep);
+  const [stepTiming, setStepTiming] = useState<Timing>(Timing.Batch);
 
   // Edit step dialog
   const [editStepDialogOpen, setEditStepDialogOpen] = useState(false);
@@ -370,7 +370,7 @@ export default function RecipeEditor() {
       const data = selectedNode.data as StepNodeData;
       setStepName(data.label);
       setStepType(data.stepType);
-      setStepTiming(data.timing || "batch");
+      setStepTiming(data.timing || Timing.Batch);
       setEditingNodeId(selectedNode.id);
       setEditStepDialogOpen(true);
     }
@@ -438,8 +438,8 @@ export default function RecipeEditor() {
     setEditStepDialogOpen(false);
     setEditingNodeId(null);
     setStepName("");
-    setStepType("prep");
-    setStepTiming("batch");
+    setStepType(StepType.Prep);
+    setStepTiming(Timing.Batch);
     setSelectedNode(null);
   };
 
@@ -518,8 +518,8 @@ export default function RecipeEditor() {
     setNodes((nds) => [...nds, newNode]);
     setStepDialogOpen(false);
     setStepName("");
-    setStepType("prep");
-    setStepTiming("batch");
+    setStepType(StepType.Prep);
+    setStepTiming(Timing.Batch);
   };
 
   const handleDeleteNode = async () => {
@@ -1083,12 +1083,10 @@ export default function RecipeEditor() {
             <Select
               value={stepType}
               label="Step Type"
-              onChange={(e) =>
-                setStepType(e.target.value as "prep" | "assembly")
-              }
+              onChange={(e) => setStepType(e.target.value as StepType)}
             >
-              <MenuItem value="prep">Prep (raw ingredients only)</MenuItem>
-              <MenuItem value="assembly">Assembly</MenuItem>
+              <MenuItem value={StepType.Prep}>Prep (raw ingredients only)</MenuItem>
+              <MenuItem value={StepType.Assembly}>Assembly</MenuItem>
             </Select>
           </FormControl>
 
@@ -1098,9 +1096,7 @@ export default function RecipeEditor() {
               <Select
                 value={stepTiming}
                 label="Timing"
-                onChange={(e) =>
-                  setStepTiming(e.target.value as "batch" | "just_in_time")
-                }
+                onChange={(e) => setStepTiming(e.target.value as Timing)}
               >
                 <MenuItem value="batch">Batch (prep day)</MenuItem>
                 <MenuItem value="just_in_time">
@@ -1244,8 +1240,8 @@ export default function RecipeEditor() {
           setEditStepDialogOpen(false);
           setEditingNodeId(null);
           setStepName("");
-          setStepType("prep");
-          setStepTiming("batch");
+          setStepType(StepType.Prep);
+          setStepTiming(Timing.Batch);
         }}
         maxWidth="sm"
         fullWidth
@@ -1267,12 +1263,10 @@ export default function RecipeEditor() {
             <Select
               value={stepType}
               label="Step Type"
-              onChange={(e) =>
-                setStepType(e.target.value as "prep" | "assembly")
-              }
+              onChange={(e) => setStepType(e.target.value as StepType)}
             >
-              <MenuItem value="prep">Prep (raw ingredients only)</MenuItem>
-              <MenuItem value="assembly">Assembly</MenuItem>
+              <MenuItem value={StepType.Prep}>Prep (raw ingredients only)</MenuItem>
+              <MenuItem value={StepType.Assembly}>Assembly</MenuItem>
             </Select>
           </FormControl>
 
@@ -1282,9 +1276,7 @@ export default function RecipeEditor() {
               <Select
                 value={stepTiming}
                 label="Timing"
-                onChange={(e) =>
-                  setStepTiming(e.target.value as "batch" | "just_in_time")
-                }
+                onChange={(e) => setStepTiming(e.target.value as Timing)}
               >
                 <MenuItem value="batch">Batch (prep day)</MenuItem>
                 <MenuItem value="just_in_time">
@@ -1300,8 +1292,8 @@ export default function RecipeEditor() {
               setEditStepDialogOpen(false);
               setEditingNodeId(null);
               setStepName("");
-              setStepType("prep");
-              setStepTiming("batch");
+              setStepType(StepType.Prep);
+              setStepTiming(Timing.Batch);
             }}
           >
             Cancel

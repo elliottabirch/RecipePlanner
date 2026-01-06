@@ -1,4 +1,4 @@
-import type { ProductType, Product, StorageLocation } from "../../types";
+import { ProductType, StorageLocation, type Product } from "../../types";
 
 // ============================================================================
 // Product Processing Utilities
@@ -34,7 +34,7 @@ export function createProductKey(
   plannedMealId?: string,
   instanceIndex?: number
 ): string {
-  if (productType === "stored" && mealDestination && plannedMealId) {
+  if (productType === ProductType.Stored && mealDestination && plannedMealId) {
     return `${productId}-${mealDestination}-${plannedMealId}-${
       instanceIndex || 0
     }`;
@@ -46,7 +46,7 @@ export function createProductKey(
  * Check if a product should be instanced (creates individual entries) or aggregated
  */
 export function shouldCreateInstances(productType: ProductType): boolean {
-  return productType === "stored";
+  return productType === ProductType.Stored;
 }
 
 /**
@@ -107,12 +107,12 @@ export function addMealSource(
 export function determineStorageLocation(
   product: Product
 ): StorageLocation | "pantry" {
-  if (product.type === "stored") {
-    return product.storage_location || "fridge";
-  } else if (product.type === "raw" && product.pantry) {
+  if (product.type === ProductType.Stored) {
+    return product.storage_location || StorageLocation.Fridge;
+  } else if (product.type === ProductType.Raw && product.pantry) {
     return "pantry";
-  } else if (product.type === "raw") {
-    return "fridge"; // Fresh raw ingredients assumed in fridge
+  } else if (product.type === ProductType.Raw) {
+    return StorageLocation.Fridge; // Fresh raw ingredients assumed in fridge
   }
-  return "fridge"; // Default
+  return StorageLocation.Fridge; // Default
 }

@@ -25,7 +25,7 @@ export class TextFileProvider implements ListProvider {
   }
 
   async export(
-    items: ShoppingListItem[],
+    _items: ShoppingListItem[],
     grouped: GroupedShoppingList,
     options: ExportOptions = {}
   ): Promise<ExportResult> {

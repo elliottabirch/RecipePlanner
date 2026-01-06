@@ -1,4 +1,4 @@
-import type { RecipeStep } from "../../types";
+import { StepType, Timing, type RecipeStep } from "../../types";
 
 // ============================================================================
 // Step Processing Utilities
@@ -32,8 +32,8 @@ export function createStepSignature(
  */
 export function shouldIncludeInBatchPrep(step: RecipeStep): boolean {
   return (
-    step.step_type === "prep" ||
-    (step.step_type === "assembly" && step.timing === "batch")
+    step.step_type === StepType.Prep ||
+    (step.step_type === StepType.Assembly && step.timing === Timing.Batch)
   );
 }
 
@@ -41,7 +41,9 @@ export function shouldIncludeInBatchPrep(step: RecipeStep): boolean {
  * Check if a step is just-in-time assembly
  */
 export function isJustInTimeStep(step: RecipeStep): boolean {
-  return step.step_type === "assembly" && step.timing === "just_in_time";
+  return (
+    step.step_type === StepType.Assembly && step.timing === Timing.JustInTime
+  );
 }
 
 /**

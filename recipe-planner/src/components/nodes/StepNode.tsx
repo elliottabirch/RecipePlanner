@@ -2,23 +2,24 @@ import { memo } from "react";
 import { Handle, Position, type NodeProps, type Node } from "@xyflow/react";
 import { Box, Typography, Chip } from "@mui/material";
 import { PlayArrow as StepIcon } from "@mui/icons-material";
+import { StepType, Timing } from "../../lib/types";
 
 export interface StepNodeData extends Record<string, unknown> {
   label: string;
-  stepType: "prep" | "assembly";
-  timing?: "batch" | "just_in_time";
+  stepType: StepType;
+  timing?: Timing;
 }
 
 export type StepNodeType = Node<StepNodeData, "step">;
 
-const STEP_TYPE_COLORS = {
-  prep: "#9c27b0",
-  assembly: "#f44336",
+const STEP_TYPE_COLORS: Record<StepType, string> = {
+  [StepType.Prep]: "#9c27b0",
+  [StepType.Assembly]: "#f44336",
 };
 
-const TIMING_LABELS = {
-  batch: "Batch",
-  just_in_time: "Just-in-time",
+const TIMING_LABELS: Record<Timing, string> = {
+  [Timing.Batch]: "Batch",
+  [Timing.JustInTime]: "Just-in-time",
 };
 
 function StepNode({ data, selected }: NodeProps<StepNodeType>) {
@@ -56,7 +57,7 @@ function StepNode({ data, selected }: NodeProps<StepNodeType>) {
           }}
         />
 
-        {data.stepType === "assembly" && data.timing && (
+        {data.stepType === StepType.Assembly && data.timing && (
           <Chip
             label={TIMING_LABELS[data.timing]}
             size="small"
