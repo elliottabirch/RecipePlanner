@@ -4,3 +4,5 @@ export { MicahMealsTab } from "./MicahMealsTab";
 export { PullListsTab } from "./PullListsTab";
 export { ShoppingListTab } from "./ShoppingListTab";
 export { BatchPrepTab } from "./BatchPrepTab";
+export { WeeklyViewTab } from "./WeeklyViewTab";
+export { ProductFlowTab } from "./ProductFlowTab";
