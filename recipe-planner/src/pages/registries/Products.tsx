@@ -50,12 +50,14 @@ const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
   raw: "Raw Ingredient",
   transient: "Transient",
   stored: "Stored",
+  inventory: "Inventory",
 };
 
 const PRODUCT_TYPE_COLORS: Record<ProductType, string> = {
   raw: "#4caf50",
   transient: "#ff9800",
   stored: "#2196f3",
+  inventory: "#9c27b0",
 };
 
 export default function Products() {
@@ -141,6 +143,8 @@ export default function Products() {
       productForm.setSectionId(item.section || "");
       productForm.setStorageLocation(item.storage_location || "");
       productForm.setContainerTypeId(item.container_type || "");
+      productForm.setReadyToEat(item.ready_to_eat || false);
+      productForm.setMealSlot(item.meal_slot || "");
     } else {
       setEditingItem(null);
       productForm.resetForm();
@@ -347,6 +351,33 @@ export default function Products() {
                         {item.expand?.container_type && (
                           <Typography variant="body2" component="span">
                             Container: {item.expand.container_type.name}
+                          </Typography>
+                        )}
+                      </Box>
+                    )}
+                    {item.type === "inventory" && (
+                      <Box>
+                        {item.ready_to_eat && (
+                          <Chip
+                            label={`Ready to Eat - ${
+                              item.meal_slot || "unspecified"
+                            }`}
+                            size="small"
+                            color="success"
+                            sx={{ mr: 1, textTransform: "capitalize" }}
+                          />
+                        )}
+                        {!item.ready_to_eat && (
+                          <Chip
+                            label="Ingredient Only"
+                            size="small"
+                            variant="outlined"
+                            sx={{ mr: 1 }}
+                          />
+                        )}
+                        {item.storage_location && (
+                          <Typography variant="body2" component="span">
+                            Storage: {item.storage_location}
                           </Typography>
                         )}
                       </Box>

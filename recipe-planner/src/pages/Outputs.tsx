@@ -60,6 +60,9 @@ import {
   buildBatchPrepListFromFlow,
   buildStoredItemsListFromFlow,
   buildMealContainersList,
+  getReadyToEatInventory,
+  checkInventoryStock,
+  isRecipePerishable,
   type RecipeGraphData,
   type PlannedMealWithRecipe,
 } from "../lib/aggregation";
@@ -73,6 +76,7 @@ import type {
   Day,
   RecipeTag,
   Tag,
+  InventoryItemExpanded,
 } from "../lib/types";
 import { getAvailableProviders } from "../lib/listProviders";
 
@@ -120,6 +124,9 @@ export default function Outputs() {
   );
   const [tagsById, setTagsById] = useState<Map<string, Tag>>(new Map());
   const [micahMealTagId, setMicahMealTagId] = useState<string>("");
+  const [inventoryItems, setInventoryItems] = useState<InventoryItemExpanded[]>(
+    []
+  );
 
   // Checkbox states
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
@@ -228,6 +235,13 @@ export default function Outputs() {
 
         console.log("=== Loaded Planned Meals ===");
         console.log(meals);
+
+        // Load inventory items
+        const inventory = await getAll<InventoryItemExpanded>(
+          collections.inventoryItems,
+          { expand: "product" }
+        );
+        setInventoryItems(inventory);
 
         // Get unique recipe IDs
         const recipeIds = [...new Set(meals.map((m) => m.recipe))];
@@ -374,6 +388,17 @@ export default function Outputs() {
   const mealContainers = useMemo(
     () => buildMealContainersList(productFlowGraph),
     [productFlowGraph]
+  );
+
+  // Inventory-based computed values
+  const readyToEat = useMemo(
+    () => getReadyToEatInventory(inventoryItems),
+    [inventoryItems]
+  );
+
+  const stockWarnings = useMemo(
+    () => checkInventoryStock(recipeData, inventoryItems),
+    [recipeData, inventoryItems]
   );
 
   // Filter containers for Micah meals
@@ -669,6 +694,22 @@ export default function Outputs() {
         {error && (
           <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
             {error}
+          </Alert>
+        )}
+
+        {/* Out-of-Stock Warnings */}
+        {stockWarnings.some((w) => !w.inStock) && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" gutterBottom fontWeight="bold">
+              ⚠️ Out of Stock Items:
+            </Typography>
+            {stockWarnings
+              .filter((w) => !w.inStock)
+              .map((w, i) => (
+                <Typography key={i} variant="body2">
+                  • {w.recipeName}: {w.productName}
+                </Typography>
+              ))}
           </Alert>
         )}
 
@@ -1374,34 +1415,125 @@ export default function Outputs() {
                   Weekly Calendar
                 </Typography>
 
-                {/* Week-spanning meals */}
-                {plannedMeals.filter((m) => !m.day).length > 0 && (
+                {/* Week-spanning Section */}
+                <Paper sx={{ p: 2, mb: 3, bgcolor: "grey.50" }}>
+                  <Typography
+                    variant="h6"
+                    gutterBottom
+                    sx={{ fontWeight: "bold" }}
+                  >
+                    WEEK-SPANNING
+                  </Typography>
+
+                  {/* MEALS Section */}
                   <Box mb={2}>
                     <Typography
                       variant="subtitle2"
                       color="text.secondary"
                       gutterBottom
+                      sx={{ textTransform: "uppercase", fontWeight: "bold" }}
                     >
-                      Week-spanning (grab anytime)
+                      MEALS
                     </Typography>
                     <Box display="flex" flexWrap="wrap" gap={1}>
+                      {/* Week-spanning planned meals (not snacks, not batch_prep) */}
                       {plannedMeals
-                        .filter((m) => !m.day && m.meal_slot !== "micah")
-                        .map((meal) => (
-                          <Chip
-                            key={meal.id}
-                            label={`${
-                              meal.expand?.recipe?.name || "Unknown"
-                            } (${meal.meal_slot})`}
-                            sx={{
-                              backgroundColor: SLOT_COLORS[meal.meal_slot],
-                              color: "white",
-                            }}
-                          />
-                        ))}
+                        .filter(
+                          (m) =>
+                            !m.day &&
+                            m.meal_slot !== "snack" &&
+                            m.meal_slot !== "micah"
+                        )
+                        .filter((m) => {
+                          const data = recipeData.get(m.recipe);
+                          return data?.recipe.recipe_type !== "batch_prep";
+                        })
+                        .map((meal) => {
+                          const data = recipeData.get(meal.recipe);
+                          const isPerishable = data
+                            ? isRecipePerishable(data)
+                            : false;
+                          return (
+                            <Chip
+                              key={meal.id}
+                              label={meal.expand?.recipe?.name || "Unknown"}
+                              sx={{
+                                backgroundColor: SLOT_COLORS[meal.meal_slot],
+                                color: "white",
+                                opacity: isPerishable ? 1 : 0.5,
+                                fontWeight: isPerishable ? "bold" : "normal",
+                              }}
+                            />
+                          );
+                        })}
+                      {/* Ready-to-eat inventory meals */}
+                      {readyToEat.meals.map((product) => (
+                        <Chip
+                          key={product.id}
+                          label={product.name}
+                          sx={{
+                            backgroundColor: "#e8f5e9",
+                            color: "#2e7d32",
+                            border: "1px solid #a5d6a7",
+                          }}
+                        />
+                      ))}
                     </Box>
                   </Box>
-                )}
+
+                  {/* SNACKS Section */}
+                  <Box>
+                    <Typography
+                      variant="subtitle2"
+                      color="text.secondary"
+                      gutterBottom
+                      sx={{ textTransform: "uppercase", fontWeight: "bold" }}
+                    >
+                      SNACKS
+                    </Typography>
+                    <Box display="flex" flexWrap="wrap" gap={1}>
+                      {/* Week-spanning planned snacks (not batch_prep) */}
+                      {plannedMeals
+                        .filter((m) => !m.day && m.meal_slot === "snack")
+                        .filter((m) => {
+                          const data = recipeData.get(m.recipe);
+                          return data?.recipe.recipe_type !== "batch_prep";
+                        })
+                        .map((meal) => {
+                          const data = recipeData.get(meal.recipe);
+                          const isPerishable = data
+                            ? isRecipePerishable(data)
+                            : false;
+                          return (
+                            <Chip
+                              key={meal.id}
+                              label={meal.expand?.recipe?.name || "Unknown"}
+                              size="small"
+                              sx={{
+                                backgroundColor: SLOT_COLORS[meal.meal_slot],
+                                color: "white",
+                                opacity: isPerishable ? 1 : 0.5,
+                                fontWeight: isPerishable ? "bold" : "normal",
+                              }}
+                            />
+                          );
+                        })}
+                      {/* Ready-to-eat inventory snacks */}
+                      {readyToEat.snacks.map((product) => (
+                        <Chip
+                          key={product.id}
+                          label={product.name}
+                          size="small"
+                          sx={{
+                            backgroundColor: "#f3e5f5",
+                            color: "#7b1fa2",
+                            border: "1px solid #ce93d8",
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  </Box>
+                </Paper>
 
                 <TableContainer>
                   <Table size="small">
@@ -1442,21 +1574,35 @@ export default function Outputs() {
                                   m.meal_slot === slot.value &&
                                   slot.value !== "micah"
                               );
+
+                              // Filter to only include meal recipes (not batch_prep)
+                              const mealRecipes = meals.filter((m) => {
+                                const data = recipeData.get(m.recipe);
+                                return (
+                                  data?.recipe.recipe_type !== "batch_prep"
+                                );
+                              });
+
                               return (
                                 <TableCell
                                   key={day.value}
                                   sx={{
                                     verticalAlign: "top",
                                     backgroundColor:
-                                      meals.length > 0
+                                      mealRecipes.length > 0
                                         ? "action.hover"
                                         : "inherit",
                                     minWidth: 100,
                                     p: 0.5,
                                   }}
                                 >
-                                  {meals.map((meal) => {
+                                  {mealRecipes.map((meal) => {
                                     const isMicah = isMicahMeal(meal);
+                                    const data = recipeData.get(meal.recipe);
+                                    const isPerishable = data
+                                      ? isRecipePerishable(data)
+                                      : false;
+
                                     return (
                                       <Box
                                         key={meal.id}
@@ -1474,18 +1620,21 @@ export default function Outputs() {
                                           boxShadow: isMicah
                                             ? "0 0 8px rgba(156, 39, 176, 0.6)"
                                             : "none",
+                                          opacity: isPerishable ? 1 : 0.6,
                                         }}
                                       >
                                         <Typography
                                           variant="caption"
                                           sx={{
                                             color: "inherit",
-                                            fontWeight: isMicah
-                                              ? "bold"
-                                              : "normal",
+                                            fontWeight:
+                                              isMicah || isPerishable
+                                                ? "bold"
+                                                : "normal",
                                           }}
                                         >
                                           {isMicah && "⭐ "}
+                                          {isPerishable && "🥬 "}
                                           {meal.expand?.recipe?.name || "?"}
                                           {meal.quantity &&
                                             meal.quantity > 1 &&

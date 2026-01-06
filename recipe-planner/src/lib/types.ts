@@ -26,7 +26,7 @@ export interface Tag extends BaseRecord {
 }
 
 // Products
-export type ProductType = "raw" | "transient" | "stored";
+export type ProductType = "raw" | "transient" | "stored" | "inventory";
 export type StorageLocation = "fridge" | "freezer" | "dry";
 
 export interface Product extends BaseRecord {
@@ -38,12 +38,16 @@ export interface Product extends BaseRecord {
   section?: string; // relation ID
   storage_location?: StorageLocation;
   container_type?: string; // relation ID
+  // New fields for inventory
+  ready_to_eat?: boolean;
+  meal_slot?: "snack" | "meal";
 }
 
 // Recipes
 export interface Recipe extends BaseRecord {
   name: string;
   notes?: string;
+  recipe_type?: "meal" | "batch_prep";
 }
 
 export interface RecipeTag extends BaseRecord {
@@ -101,6 +105,19 @@ export interface PlannedMeal extends BaseRecord {
   meal_slot: MealSlot;
   day?: Day;
   quantity?: number;
+}
+
+// Inventory
+export interface InventoryItem extends BaseRecord {
+  product: string; // relation ID
+  in_stock: boolean;
+  notes?: string;
+}
+
+export interface InventoryItemExpanded extends InventoryItem {
+  expand?: {
+    product?: Product;
+  };
 }
 
 // Expanded types (with relations populated)

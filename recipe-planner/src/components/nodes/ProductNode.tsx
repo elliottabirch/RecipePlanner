@@ -6,7 +6,7 @@ import { Egg as ProductIcon } from "@mui/icons-material";
 export interface ProductNodeData extends Record<string, unknown> {
   label: string;
   productId: string;
-  productType: "raw" | "transient" | "stored";
+  productType: "raw" | "transient" | "stored" | "inventory";
   quantity?: number;
   unit?: string;
   mealDestination?: string;
@@ -18,6 +18,7 @@ const TYPE_COLORS = {
   raw: "#4caf50",
   transient: "#ff9800",
   stored: "#2196f3",
+  inventory: "#9c27b0",
 };
 
 function ProductNode({ data, selected }: NodeProps<ProductNodeType>) {

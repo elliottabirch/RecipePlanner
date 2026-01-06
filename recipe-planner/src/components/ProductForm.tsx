@@ -38,6 +38,8 @@ export interface ProductFormValues {
   sectionId: string;
   storageLocation: StorageLocation | "";
   containerTypeId: string;
+  readyToEat: boolean;
+  mealSlot: "snack" | "meal" | "";
 }
 
 export function useProductForm(initialValues?: Partial<ProductFormValues>) {
@@ -55,6 +57,12 @@ export function useProductForm(initialValues?: Partial<ProductFormValues>) {
   const [containerTypeId, setContainerTypeId] = useState(
     initialValues?.containerTypeId || ""
   );
+  const [readyToEat, setReadyToEat] = useState(
+    initialValues?.readyToEat || false
+  );
+  const [mealSlot, setMealSlot] = useState<"snack" | "meal" | "">(
+    initialValues?.mealSlot || ""
+  );
 
   const resetForm = () => {
     setName("");
@@ -65,6 +73,8 @@ export function useProductForm(initialValues?: Partial<ProductFormValues>) {
     setSectionId("");
     setStorageLocation("");
     setContainerTypeId("");
+    setReadyToEat(false);
+    setMealSlot("");
   };
 
   const getValues = (): ProductFormValues => ({
@@ -76,6 +86,8 @@ export function useProductForm(initialValues?: Partial<ProductFormValues>) {
     sectionId,
     storageLocation,
     containerTypeId,
+    readyToEat,
+    mealSlot,
   });
 
   const getProductData = (): Partial<Product> => {
@@ -90,17 +102,32 @@ export function useProductForm(initialValues?: Partial<ProductFormValues>) {
       data.track_quantity = pantry && trackQuantity ? true : false;
       data.store = storeId || undefined;
       data.section = sectionId || undefined;
-      // Clear stored fields
+      // Clear other type fields
       data.storage_location = undefined;
       data.container_type = undefined;
+      data.ready_to_eat = undefined;
+      data.meal_slot = undefined;
     } else if (type === "stored") {
       data.storage_location = storageLocation || undefined;
       data.container_type = containerTypeId || undefined;
-      // Clear raw fields
+      // Clear other type fields
       data.pantry = false;
       data.track_quantity = false;
       data.store = undefined;
       data.section = undefined;
+      data.ready_to_eat = undefined;
+      data.meal_slot = undefined;
+    } else if (type === "inventory") {
+      data.ready_to_eat = readyToEat;
+      data.meal_slot =
+        readyToEat && mealSlot ? (mealSlot as "snack" | "meal") : undefined;
+      data.storage_location = storageLocation || undefined;
+      // Clear other type fields
+      data.pantry = false;
+      data.track_quantity = false;
+      data.store = undefined;
+      data.section = undefined;
+      data.container_type = undefined;
     } else {
       // Transient - clear all type-specific fields
       data.pantry = false;
@@ -109,6 +136,8 @@ export function useProductForm(initialValues?: Partial<ProductFormValues>) {
       data.section = undefined;
       data.storage_location = undefined;
       data.container_type = undefined;
+      data.ready_to_eat = undefined;
+      data.meal_slot = undefined;
     }
 
     return data;
@@ -135,6 +164,10 @@ export function useProductForm(initialValues?: Partial<ProductFormValues>) {
     setStorageLocation,
     containerTypeId,
     setContainerTypeId,
+    readyToEat,
+    setReadyToEat,
+    mealSlot,
+    setMealSlot,
     resetForm,
     getValues,
     getProductData,
@@ -170,6 +203,7 @@ export default function ProductForm({
           <MenuItem value="raw">Raw Ingredient</MenuItem>
           <MenuItem value="transient">Transient</MenuItem>
           <MenuItem value="stored">Stored</MenuItem>
+          <MenuItem value="inventory">Inventory</MenuItem>
         </Select>
       </FormControl>
 
@@ -276,6 +310,63 @@ export default function ProductForm({
               ))}
             </Select>
           </FormControl>
+        </>
+      )}
+
+      {/* Inventory-specific fields */}
+      {form.type === "inventory" && (
+        <>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={form.readyToEat}
+                onChange={(e) => form.setReadyToEat(e.target.checked)}
+              />
+            }
+            label="Ready to Eat (can be consumed without cooking)"
+            sx={{ mb: 2, display: "block" }}
+          />
+
+          {form.readyToEat && (
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel>Meal Slot</InputLabel>
+              <Select
+                value={form.mealSlot}
+                label="Meal Slot"
+                onChange={(e) =>
+                  form.setMealSlot(e.target.value as "snack" | "meal")
+                }
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                <MenuItem value="meal">Meal</MenuItem>
+                <MenuItem value="snack">Snack</MenuItem>
+              </Select>
+            </FormControl>
+          )}
+
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Storage Location</InputLabel>
+            <Select
+              value={form.storageLocation}
+              label="Storage Location"
+              onChange={(e) =>
+                form.setStorageLocation(e.target.value as StorageLocation)
+              }
+            >
+              <MenuItem value="">
+                <em>None</em>
+              </MenuItem>
+              <MenuItem value="fridge">Fridge</MenuItem>
+              <MenuItem value="freezer">Freezer</MenuItem>
+              <MenuItem value="dry">Dry Storage</MenuItem>
+            </Select>
+          </FormControl>
+
+          <Typography color="text.secondary" variant="body2" sx={{ mt: 1 }}>
+            Inventory items are tracked long-term across multiple weeks.
+          </Typography>
         </>
       )}
 

@@ -11,6 +11,7 @@ import type {
   ContainerType,
   MealSlot,
   Day,
+  InventoryItemExpanded,
 } from "./types";
 
 // ============================================================================
@@ -20,7 +21,7 @@ import type {
 export interface AggregatedProduct {
   productId: string;
   productName: string;
-  productType: "raw" | "transient" | "stored";
+  productType: "raw" | "transient" | "stored" | "inventory";
   isPantry: boolean;
   trackQuantity?: boolean;
   totalQuantity: number;
@@ -88,7 +89,7 @@ export interface MealContainer {
 export interface AggregatedFlowProduct {
   productId: string;
   productName: string;
-  productType: "raw" | "transient" | "stored";
+  productType: "raw" | "transient" | "stored" | "inventory";
   totalQuantity: number;
   unit: string;
   // Track which meals contribute to this product
@@ -848,4 +849,84 @@ export function buildMealContainersList(
   });
 
   return result.sort((a, b) => a.recipeName.localeCompare(b.recipeName));
+}
+
+/**
+ * Get ready-to-eat inventory items grouped by meal slot
+ */
+export function getReadyToEatInventory(
+  inventoryItems: InventoryItemExpanded[]
+): { meals: Product[]; snacks: Product[] } {
+  const meals: Product[] = [];
+  const snacks: Product[] = [];
+
+  inventoryItems.forEach((item) => {
+    const product = item.expand?.product;
+    if (!product || !item.in_stock || !product.ready_to_eat) {
+      return;
+    }
+
+    if (product.meal_slot === "meal") {
+      meals.push(product);
+    } else if (product.meal_slot === "snack") {
+      snacks.push(product);
+    }
+  });
+
+  return { meals, snacks };
+}
+
+/**
+ * Check stock status for inventory products used in recipes
+ */
+export function checkInventoryStock(
+  recipeDataMap: Map<string, RecipeGraphData>,
+  inventoryItems: InventoryItemExpanded[]
+): {
+  recipeId: string;
+  recipeName: string;
+  productName: string;
+  inStock: boolean;
+}[] {
+  const warnings: {
+    recipeId: string;
+    recipeName: string;
+    productName: string;
+    inStock: boolean;
+  }[] = [];
+
+  // Create a map of product IDs to stock status
+  const stockMap = new Map<string, boolean>();
+  inventoryItems.forEach((item) => {
+    if (item.expand?.product) {
+      stockMap.set(item.product, item.in_stock);
+    }
+  });
+
+  recipeDataMap.forEach((data) => {
+    data.productNodes.forEach((node) => {
+      const product = node.expand?.product;
+      if (product?.type === "inventory") {
+        const inStock = stockMap.get(product.id) ?? false;
+        warnings.push({
+          recipeId: data.recipe.id,
+          recipeName: data.recipe.name,
+          productName: product.name,
+          inStock,
+        });
+      }
+    });
+  });
+
+  return warnings;
+}
+
+/**
+ * Determine if a recipe is perishable (has raw product inputs)
+ */
+export function isRecipePerishable(data: RecipeGraphData): boolean {
+  return data.productNodes.some((node) => {
+    const product = node.expand?.product;
+    return product?.type === "raw";
+  });
 }

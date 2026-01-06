@@ -88,7 +88,7 @@ export default function RecipeEditor() {
   const navigate = useNavigate();
   const isNew = !id;
 
-  const [recipe, setRecipe] = useState<Recipe | null>(null);
+  const [, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,6 +96,7 @@ export default function RecipeEditor() {
   // Form fields
   const [name, setName] = useState("");
   const [notes, setNotes] = useState("");
+  const [recipeType, setRecipeType] = useState<"meal" | "batch_prep">("meal");
 
   // React Flow state
   const [nodes, setNodes, onNodesChange] = useNodesState<FlowNode>([]);
@@ -245,6 +246,7 @@ export default function RecipeEditor() {
       setRecipe(recipeData);
       setName(recipeData.name);
       setNotes(recipeData.notes || "");
+      setRecipeType(recipeData.recipe_type || "meal");
 
       // Set selected tags
       const tags = recipeTags
@@ -398,7 +400,7 @@ export default function RecipeEditor() {
                   : productUnit || undefined,
               mealDestination: productMealDestination || undefined,
             },
-          };
+          } as FlowNode;
         }
         return node;
       })
@@ -427,7 +429,7 @@ export default function RecipeEditor() {
               stepType: stepType,
               timing: stepType === "assembly" ? stepTiming : undefined,
             },
-          };
+          } as FlowNode;
         }
         return node;
       })
@@ -559,12 +561,14 @@ export default function RecipeEditor() {
         const newRecipe = await create<Recipe>(collections.recipes, {
           name: name.trim(),
           notes: notes.trim() || undefined,
+          recipe_type: recipeType,
         });
         recipeId = newRecipe.id;
       } else {
         await update(collections.recipes, id!, {
           name: name.trim(),
           notes: notes.trim() || undefined,
+          recipe_type: recipeType,
         });
       }
 
@@ -767,6 +771,20 @@ export default function RecipeEditor() {
             sx={{ width: 300 }}
           />
 
+          <FormControl size="small" sx={{ width: 180 }}>
+            <InputLabel>Recipe Type</InputLabel>
+            <Select
+              value={recipeType}
+              label="Recipe Type"
+              onChange={(e) =>
+                setRecipeType(e.target.value as "meal" | "batch_prep")
+              }
+            >
+              <MenuItem value="meal">Meal Recipe</MenuItem>
+              <MenuItem value="batch_prep">Batch Prep</MenuItem>
+            </Select>
+          </FormControl>
+
           <Box flexGrow={1} />
 
           <Button
@@ -845,7 +863,7 @@ export default function RecipeEditor() {
           onConnect={onConnect}
           onNodeClick={onNodeClick}
           onPaneClick={onPaneClick}
-          onEdgeDoubleClick={(event, current_edge) => {
+          onEdgeDoubleClick={(_, current_edge) => {
             setEdges(edges.filter((edge) => edge.id !== current_edge.id));
           }}
           nodeTypes={nodeTypes}

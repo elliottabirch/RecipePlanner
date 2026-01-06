@@ -28,6 +28,7 @@ import {
   Label as TagIcon,
   Egg as ProductIcon,
   Settings as RegistryIcon,
+  Inventory2 as InventoryIcon,
 } from "@mui/icons-material";
 
 const DRAWER_WIDTH = 260;
@@ -111,6 +112,17 @@ export default function Layout() {
           <ListItemText primary="Outputs" />
         </ListItemButton>
 
+        {/* Inventory */}
+        <ListItemButton
+          selected={isActive("/inventory")}
+          onClick={() => handleNavClick("/inventory")}
+        >
+          <ListItemIcon>
+            <InventoryIcon />
+          </ListItemIcon>
+          <ListItemText primary="Inventory" />
+        </ListItemButton>
+
         {/* Registries (collapsible) */}
         <ListItemButton onClick={() => setRegistriesOpen(!registriesOpen)}>
           <ListItemIcon>
@@ -163,6 +175,8 @@ export default function Layout() {
               ? "Recipes"
               : location.pathname.includes("/plans")
               ? "Weekly Plans"
+              : location.pathname.includes("/inventory")
+              ? "Inventory"
               : location.pathname.includes("/outputs")
               ? "Outputs"
               : "Meal Planner"}
