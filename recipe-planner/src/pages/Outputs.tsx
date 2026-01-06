@@ -18,8 +18,6 @@ import {
   Checkbox,
   Divider,
   Chip,
-  Card,
-  CardContent,
   Table,
   TableBody,
   TableCell,
@@ -79,7 +77,12 @@ import type {
 } from "../lib/types";
 import { getAvailableProviders } from "../lib/listProviders";
 import { DAYS, MEAL_SLOTS, SLOT_COLORS } from "../constants/mealPlanning";
-import { FridgeFreezerTab, MealContainersTab } from "../components/outputs";
+import {
+  FridgeFreezerTab,
+  MealContainersTab,
+  MicahMealsTab,
+  PullListsTab,
+} from "../components/outputs";
 
 export default function Outputs() {
   const [plans, setPlans] = useState<WeeklyPlan[]>([]);
@@ -986,91 +989,11 @@ export default function Outputs() {
                 <Typography variant="body2" color="text.secondary" gutterBottom>
                   All containers for meals tagged as "Micah Meal"
                 </Typography>
-
-                {micahMealContainers.length === 0 ? (
-                  <Typography color="text.secondary">
-                    No Micah meals found. Tag recipes with "Micah Meal" to see
-                    them here.
-                  </Typography>
-                ) : (
-                  micahMealContainers.map((meal, idx) => (
-                    <Card
-                      key={idx}
-                      variant="outlined"
-                      sx={{ mb: 2, borderColor: "#9c27b0", borderWidth: 2 }}
-                    >
-                      <CardContent>
-                        <Typography variant="h6" gutterBottom color="primary">
-                          {meal.recipeName}
-                        </Typography>
-
-                        {/* Group by storage location */}
-                        {(["fridge", "freezer", "dry"] as const).map(
-                          (location) => {
-                            const containers = meal.containers.filter(
-                              (c) => c.storageLocation === location
-                            );
-                            if (containers.length === 0) return null;
-
-                            return (
-                              <Box key={location} mb={2}>
-                                <Typography
-                                  variant="subtitle2"
-                                  color="text.secondary"
-                                  textTransform="uppercase"
-                                  gutterBottom
-                                >
-                                  In {location}:
-                                </Typography>
-                                <List dense disablePadding>
-                                  {containers.map((container, containerIdx) => {
-                                    const key = `micah-container-${idx}-${location}-${containerIdx}`;
-                                    return (
-                                      <ListItem
-                                        key={containerIdx}
-                                        disablePadding
-                                        sx={{ ml: 2 }}
-                                      >
-                                        <ListItemIcon sx={{ minWidth: 32 }}>
-                                          <Checkbox
-                                            edge="start"
-                                            checked={checkedItems.has(key)}
-                                            onChange={() => toggleChecked(key)}
-                                            size="small"
-                                          />
-                                        </ListItemIcon>
-                                        <ListItemText
-                                          primary={
-                                            <Typography
-                                              variant="body2"
-                                              sx={{
-                                                textDecoration:
-                                                  checkedItems.has(key)
-                                                    ? "line-through"
-                                                    : "none",
-                                                fontWeight: "bold",
-                                              }}
-                                            >
-                                              {container.quantity &&
-                                                `${container.quantity}× `}
-                                              {container.productName}
-                                              {container.containerTypeName &&
-                                                ` (${container.containerTypeName})`}
-                                            </Typography>
-                                          }
-                                        />
-                                      </ListItem>
-                                    );
-                                  })}
-                                </List>
-                              </Box>
-                            );
-                          }
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
+                <MicahMealsTab
+                  micahMealContainers={micahMealContainers}
+                  checkedItems={checkedItems}
+                  onToggleChecked={toggleChecked}
+                />
               </Paper>
             )}
 
@@ -1080,104 +1003,11 @@ export default function Outputs() {
                 <Typography variant="h6" gutterBottom>
                   Just-in-Time Pull Lists
                 </Typography>
-
-                {pullLists.length === 0 ? (
-                  <Typography color="text.secondary">
-                    No just-in-time meals. Make sure your recipes have assembly
-                    steps with timing set to "just_in_time".
-                  </Typography>
-                ) : (
-                  pullLists.map((pullList, idx) => {
-                    const dayLabel =
-                      DAYS.find((d) => d.value === pullList.day)?.label ||
-                      pullList.day;
-                    const slotLabel =
-                      MEAL_SLOTS.find((s) => s.value === pullList.slot)
-                        ?.label || pullList.slot;
-
-                    return (
-                      <Card key={idx} variant="outlined" sx={{ mb: 2 }}>
-                        <CardContent>
-                          <Box
-                            display="flex"
-                            alignItems="center"
-                            gap={1}
-                            mb={1}
-                          >
-                            <Chip
-                              label={slotLabel}
-                              size="small"
-                              sx={{
-                                backgroundColor: SLOT_COLORS[pullList.slot],
-                                color: "white",
-                              }}
-                            />
-                            <Typography variant="subtitle1" fontWeight="bold">
-                              {dayLabel}: {pullList.recipeName}
-                            </Typography>
-                          </Box>
-
-                          {(
-                            ["fridge", "freezer", "pantry", "dry"] as const
-                          ).map((storage) => {
-                            const items = pullList.items.filter(
-                              (i) => i.fromStorage === storage
-                            );
-                            if (items.length === 0) return null;
-
-                            return (
-                              <Box key={storage} ml={1} mb={1}>
-                                <Typography
-                                  variant="caption"
-                                  color="text.secondary"
-                                  textTransform="uppercase"
-                                >
-                                  From {storage}:
-                                </Typography>
-                                <List dense disablePadding>
-                                  {items.map((item, itemIdx) => {
-                                    const key = `pull-${idx}-${storage}-${itemIdx}`;
-                                    return (
-                                      <ListItem key={itemIdx} disablePadding>
-                                        <ListItemIcon sx={{ minWidth: 32 }}>
-                                          <Checkbox
-                                            edge="start"
-                                            checked={checkedItems.has(key)}
-                                            onChange={() => toggleChecked(key)}
-                                            size="small"
-                                          />
-                                        </ListItemIcon>
-                                        <ListItemText
-                                          primary={
-                                            <Typography
-                                              variant="body2"
-                                              sx={{
-                                                textDecoration:
-                                                  checkedItems.has(key)
-                                                    ? "line-through"
-                                                    : "none",
-                                              }}
-                                            >
-                                              {item.productName}
-                                              {item.quantity &&
-                                                ` — ${item.quantity} ${item.unit}`}
-                                              {item.containerTypeName &&
-                                                ` (${item.containerTypeName})`}
-                                            </Typography>
-                                          }
-                                        />
-                                      </ListItem>
-                                    );
-                                  })}
-                                </List>
-                              </Box>
-                            );
-                          })}
-                        </CardContent>
-                      </Card>
-                    );
-                  })
-                )}
+                <PullListsTab
+                  pullLists={pullLists}
+                  checkedItems={checkedItems}
+                  onToggleChecked={toggleChecked}
+                />
               </Paper>
             )}
 
