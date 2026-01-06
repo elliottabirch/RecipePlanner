@@ -13,8 +13,6 @@ import {
   Tab,
   List,
   ListItem,
-  ListItemIcon,
-  ListItemText,
   Checkbox,
   Divider,
   Chip,
@@ -35,7 +33,6 @@ import {
   Restaurant as PullIcon,
   CalendarMonth as CalendarIcon,
   AccountTree as FlowIcon,
-  ContentCopy as ContentCopyIcon,
   Print as PrintIcon,
 } from "@mui/icons-material";
 import {
@@ -82,6 +79,7 @@ import {
   MealContainersTab,
   MicahMealsTab,
   PullListsTab,
+  ShoppingListTab,
 } from "../components/outputs";
 
 export default function Outputs() {
@@ -663,165 +661,12 @@ export default function Outputs() {
             {/* Shopping List Tab */}
             {activeTab === 0 && (
               <Paper sx={{ p: 2 }}>
-                <Box
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  mb={2}
-                >
-                  <Typography variant="h6">Shopping List</Typography>
-                  {shoppingList.length > 0 && (
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={handleExport}
-                      startIcon={<ContentCopyIcon />}
-                    >
-                      Copy to Clipboard
-                    </Button>
-                  )}
-                </Box>
-
-                {shoppingList.length === 0 ? (
-                  <Typography color="text.secondary">
-                    No items to shop for. Make sure your recipes have raw
-                    product nodes connected to steps.
-                  </Typography>
-                ) : (
-                  <>
-                    {Array.from(groupedShoppingList.byStore.entries()).map(
-                      ([storeName, sections]) => (
-                        <Box key={storeName} mb={3}>
-                          <Typography
-                            variant="subtitle1"
-                            fontWeight="bold"
-                            sx={{ mb: 1 }}
-                          >
-                            {storeName}
-                          </Typography>
-                          {Array.from(sections.entries()).map(
-                            ([sectionName, items]) => {
-                              // Filter out pantry items checked in the pantry section
-                              const visibleItems = items.filter((item) => {
-                                if (item.isPantry) {
-                                  const pantryKey = `pantry-${item.productId}`;
-                                  return !checkedItems.has(pantryKey);
-                                }
-                                return true;
-                              });
-
-                              if (visibleItems.length === 0) return null;
-
-                              return (
-                                <Box key={sectionName} ml={2} mb={2}>
-                                  <Typography
-                                    variant="subtitle2"
-                                    color="text.secondary"
-                                    gutterBottom
-                                  >
-                                    {sectionName}
-                                  </Typography>
-                                  <List dense>
-                                    {visibleItems.map((item) => {
-                                      const key = `shop-${item.productId}`;
-                                      return (
-                                        <ListItem
-                                          key={item.productId}
-                                          disablePadding
-                                        >
-                                          <ListItemIcon sx={{ minWidth: 36 }}>
-                                            <Checkbox
-                                              edge="start"
-                                              checked={checkedItems.has(key)}
-                                              onChange={() =>
-                                                toggleChecked(key)
-                                              }
-                                              size="small"
-                                            />
-                                          </ListItemIcon>
-                                          <ListItemText
-                                            primary={
-                                              <span
-                                                style={{
-                                                  textDecoration:
-                                                    checkedItems.has(key)
-                                                      ? "line-through"
-                                                      : "none",
-                                                }}
-                                              >
-                                                {item.productName} —{" "}
-                                                {item.totalQuantity} {item.unit}
-                                              </span>
-                                            }
-                                            secondary={item.sources
-                                              .map((s) => s.recipeName)
-                                              .join(", ")}
-                                          />
-                                        </ListItem>
-                                      );
-                                    })}
-                                  </List>
-                                </Box>
-                              );
-                            }
-                          )}
-                        </Box>
-                      )
-                    )}
-
-                    {groupedShoppingList.pantryItems.length > 0 && (
-                      <Box>
-                        <Typography
-                          variant="subtitle1"
-                          fontWeight="bold"
-                          sx={{ mb: 1 }}
-                        >
-                          Pantry Check
-                        </Typography>
-                        <List dense>
-                          {groupedShoppingList.pantryItems.map((item) => {
-                            const key = `pantry-${item.productId}`;
-                            const showQuantity = item.trackQuantity;
-                            return (
-                              <ListItem key={item.productId} disablePadding>
-                                <ListItemIcon sx={{ minWidth: 36 }}>
-                                  <Checkbox
-                                    edge="start"
-                                    checked={checkedItems.has(key)}
-                                    onChange={() => toggleChecked(key)}
-                                    size="small"
-                                  />
-                                </ListItemIcon>
-                                <ListItemText
-                                  primary={
-                                    <span
-                                      style={{
-                                        textDecoration: checkedItems.has(key)
-                                          ? "line-through"
-                                          : "none",
-                                      }}
-                                    >
-                                      {item.productName}
-                                      {showQuantity &&
-                                        ` — ${item.totalQuantity} ${item.unit}`}
-                                    </span>
-                                  }
-                                  secondary={
-                                    showQuantity
-                                      ? item.sources
-                                          .map((s) => s.recipeName)
-                                          .join(", ")
-                                      : undefined
-                                  }
-                                />
-                              </ListItem>
-                            );
-                          })}
-                        </List>
-                      </Box>
-                    )}
-                  </>
-                )}
+                <ShoppingListTab
+                  groupedShoppingList={groupedShoppingList}
+                  checkedItems={checkedItems}
+                  onToggleChecked={toggleChecked}
+                  onExport={handleExport}
+                />
               </Paper>
             )}
 
