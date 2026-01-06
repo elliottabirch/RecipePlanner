@@ -52,6 +52,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import dagre from "dagre";
 import { getAll, collections } from "../lib/api";
+import "../styles/printStyles.css";
 import {
   groupShoppingList,
   buildPullLists,
@@ -72,39 +73,12 @@ import type {
   RecipeStep,
   ProductToStepEdge,
   StepToProductEdge,
-  MealSlot,
-  Day,
   RecipeTag,
   Tag,
   InventoryItemExpanded,
 } from "../lib/types";
 import { getAvailableProviders } from "../lib/listProviders";
-
-const DAYS: { value: Day; label: string }[] = [
-  { value: "mon", label: "Monday" },
-  { value: "tue", label: "Tuesday" },
-  { value: "wed", label: "Wednesday" },
-  { value: "thu", label: "Thursday" },
-  { value: "fri", label: "Friday" },
-  { value: "sat", label: "Saturday" },
-  { value: "sun", label: "Sunday" },
-];
-
-const MEAL_SLOTS: { value: MealSlot; label: string }[] = [
-  { value: "breakfast", label: "Breakfast" },
-  { value: "lunch", label: "Lunch" },
-  { value: "dinner", label: "Dinner" },
-  { value: "snack", label: "Snack" },
-  { value: "micah", label: "Micah Meal" },
-];
-
-const SLOT_COLORS: Record<MealSlot, string> = {
-  breakfast: "#ff9800",
-  lunch: "#4caf50",
-  dinner: "#2196f3",
-  snack: "#9c27b0",
-  micah: "#00bcd4", // Teal/cyan color
-};
+import { DAYS, MEAL_SLOTS, SLOT_COLORS } from "../constants/mealPlanning";
 
 export default function Outputs() {
   const [plans, setPlans] = useState<WeeklyPlan[]>([]);
@@ -593,62 +567,6 @@ export default function Outputs() {
 
   return (
     <>
-      <style>
-        {`
-          @media print {
-            /* Hide navigation elements */
-            .no-print {
-              display: none !important;
-            }
-            
-            /* Override container height constraints for print */
-            body, html, #root {
-              height: auto !important;
-              overflow: visible !important;
-            }
-            
-            /* Make main container visible and remove height constraints */
-            .print-container {
-              height: auto !important;
-              overflow: visible !important;
-              display: block !important;
-            }
-            
-            /* Reset page styling for print */
-            #batch-prep-list {
-              box-shadow: none !important;
-              border: none !important;
-              margin: 0 !important;
-              padding: 20px !important;
-              height: auto !important;
-              overflow: visible !important;
-            }
-            
-            /* Ensure Paper component is visible */
-            .MuiPaper-root {
-              box-shadow: none !important;
-              background: white !important;
-            }
-            
-            /* Ensure checkboxes are visible in print */
-            input[type="checkbox"] {
-              appearance: auto;
-              -webkit-appearance: checkbox;
-            }
-            
-            /* Page break control */
-            .MuiListItem-root {
-              page-break-inside: avoid;
-            }
-            
-            /* Ensure list is visible */
-            .MuiList-root {
-              height: auto !important;
-              overflow: visible !important;
-            }
-          }
-        `}
-      </style>
       <Box
         sx={{
           display: "flex",

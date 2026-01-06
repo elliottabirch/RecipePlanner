@@ -1,0 +1,54 @@
+@media print {
+  /* Hide navigation elements */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Override container height constraints for print */
+  body,
+  html,
+  #root {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Make main container visible and remove height constraints */
+  .print-container {
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  /* Reset page styling for print */
+  #batch-prep-list {
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 20px !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Ensure Paper component is visible */
+  .MuiPaper-root {
+    box-shadow: none !important;
+    background: white !important;
+  }
+
+  /* Ensure checkboxes are visible in print */
+  input[type="checkbox"] {
+    appearance: auto;
+    -webkit-appearance: checkbox;
+  }
+
+  /* Page break control */
+  .MuiListItem-root {
+    page-break-inside: avoid;
+  }
+
+  /* Ensure list is visible */
+  .MuiList-root {
+    height: auto !important;
+    overflow: visible !important;
+  }
+}
