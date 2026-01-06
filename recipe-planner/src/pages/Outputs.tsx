@@ -148,9 +148,8 @@ export default function Outputs() {
         if (plansData.length > 0) {
           setSelectedPlanId(plansData[0].id);
         }
-      } catch (err) {
+      } catch {
         setError("Failed to load plans");
-        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -188,9 +187,6 @@ export default function Outputs() {
         );
         setPlannedMeals(meals);
 
-        console.log("=== Loaded Planned Meals ===");
-        console.log(meals);
-
         // Load inventory items
         const inventory = await getAll<InventoryItemExpanded>(
           collections.inventoryItems,
@@ -200,7 +196,6 @@ export default function Outputs() {
 
         // Get unique recipe IDs
         const recipeIds = [...new Set(meals.map((m) => m.recipe))];
-        console.log("Recipe IDs:", recipeIds);
 
         // Load recipe tags for all recipes
         const allRecipeTags = await getAll<RecipeTag>(collections.recipeTags, {
@@ -219,8 +214,6 @@ export default function Outputs() {
         const recipeDataMap = new Map<string, RecipeGraphData>();
 
         for (const recipeId of recipeIds) {
-          console.log(`\n=== Loading Recipe ${recipeId} ===`);
-
           // Load product nodes with nested expansions
           const productNodes = await getAll<RecipeProductNode>(
             collections.recipeProductNodes,
@@ -234,7 +227,6 @@ export default function Outputs() {
           const steps = await getAll<RecipeStep>(collections.recipeSteps, {
             filter: `recipe="${recipeId}"`,
           });
-          console.log("Steps:", steps);
 
           const ptsEdges = await getAll<ProductToStepEdge>(
             collections.productToStepEdges,
@@ -242,7 +234,6 @@ export default function Outputs() {
               filter: `recipe="${recipeId}"`,
             }
           );
-          console.log("Product→Step edges:", ptsEdges);
 
           const stpEdges = await getAll<StepToProductEdge>(
             collections.stepToProductEdges,
@@ -250,7 +241,6 @@ export default function Outputs() {
               filter: `recipe="${recipeId}"`,
             }
           );
-          console.log("Step→Product edges:", stpEdges);
 
           const recipe = meals.find((m) => m.recipe === recipeId)?.expand
             ?.recipe;
@@ -266,11 +256,8 @@ export default function Outputs() {
         }
 
         setRecipeData(recipeDataMap);
-        console.log("\n=== Final Recipe Data Map ===");
-        console.log(recipeDataMap);
-      } catch (err) {
+      } catch {
         setError("Failed to load plan data");
-        console.error(err);
       } finally {
         setLoadingData(false);
       }

@@ -211,30 +211,23 @@ export function buildPullLists(
 ): PullListMeal[] {
   const lists: PullListMeal[] = [];
 
-  console.log("=== Building Pull Lists ===");
-  console.log(`Planned meals: ${plannedMeals.length}`);
-
   plannedMeals.forEach((meal) => {
     // Skip week-spanning meals (no specific day)
     if (!meal.day) {
-      console.log(`Skipping meal ${meal.id}: no specific day`);
       return;
     }
 
     const data = recipeDataMap.get(meal.recipe);
     if (!data) {
-      console.log(`Skipping meal ${meal.id}: no recipe data`);
       return;
     }
 
     const recipeName = data.recipe.name;
-    console.log(`\nMeal: ${recipeName} (${meal.day} ${meal.meal_slot})`);
 
     // Find JIT assembly steps
     const jitSteps = data.steps.filter(
       (s) => s.step_type === "assembly" && s.timing === "just_in_time"
     );
-    console.log(`  JIT steps: ${jitSteps.length}`);
 
     if (jitSteps.length === 0) {
       return;
@@ -243,8 +236,6 @@ export function buildPullLists(
     const items: PullListItem[] = [];
 
     jitSteps.forEach((step) => {
-      console.log(`  Step: ${step.name}`);
-
       // Find inputs to this step
       const inputEdges = data.productToStepEdges.filter(
         (e) => e.target === step.id
@@ -255,11 +246,8 @@ export function buildPullLists(
         const product = node?.expand?.product;
 
         if (!product) {
-          console.log(`    Input node ${e.source}: no product expansion`);
           return;
         }
-
-        console.log(`    Input: ${product.name} (${product.type})`);
 
         // Determine where to pull from
         let fromStorage: "fridge" | "freezer" | "pantry" | "dry";
@@ -304,7 +292,6 @@ export function buildPullLists(
     return slotOrder.indexOf(a.slot) - slotOrder.indexOf(b.slot);
   });
 
-  console.log(`\nPull lists total: ${lists.length}`);
   return lists;
 }
 
@@ -327,8 +314,6 @@ export function buildProductFlowGraph(
   const productToStepFlows: { productId: string; stepId: string }[] = [];
   const stepToProductFlows: { stepId: string; productId: string }[] = [];
 
-  console.log("=== Building Product Flow Graph ===");
-
   // Helper to create step signature from input/output product IDs
   const createStepSignature = (
     inputIds: string[],
@@ -346,8 +331,6 @@ export function buildProductFlowGraph(
 
     const recipeName = data.recipe.name;
     const mealCount = plannedMeal.quantity || 1;
-
-    console.log(`\nProcessing: ${recipeName} (x${mealCount})`);
 
     // Track all product nodes in this recipe
     data.productNodes.forEach((node) => {
@@ -599,11 +582,6 @@ export function buildProductFlowGraph(
       });
     });
   });
-
-  console.log(`\nFlow graph: ${products.size} products, ${steps.size} steps`);
-  console.log(
-    `Flows: ${productToStepFlows.length} product→step, ${stepToProductFlows.length} step→product`
-  );
 
   return {
     products,
