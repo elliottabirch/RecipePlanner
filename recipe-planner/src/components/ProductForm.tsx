@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   TextField,
   FormControl,
@@ -9,6 +9,8 @@ import {
   Checkbox,
   Typography,
   Box,
+  Alert,
+  Chip,
 } from "@mui/material";
 import {
   ProductType,
@@ -27,6 +29,12 @@ interface ProductFormProps {
 
   // Form state from useProductForm hook
   form: ReturnType<typeof useProductForm>;
+
+  // All existing products for duplicate detection
+  existingProducts?: Product[];
+
+  // Optional: ID of product being edited (to exclude from duplicate check)
+  editingProductId?: string;
 }
 
 export interface ProductFormValues {
@@ -182,7 +190,41 @@ export default function ProductForm({
   sections,
   containerTypes,
   form,
+  existingProducts = [],
+  editingProductId,
 }: ProductFormProps) {
+  // Find potential duplicates based on the current name input
+  const potentialDuplicates = useMemo(() => {
+    if (!form.name.trim() || form.name.trim().length < 2) {
+      return [];
+    }
+
+    const searchTerm = form.name.toLowerCase().trim();
+
+    return existingProducts
+      .filter((product) => {
+        // Exclude the product being edited
+        if (editingProductId && product.id === editingProductId) {
+          return false;
+        }
+
+        const productName = product.name.toLowerCase();
+
+        // Check for exact match or contains
+        return (
+          productName.includes(searchTerm) || searchTerm.includes(productName)
+        );
+      })
+      .slice(0, 5); // Limit to 5 results
+  }, [form.name, existingProducts, editingProductId]);
+
+  const hasExactMatch = useMemo(() => {
+    const searchTerm = form.name.toLowerCase().trim();
+    return potentialDuplicates.some(
+      (product) => product.name.toLowerCase() === searchTerm
+    );
+  }, [form.name, potentialDuplicates]);
+
   return (
     <Box>
       <TextField
@@ -193,7 +235,47 @@ export default function ProductForm({
         value={form.name}
         onChange={(e) => form.setName(e.target.value)}
         sx={{ mb: 2 }}
+        error={hasExactMatch}
+        helperText={
+          hasExactMatch ? "A product with this exact name already exists" : ""
+        }
       />
+
+      {/* Duplicate warning */}
+      {potentialDuplicates.length > 0 && (
+        <Alert severity={hasExactMatch ? "error" : "warning"} sx={{ mb: 2 }}>
+          <Typography variant="body2" fontWeight="bold" gutterBottom>
+            {hasExactMatch
+              ? "⚠️ Exact match found - this product already exists!"
+              : "Similar products found:"}
+          </Typography>
+          <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
+            {potentialDuplicates.map((product) => (
+              <Chip
+                key={product.id}
+                label={product.name}
+                size="small"
+                sx={{
+                  backgroundColor:
+                    product.type === "raw"
+                      ? "#4caf50"
+                      : product.type === "transient"
+                      ? "#ff9800"
+                      : product.type === "stored"
+                      ? "#2196f3"
+                      : "#9c27b0",
+                  color: "white",
+                }}
+              />
+            ))}
+          </Box>
+          <Typography variant="caption" display="block" mt={1}>
+            {hasExactMatch
+              ? "Please use the existing product or choose a different name."
+              : "Make sure you're not creating a duplicate product."}
+          </Typography>
+        </Alert>
+      )}
 
       <FormControl fullWidth sx={{ mb: 2 }}>
         <InputLabel>Type</InputLabel>

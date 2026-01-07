@@ -1012,6 +1012,7 @@ export default function RecipeEditor() {
                 sections={sections}
                 containerTypes={containerTypes}
                 form={productForm}
+                existingProducts={products}
               />
 
               <Button

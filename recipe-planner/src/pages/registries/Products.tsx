@@ -425,6 +425,8 @@ export default function Products() {
             sections={sections}
             containerTypes={containerTypes}
             form={productForm}
+            existingProducts={items}
+            editingProductId={editingItem?.id}
           />
         </DialogContent>
         <DialogActions>

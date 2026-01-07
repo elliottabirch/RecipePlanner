@@ -1,0 +1,69 @@
+<svg width="120" height="160" viewBox="0 0 120 160" xmlns="http://www.w3.org/2000/svg">
+  <!-- Cup body (cylinder side) -->
+  <path 
+    d="M 10 40 
+       L 10 130 
+       Q 10 150 60 150 
+       Q 110 150 110 130 
+       L 110 40"
+    fill="#e0e0e0"
+    stroke="#888888"
+    stroke-width="2"
+  />
+  
+  <!-- Bottom ellipse (hidden, but defines the curve) -->
+  <ellipse 
+    cx="60" 
+    cy="130" 
+    rx="50" 
+    ry="20"
+    fill="#d0d0d0"
+    stroke="#888888"
+    stroke-width="2"
+  />
+  
+  <!-- Cup body redrawn to cover bottom ellipse top half -->
+  <path 
+    d="M 10 40 
+       L 10 130 
+       Q 10 150 60 150 
+       Q 110 150 110 130 
+       L 110 40"
+    fill="#e0e0e0"
+    stroke="none"
+  />
+  
+  <!-- Left and right edges -->
+  <line x1="10" y1="40" x2="10" y2="130" stroke="#888888" stroke-width="2"/>
+  <line x1="110" y1="40" x2="110" y2="130" stroke="#888888" stroke-width="2"/>
+  
+  <!-- Bottom curve visible -->
+  <path 
+    d="M 10 130 Q 10 150 60 150 Q 110 150 110 130"
+    fill="none"
+    stroke="#888888"
+    stroke-width="2"
+  />
+  
+  <!-- Top outer ellipse (rim) -->
+  <ellipse 
+    cx="60" 
+    cy="40" 
+    rx="50" 
+    ry="20"
+    fill="#f5f5f5"
+    stroke="#888888"
+    stroke-width="2"
+  />
+  
+  <!-- Top inner ellipse (hollow interior) -->
+  <ellipse 
+    cx="60" 
+    cy="40" 
+    rx="40" 
+    ry="15"
+    fill="#c0c0c0"
+    stroke="#777777"
+    stroke-width="1.5"
+  />
+</svg>

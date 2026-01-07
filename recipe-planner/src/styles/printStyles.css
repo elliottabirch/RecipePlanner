@@ -35,6 +35,21 @@
     background: white !important;
   }
 
+  /* Preserve chip and box colors in print */
+  .MuiChip-root,
+  .MuiBox-root {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Ensure table cells preserve backgrounds */
+  .MuiTableCell-root {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
   /* Ensure checkboxes are visible in print */
   input[type="checkbox"] {
     appearance: auto;
@@ -50,5 +65,55 @@
   .MuiList-root {
     height: auto !important;
     overflow: visible !important;
+  }
+
+  /* Print page control */
+  .print-page {
+    page-break-after: always;
+    page-break-inside: avoid;
+    width: 100%;
+    height: auto;
+    margin: 0;
+  }
+
+  /* Remove page break after last page */
+  .print-page:last-child {
+    page-break-after: auto;
+  }
+}
+
+/* Page orientation control - Landscape */
+@media print {
+  @page landscape {
+    size: landscape;
+  }
+
+  .print-landscape {
+    page: landscape;
+  }
+}
+
+/* Page orientation control - Portrait */
+@media print {
+  @page portrait {
+    size: portrait;
+  }
+
+  .print-portrait {
+    page: portrait;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  /* Ensure portrait page content fits within page boundaries */
+  .print-portrait .MuiBox-root {
+    max-width: 100%;
+    word-wrap: break-word;
+  }
+
+  .print-portrait .MuiChip-root {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }

@@ -748,6 +748,8 @@ export default function Outputs() {
                   tagsById={tagsById}
                   isMicahMeal={isMicahMeal}
                   readyToEat={readyToEat}
+                  micahMealContainers={micahMealContainers}
+                  pullLists={pullLists}
                 />
               </Paper>
             )}
