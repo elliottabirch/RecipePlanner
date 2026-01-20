@@ -19,6 +19,7 @@ import {
   Grid,
   Chip,
   InputAdornment,
+  Divider,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -29,14 +30,23 @@ import {
 } from "@mui/icons-material";
 import { getAll, create, remove, collections } from "../lib/api";
 import type { Recipe, RecipeTag, Tag } from "../lib/types";
+import FilterGroup from "../components/FilterGroup";
+import type { FilterOption } from "../components/FilterGroup";
+import type { FilterState } from "../components/FilterChip";
 
 export default function Recipes() {
   const navigate = useNavigate();
   const [items, setItems] = useState<Recipe[]>([]);
   const [recipeTags, setRecipeTags] = useState<Record<string, Tag[]>>({});
+  const [allTags, setAllTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Filter states
+  const [filterStates, setFilterStates] = useState<Record<string, FilterState>>(
+    {},
+  );
 
   // New recipe dialog
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -52,13 +62,15 @@ export default function Recipes() {
       setLoading(true);
       setError(null);
 
-      const [recipes, recipeTagsData] = await Promise.all([
+      const [recipes, recipeTagsData, tags] = await Promise.all([
         getAll<Recipe>(collections.recipes, { sort: "name" }),
         getAll<RecipeTag>(collections.recipeTags, { expand: "tag" }),
+        getAll<Tag>(collections.tags, { sort: "name" }),
       ]);
 
       setItems(recipes);
-
+      setAllTags(tags);
+      console.log(tags);
       // Group tags by recipe
       const tagsByRecipe: Record<string, Tag[]> = {};
       recipeTagsData.forEach((rt) => {
@@ -120,9 +132,91 @@ export default function Recipes() {
     }
   };
 
-  const filteredItems = items.filter((item) =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleFilterChange = (id: string, state: FilterState) => {
+    setFilterStates((prev) => ({
+      ...prev,
+      [id]: state,
+    }));
+  };
+
+  // Filter options
+  const recipeTypeOptions: FilterOption[] = [
+    { id: "recipe_type_batch", label: "Batch", color: "#9c27b0" },
+    { id: "recipe_type_meal", label: "Meal", color: "#f44336" },
+  ];
+
+  const userOptions: FilterOption[] = [
+    { id: "user_micah", label: "Micah", color: "#ff9800" },
+  ];
+
+  const tagOptions: FilterOption[] = allTags.map((tag) => ({
+    id: `tag_${tag.id}`,
+    label: tag.name,
+    color: tag.color || "#2196f3",
+  }));
+
+  const filteredItems = items.filter((item) => {
+    // Search filter
+    if (!item.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+
+    // Recipe Type filters
+    const batchState = filterStates["recipe_type_batch"];
+    const mealState = filterStates["recipe_type_meal"];
+    if (batchState === "include" && item.recipe_type !== "batch_prep") {
+      return false;
+    }
+    if (batchState === "exclude" && item.recipe_type === "batch_prep") {
+      return false;
+    }
+    if (mealState === "include" && item.recipe_type !== "meal") {
+      return false;
+    }
+    if (mealState === "exclude" && item.recipe_type === "meal") {
+      return false;
+    }
+
+    // User filters (based on tags)
+    const itemTags = recipeTags[item.id] || [];
+    const micahState = filterStates["user_micah"];
+    const adultsState = filterStates["user_adults"];
+
+    const hasMicahTag = itemTags.some(
+      (tag) => tag.name.toLowerCase() === "micah meal",
+    );
+    const hasAdultsTag = itemTags.some(
+      (tag) => tag.name.toLowerCase() === "adults",
+    );
+
+    if (micahState === "include" && !hasMicahTag) {
+      return false;
+    }
+    if (micahState === "exclude" && hasMicahTag) {
+      return false;
+    }
+    if (adultsState === "include" && !hasAdultsTag) {
+      return false;
+    }
+    if (adultsState === "exclude" && hasAdultsTag) {
+      return false;
+    }
+
+    // Tag filters
+    for (const tag of allTags) {
+      const tagState = filterStates[`tag_${tag.id}`];
+      const hasTag = itemTags.some((t) => t.id === tag.id);
+
+      if (tagState === "include" && !hasTag) {
+        return false;
+      }
+      if (tagState === "exclude" && hasTag) {
+        return false;
+      }
+    }
+
+    return true;
+  });
 
   if (loading) {
     return (
@@ -168,7 +262,7 @@ export default function Recipes() {
         placeholder="Search recipes..."
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
-        sx={{ mb: 3 }}
+        sx={{ mb: 2 }}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
@@ -177,6 +271,49 @@ export default function Recipes() {
           ),
         }}
       />
+
+      {/* Filters */}
+      <Paper
+        sx={{
+          p: 2,
+          mb: 3,
+          backgroundColor: "background.default",
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            gap: 3,
+            flexWrap: "wrap",
+            alignItems: "flex-start",
+          }}
+        >
+          <FilterGroup
+            title="Recipe Type"
+            options={recipeTypeOptions}
+            filterStates={filterStates}
+            onFilterChange={handleFilterChange}
+          />
+          <Divider orientation="vertical" flexItem />
+          <FilterGroup
+            title="User"
+            options={userOptions}
+            filterStates={filterStates}
+            onFilterChange={handleFilterChange}
+          />
+          {tagOptions.length > 0 && (
+            <>
+              <Divider orientation="vertical" flexItem />
+              <FilterGroup
+                title="Tags"
+                options={tagOptions}
+                filterStates={filterStates}
+                onFilterChange={handleFilterChange}
+              />
+            </>
+          )}
+        </Box>
+      </Paper>
 
       {filteredItems.length === 0 ? (
         <Paper sx={{ p: 4, textAlign: "center" }}>
