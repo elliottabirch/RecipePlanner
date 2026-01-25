@@ -70,7 +70,6 @@ export default function Recipes() {
 
       setItems(recipes);
       setAllTags(tags);
-      console.log(tags);
       // Group tags by recipe
       const tagsByRecipe: Record<string, Tag[]> = {};
       recipeTagsData.forEach((rt) => {
