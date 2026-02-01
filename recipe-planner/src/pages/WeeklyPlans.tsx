@@ -46,8 +46,13 @@ import type {
   Product,
   RecipeTag,
   Tag,
+  MealVariantOverrideExpanded,
+  RecipeStep,
 } from "../lib/types";
 import { DAYS, MEAL_SLOTS, SLOT_COLORS } from "../constants/mealPlanning";
+import { VariantsList } from "../components/VariantsList";
+import { VariantEditorDialog } from "../components/VariantEditorDialog";
+import type { RecipeGraphData } from "../lib/aggregation";
 
 interface PlannedMealExpanded extends PlannedMeal {
   expand?: {
@@ -70,6 +75,13 @@ export default function WeeklyPlans() {
   const [tagsById, setTagsById] = useState<Map<string, Tag>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Variant state
+  const [variantOverrides, setVariantOverrides] = useState<MealVariantOverrideExpanded[]>([]);
+  const [variantEditorOpen, setVariantEditorOpen] = useState(false);
+  const [editingMealId, setEditingMealId] = useState<string | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [recipeData, setRecipeData] = useState<Map<string, RecipeGraphData>>(new Map());
 
   // New plan dialog
   const [planDialogOpen, setPlanDialogOpen] = useState(false);
@@ -226,13 +238,90 @@ export default function WeeklyPlans() {
     }
   };
 
+  // Load products on mount
+  const loadProducts = async () => {
+    const productsData = await getAll<Product>(collections.products, { sort: "name" });
+    setProducts(productsData);
+  };
+
+  // Load recipe data for all recipes in the plan
+  const loadRecipeData = async (meals: PlannedMealExpanded[]) => {
+    const recipeIds = [...new Set(meals.map((m) => m.recipe))];
+    const recipeDataMap = new Map<string, RecipeGraphData>();
+
+    for (const recipeId of recipeIds) {
+      const [productNodes, steps, ptsEdges, stpEdges] = await Promise.all([
+        getAll<RecipeProductNode>(collections.recipeProductNodes, {
+          filter: `recipe="${recipeId}"`,
+          expand: "product",
+        }),
+        getAll<RecipeStep>(collections.recipeSteps, {
+          filter: `recipe="${recipeId}"`,
+        }),
+        getAll<ProductToStepEdge>(collections.productToStepEdges, {
+          filter: `recipe="${recipeId}"`,
+        }),
+        getAll<StepToProductEdge>(collections.stepToProductEdges, {
+          filter: `recipe="${recipeId}"`,
+        }),
+      ]);
+
+      const recipe = meals.find((m) => m.recipe === recipeId)?.expand?.recipe;
+      if (recipe) {
+        recipeDataMap.set(recipeId, {
+          recipe,
+          productNodes,
+          steps,
+          productToStepEdges: ptsEdges,
+          stepToProductEdges: stpEdges,
+        });
+      }
+    }
+
+    setRecipeData(recipeDataMap);
+  };
+
+  // Load variant overrides
+  const loadVariantOverrides = async () => {
+    if (!selectedPlan || plannedMeals.length === 0) {
+      setVariantOverrides([]);
+      return;
+    }
+
+    const mealIds = plannedMeals.map((m) => m.id);
+    const filter = mealIds.map((id) => `planned_meal="${id}"`).join(" || ");
+
+    const overrides = await getAll<MealVariantOverrideExpanded>(
+      collections.mealVariantOverrides,
+      {
+        filter,
+        expand: "planned_meal,original_node,original_node.product,replacement_product",
+      }
+    );
+
+    setVariantOverrides(overrides);
+  };
+
   useEffect(() => {
     loadPlans();
+    loadProducts();
   }, []);
 
   useEffect(() => {
     loadPlannedMeals();
   }, [selectedPlan]);
+
+  // Load recipe data when planned meals change
+  useEffect(() => {
+    if (plannedMeals.length > 0) {
+      loadRecipeData(plannedMeals);
+    }
+  }, [plannedMeals]);
+
+  // Load variant overrides when planned meals change
+  useEffect(() => {
+    loadVariantOverrides();
+  }, [plannedMeals]);
 
   const handleOpenPlanDialog = (plan?: WeeklyPlan) => {
     if (plan) {
@@ -344,6 +433,42 @@ export default function WeeklyPlans() {
     }
   };
 
+  // Variant handlers
+  const handleEditVariants = (mealId: string) => {
+    setEditingMealId(mealId);
+    setVariantEditorOpen(true);
+  };
+
+  const handleSaveVariants = async (
+    mealId: string,
+    overrides: { originalNodeId: string; replacementProductId: string }[]
+  ) => {
+    // Delete existing overrides for this meal
+    const existingForMeal = variantOverrides.filter((o) => o.planned_meal === mealId);
+    await Promise.all(
+      existingForMeal.map((o) => remove(collections.mealVariantOverrides, o.id))
+    );
+
+    // Create new overrides
+    await Promise.all(
+      overrides.map((o) =>
+        create(collections.mealVariantOverrides, {
+          planned_meal: mealId,
+          original_node: o.originalNodeId,
+          replacement_product: o.replacementProductId,
+        })
+      )
+    );
+
+    // Reload
+    await loadVariantOverrides();
+  };
+
+  const handleDeleteOverride = async (overrideId: string) => {
+    await remove(collections.mealVariantOverrides, overrideId);
+    await loadVariantOverrides();
+  };
+
   // Group meals by day and slot
   const getMealsForDaySlot = (day: Day | null, slot: MealSlot) => {
     return plannedMeals.filter(
@@ -451,6 +576,17 @@ export default function WeeklyPlans() {
             </List>
           )}
         </Paper>
+
+        {/* Variants List */}
+        {selectedPlan && (
+          <VariantsList
+            plannedMeals={plannedMeals}
+            overrides={variantOverrides}
+            recipeData={recipeData}
+            onEdit={handleEditVariants}
+            onDeleteOverride={handleDeleteOverride}
+          />
+        )}
 
         {/* Micah Meals column */}
         {selectedPlan && micahMeals.length > 0 && (
@@ -657,11 +793,16 @@ export default function WeeklyPlans() {
                                       justifyContent: "space-between",
                                       alignItems: "center",
                                       gap: 0.5,
+                                      cursor: "pointer",
+                                      "&:hover": {
+                                        opacity: 0.8,
+                                      },
                                     }}
+                                    onClick={() => handleEditVariants(meal.id)}
                                   >
                                     <Typography
                                       variant="caption"
-                                      sx={{ color: "inherit", lineHeight: 1.2 }}
+                                      sx={{ color: "inherit", lineHeight: 1.2, flex: 1 }}
                                     >
                                       {meal.expand?.recipe?.name || "?"}
                                       {meal.quantity &&
@@ -670,9 +811,10 @@ export default function WeeklyPlans() {
                                     </Typography>
                                     <IconButton
                                       size="small"
-                                      onClick={() =>
-                                        handleDeleteClick("meal", meal)
-                                      }
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteClick("meal", meal);
+                                      }}
                                       sx={{
                                         p: 0,
                                         color: "rgba(255,255,255,0.7)",
@@ -856,6 +998,26 @@ export default function WeeklyPlans() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Variant Editor Dialog */}
+      <VariantEditorDialog
+        open={variantEditorOpen}
+        onClose={() => {
+          setVariantEditorOpen(false);
+          setEditingMealId(null);
+        }}
+        plannedMeal={plannedMeals.find((m) => m.id === editingMealId) || null}
+        recipeData={
+          editingMealId
+            ? recipeData.get(
+                plannedMeals.find((m) => m.id === editingMealId)?.recipe || ""
+              ) || null
+            : null
+        }
+        existingOverrides={variantOverrides.filter((o) => o.planned_meal === editingMealId)}
+        products={products}
+        onSave={handleSaveVariants}
+      />
     </Box>
   );
 }

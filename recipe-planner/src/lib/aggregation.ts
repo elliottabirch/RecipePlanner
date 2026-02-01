@@ -20,7 +20,19 @@ export type {
   ProductFlowGraphData,
   RecipeGraphData,
   PlannedMealWithRecipe,
+  MealKeyedRecipeData,
 } from "./aggregation/types.js";
+
+// Re-export variant utilities
+export {
+  applyVariantOverrides,
+  validateOverrides,
+  previewOrphanedNodes,
+  findOrphanedNodes,
+  type VariantOverride,
+  type OverrideValidation,
+  type OverrideValidationResult,
+} from "./aggregation/utils/variant-utils";
 
 // Import builder functions
 import { processRecipeProducts } from "./aggregation/builders/product-builder";
@@ -95,7 +107,7 @@ export function buildPullLists(
   const daySpecificMeals = plannedMeals.filter((meal) => meal.day);
 
   daySpecificMeals.forEach((meal) => {
-    const data = recipeDataMap.get(meal.recipe);
+    const data = recipeDataMap.get(meal.id);
     if (!data) return;
 
     const recipeName = data.recipe.name;
@@ -161,7 +173,7 @@ export function buildProductFlowGraph(
 
   // Process each planned meal
   plannedMeals.forEach((meal) => {
-    const data = recipeData.get(meal.recipe);
+    const data = recipeData.get(meal.id);
     if (!data) return;
 
     const mealCount = meal.quantity || 1;

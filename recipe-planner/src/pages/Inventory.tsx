@@ -14,7 +14,6 @@ import {
   List,
   ListItem,
   ListItemText,
-  Divider,
   Switch,
   TextField,
   Autocomplete,
@@ -60,8 +59,10 @@ export default function Inventory() {
           sort: "name",
         }),
       ]);
-      setItems(inventoryData);
-      setProducts(productsData);
+      const sortedItems = inventoryData.sort((a, b) => { if (a.product < b.product) return -1; if (a.product > b.product) return 1; return 0; });
+      const sortedProducts = productsData.sort((a, b) => { if (a.name < b.name) return -1; if (a.name > b.name) return 1; return 0; });
+      setItems(sortedItems);
+      setProducts(sortedProducts);
     } catch (err) {
       setError("Failed to load inventory");
       console.error(err);
@@ -184,51 +185,53 @@ export default function Inventory() {
             In Stock ({inStockItems.length})
           </Typography>
         </Box>
-        <List>
+        <List disablePadding>
           {inStockItems.map((item, index) => (
-            <Box key={item.id}>
-              {index > 0 && <Divider />}
-              <ListItem
-                secondaryAction={
-                  <Box display="flex" gap={1} alignItems="center">
-                    <Switch
-                      checked={item.in_stock}
-                      onChange={() => handleToggleStock(item)}
-                      color="success"
-                    />
-                    <IconButton
-                      size="small"
-                      onClick={() => {
-                        setEditingItem(item);
-                        setEditNotes(item.notes || "");
-                        setEditNotesDialogOpen(true);
-                      }}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton size="small" onClick={() => handleDelete(item)}>
-                      <DeleteIcon />
-                    </IconButton>
+            <ListItem
+              key={item.id}
+              sx={{
+                bgcolor:
+                  index % 2 === 0 ? "rgba(46, 125, 50, 0.08)" : "transparent",
+              }}
+              secondaryAction={
+                <Box display="flex" gap={1} alignItems="center">
+                  <Switch
+                    checked={item.in_stock}
+                    onChange={() => handleToggleStock(item)}
+                    color="success"
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      setEditingItem(item);
+                      setEditNotes(item.notes || "");
+                      setEditNotesDialogOpen(true);
+                    }}
+                  >
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton size="small" onClick={() => handleDelete(item)}>
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
+              }
+            >
+              <ListItemText
+                primary={
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Typography>{item.expand?.product?.name}</Typography>
+                    {item.expand?.product?.ready_to_eat && (
+                      <Chip
+                        label={item.expand.product.meal_slot || "ready"}
+                        size="small"
+                        color="success"
+                      />
+                    )}
                   </Box>
                 }
-              >
-                <ListItemText
-                  primary={
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Typography>{item.expand?.product?.name}</Typography>
-                      {item.expand?.product?.ready_to_eat && (
-                        <Chip
-                          label={item.expand.product.meal_slot || "ready"}
-                          size="small"
-                          color="success"
-                        />
-                      )}
-                    </Box>
-                  }
-                  secondary={item.notes}
-                />
-              </ListItem>
-            </Box>
+                secondary={item.notes}
+              />
+            </ListItem>
           ))}
           {inStockItems.length === 0 && (
             <ListItem>
@@ -248,51 +251,52 @@ export default function Inventory() {
             Out of Stock ({outOfStockItems.length})
           </Typography>
         </Box>
-        <List>
+        <List disablePadding>
           {outOfStockItems.map((item, index) => (
-            <Box key={item.id}>
-              {index > 0 && <Divider />}
-              <ListItem
-                sx={{ opacity: 0.6 }}
-                secondaryAction={
-                  <Box display="flex" gap={1} alignItems="center">
-                    <Switch
-                      checked={item.in_stock}
-                      onChange={() => handleToggleStock(item)}
-                    />
-                    <IconButton
-                      size="small"
-                      onClick={() => {
-                        setEditingItem(item);
-                        setEditNotes(item.notes || "");
-                        setEditNotesDialogOpen(true);
-                      }}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton size="small" onClick={() => handleDelete(item)}>
-                      <DeleteIcon />
-                    </IconButton>
+            <ListItem
+              key={item.id}
+              sx={{
+                opacity: 0.6,
+                bgcolor: index % 2 === 0 ? "grey.100" : "transparent",
+              }}
+              secondaryAction={
+                <Box display="flex" gap={1} alignItems="center">
+                  <Switch
+                    checked={item.in_stock}
+                    onChange={() => handleToggleStock(item)}
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      setEditingItem(item);
+                      setEditNotes(item.notes || "");
+                      setEditNotesDialogOpen(true);
+                    }}
+                  >
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton size="small" onClick={() => handleDelete(item)}>
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
+              }
+            >
+              <ListItemText
+                primary={
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Typography>{item.expand?.product?.name}</Typography>
+                    {item.expand?.product?.ready_to_eat && (
+                      <Chip
+                        label={item.expand.product.meal_slot || "ready"}
+                        size="small"
+                        variant="outlined"
+                      />
+                    )}
                   </Box>
                 }
-              >
-                <ListItemText
-                  primary={
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Typography>{item.expand?.product?.name}</Typography>
-                      {item.expand?.product?.ready_to_eat && (
-                        <Chip
-                          label={item.expand.product.meal_slot || "ready"}
-                          size="small"
-                          variant="outlined"
-                        />
-                      )}
-                    </Box>
-                  }
-                  secondary={item.notes}
-                />
-              </ListItem>
-            </Box>
+                secondary={item.notes}
+              />
+            </ListItem>
           ))}
           {outOfStockItems.length === 0 && (
             <ListItem>

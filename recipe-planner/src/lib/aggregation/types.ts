@@ -48,6 +48,13 @@ export interface RecipeGraphData {
 }
 
 /**
+ * Recipe graph data keyed by planned meal ID.
+ * This allows the same recipe to have different effective graphs
+ * for different planned meals (when variants are applied).
+ */
+export type MealKeyedRecipeData = Map<string, RecipeGraphData>;
+
+/**
  * Planned meal with expanded recipe data
  */
 export interface PlannedMealWithRecipe extends PlannedMeal {

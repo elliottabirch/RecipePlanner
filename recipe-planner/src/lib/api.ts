@@ -63,4 +63,5 @@ export const collections = {
   weeklyPlans: "weekly_plans",
   plannedMeals: "planned_meals",
   inventoryItems: "inventory_items",
+  mealVariantOverrides: "meal_variant_overrides",
 } as const;

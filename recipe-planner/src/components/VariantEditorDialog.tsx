@@ -193,6 +193,7 @@ export function VariantEditorDialog({
   };
 
   const handleSave = async () => {
+    
     if (!plannedMeal) return;
 
     // Filter to only overrides with a replacement selected
@@ -204,6 +205,7 @@ export function VariantEditorDialog({
       }));
 
     setSaving(true);
+    
     try {
       await onSave(plannedMeal.id, validOverrides);
       onClose();
@@ -238,6 +240,7 @@ export function VariantEditorDialog({
         return true;
       }
     }
+    
 
     return false;
   }, [existingOverrides, pendingOverrides]);

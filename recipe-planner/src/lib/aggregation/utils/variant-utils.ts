@@ -79,13 +79,10 @@ export function findOrphanedNodes(
   const orphaned = new Set<string>();
   
   // Build adjacency maps for traversal
-  // stepToProductEdges: step -> product (step outputs)
-  // productToStepEdges: product -> step (product feeds into step)
-  
-  const productToIncomingSteps = new Map<string, Set<string>>(); // product <- steps that output to it
-  const stepToIncomingProducts = new Map<string, Set<string>>(); // step <- products that feed it
-  const productToOutgoingSteps = new Map<string, Set<string>>(); // product -> steps it feeds
-  const stepToOutgoingProducts = new Map<string, Set<string>>(); // step -> products it outputs
+  const productToIncomingSteps = new Map<string, Set<string>>();
+  const stepToIncomingProducts = new Map<string, Set<string>>();
+  const productToOutgoingSteps = new Map<string, Set<string>>();
+  const stepToOutgoingProducts = new Map<string, Set<string>>();
   
   // Initialize maps
   for (const node of recipeData.productNodes) {
@@ -107,20 +104,26 @@ export function findOrphanedNodes(
     stepToIncomingProducts.get(edge.target)?.add(edge.source);
   }
   
-  // Find all nodes that can reach a terminal output (not in replacedNodeIds)
-  // Terminal outputs: product nodes with no outgoing edges to steps, excluding replaced nodes
   const reachesTerminal = new Set<string>();
+  const queue: { type: "product" | "step"; id: string }[] = [];
   
-  // Start from terminal product nodes (those not feeding any steps)
+  // Terminal products: product nodes not feeding any steps (excluding replaced)
   const terminalProducts = recipeData.productNodes.filter(
     (n) => !replacedNodeIds.has(n.id) && (productToOutgoingSteps.get(n.id)?.size ?? 0) === 0
   );
+  for (const p of terminalProducts) {
+    queue.push({ type: "product", id: p.id });
+  }
+  
+  // NEW: Terminal steps: steps with no output products (e.g., JIT assembly)
+  const terminalSteps = recipeData.steps.filter(
+    (s) => (stepToOutgoingProducts.get(s.id)?.size ?? 0) === 0
+  );
+  for (const s of terminalSteps) {
+    queue.push({ type: "step", id: s.id });
+  }
   
   // BFS backward from terminals
-  const queue: { type: "product" | "step"; id: string }[] = terminalProducts.map(
-    (n) => ({ type: "product" as const, id: n.id })
-  );
-  
   while (queue.length > 0) {
     const current = queue.shift()!;
     const key = `${current.type}:${current.id}`;
@@ -129,13 +132,11 @@ export function findOrphanedNodes(
     reachesTerminal.add(key);
     
     if (current.type === "product") {
-      // Find steps that output this product
       const incomingSteps = productToIncomingSteps.get(current.id) ?? new Set();
       for (const stepId of incomingSteps) {
         queue.push({ type: "step", id: stepId });
       }
     } else {
-      // Find products that feed this step
       const incomingProducts = stepToIncomingProducts.get(current.id) ?? new Set();
       for (const productNodeId of incomingProducts) {
         if (!replacedNodeIds.has(productNodeId)) {
@@ -178,6 +179,7 @@ export function applyVariantOverrides(
     return recipeData;
   }
   
+  
   // Validate first - only apply valid overrides
   const { valid } = validateOverrides(recipeData, overrides);
   
@@ -185,6 +187,21 @@ export function applyVariantOverrides(
     return recipeData;
   }
   
+  console.log("Recipe data:", {
+    productNodes: recipeData.productNodes.map(n => ({ 
+      id: n.id, 
+      name: n.expand?.product?.name,
+      type: n.expand?.product?.type 
+    })),
+    steps: recipeData.steps.map(s => ({ id: s.id, name: s.name })),
+    productToStepEdges: recipeData.productToStepEdges.map(e => ({ source: e.source, target: e.target })),
+    stepToProductEdges: recipeData.stepToProductEdges.map(e => ({ source: e.source, target: e.target })),
+  });
+  console.log("Replacing nodes:", valid.map(v => v.originalNodeId));
+  
+
+  
+
   // Build map of replacements
   const replacementMap = new Map<string, VariantOverride>();
   for (const override of valid) {
@@ -195,6 +212,7 @@ export function applyVariantOverrides(
   
   // Find orphaned nodes
   const orphanedIds = findOrphanedNodes(recipeData, replacedNodeIds);
+    console.log("Orphaned result:", [...orphanedIds]);
   
   // Build new product nodes array
   const newProductNodes: ExpandedProductNode[] = [];

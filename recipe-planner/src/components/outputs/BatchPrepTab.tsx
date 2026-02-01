@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import {
   Box,
   Typography,
@@ -9,6 +10,7 @@ import {
   Chip,
 } from "@mui/material";
 import { Print as PrintIcon } from "@mui/icons-material";
+import { useReactToPrint } from "react-to-print";
 import type { AggregatedStep } from "../../lib/aggregation";
 import { EmptyState } from "../EmptyState";
 import {
@@ -19,20 +21,31 @@ import {
   STEP_TYPE_LABELS,
 } from "../../constants/outputs";
 import { StepType } from "../../lib/types";
+import { BatchPrepPrintView } from "./BatchPrepPrintView";
 
 interface BatchPrepTabProps {
   batchPrepSteps: AggregatedStep[];
   checkedItems: Set<string>;
   onToggleChecked: (key: string) => void;
-  onPrint: () => void;
 }
 
 export function BatchPrepTab({
   batchPrepSteps,
   checkedItems,
   onToggleChecked,
-  onPrint,
 }: BatchPrepTabProps) {
+  const printRef = useRef<HTMLDivElement>(null);
+
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: "Batch Prep List",
+    pageStyle: `
+      @page {
+        margin: 0.5in;
+      }
+    `,
+  });
+
   if (batchPrepSteps.length === 0) {
     return <EmptyState message={UI_TEXT.noPrepSteps} />;
   }
@@ -52,7 +65,7 @@ export function BatchPrepTab({
         <Button
           variant="contained"
           color="primary"
-          onClick={onPrint}
+          onClick={() => handlePrint()}
           startIcon={<PrintIcon />}
         >
           {UI_TEXT.printList}
@@ -135,6 +148,11 @@ export function BatchPrepTab({
           );
         })}
       </List>
+
+      {/* Hidden print view */}
+      <Box sx={{ display: "none" }}>
+        <BatchPrepPrintView ref={printRef} batchPrepSteps={batchPrepSteps} />
+      </Box>
     </>
   );
 }

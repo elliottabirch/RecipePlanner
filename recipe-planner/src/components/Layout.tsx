@@ -218,20 +218,21 @@ export default function Layout() {
 
       {/* Main content */}
       <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          p: 3,
-          width: { xs: "100vw", md: `calc(100vw - ${DRAWER_WIDTH}px)` },
-          maxWidth: { xs: "100vw", md: `calc(100vw - ${DRAWER_WIDTH}px)` },
-          ml: { xs: 0, md: `${DRAWER_WIDTH}px` },
-          mt: "64px",
-          overflow: "auto",
-          boxSizing: "border-box",
-        }}
-      >
-        <Outlet />
-      </Box>
+  component="main"
+  sx={{
+    flexGrow: 1,
+    p: 3,
+    width: { xs: "100vw", md: `calc(100vw - ${DRAWER_WIDTH}px)` },
+    maxWidth: { xs: "100vw", md: `calc(100vw - ${DRAWER_WIDTH}px)` },
+    ml: { xs: 0, md: `${DRAWER_WIDTH}px` },
+    mt: "64px",
+    height: "calc(100vh - 64px)",  // Add this - constrains to viewport minus AppBar
+    overflow: "auto",
+    boxSizing: "border-box",
+  }}
+>
+  <Outlet />
+</Box>
     </Box>
   );
 }

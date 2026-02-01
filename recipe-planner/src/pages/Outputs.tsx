@@ -36,8 +36,10 @@ import {
   buildMealContainersList,
   getReadyToEatInventory,
   checkInventoryStock,
+  applyVariantOverrides,
   type RecipeGraphData,
   type PlannedMealWithRecipe,
+  type VariantOverride,
 } from "../lib/aggregation";
 import type {
   WeeklyPlan,
@@ -48,6 +50,7 @@ import type {
   RecipeTag,
   Tag,
   InventoryItemExpanded,
+  MealVariantOverrideExpanded,
 } from "../lib/types";
 import { getAvailableProviders } from "../lib/listProviders";
 import {
@@ -201,6 +204,35 @@ export default function Outputs() {
         );
         setInventoryItems(inventory);
 
+        // Load variant overrides for all meals in this plan
+        const mealIds = meals.map((m) => m.id);
+        let overrides: MealVariantOverrideExpanded[] = [];
+        if (mealIds.length > 0) {
+          const filter = mealIds.map((id) => `planned_meal="${id}"`).join(" || ");
+          overrides = await getAll<MealVariantOverrideExpanded>(
+            collections.mealVariantOverrides,
+            {
+              filter,
+              expand: "original_node.product,replacement_product",
+            }
+          );
+        }
+
+        // Build override map by meal ID
+        const overridesByMeal = new Map<string, VariantOverride[]>();
+        for (const override of overrides) {
+          const mealId = override.planned_meal;
+          if (!overridesByMeal.has(mealId)) {
+            overridesByMeal.set(mealId, []);
+          }
+          if (override.expand?.replacement_product) {
+            overridesByMeal.get(mealId)!.push({
+              originalNodeId: override.original_node,
+              replacementProduct: override.expand.replacement_product,
+            });
+          }
+        }
+
         // Get unique recipe IDs
         const recipeIds = [...new Set(meals.map((m) => m.recipe))];
 
@@ -217,44 +249,32 @@ export default function Outputs() {
         });
         setRecipeTags(recipeTagsMap);
 
-        // Load full graph data for each recipe
-        const recipeDataMap = new Map<string, RecipeGraphData>();
+        // Load base recipe data by recipe ID
+        const baseRecipeData = new Map<string, RecipeGraphData>();
 
         for (const recipeId of recipeIds) {
-          // Load product nodes with nested expansions
-          const productNodes = await getAll<RecipeProductNode>(
-            collections.recipeProductNodes,
-            {
+          const [productNodes, steps, ptsEdges, stpEdges] = await Promise.all([
+            getAll<RecipeProductNode>(collections.recipeProductNodes, {
               filter: `recipe="${recipeId}"`,
               expand:
                 "product, product.container_type, product.store, product.section",
-            }
-          );
-
-          const steps = await getAll<RecipeStep>(collections.recipeSteps, {
-            filter: `recipe="${recipeId}"`,
-          });
-
-          const ptsEdges = await getAll<ProductToStepEdge>(
-            collections.productToStepEdges,
-            {
+            }),
+            getAll<RecipeStep>(collections.recipeSteps, {
               filter: `recipe="${recipeId}"`,
-            }
-          );
-
-          const stpEdges = await getAll<StepToProductEdge>(
-            collections.stepToProductEdges,
-            {
+            }),
+            getAll<ProductToStepEdge>(collections.productToStepEdges, {
               filter: `recipe="${recipeId}"`,
-            }
-          );
+            }),
+            getAll<StepToProductEdge>(collections.stepToProductEdges, {
+              filter: `recipe="${recipeId}"`,
+            }),
+          ]);
 
-          const recipe = meals.find((m) => m.recipe === recipeId)?.expand
-            ?.recipe;
+          const recipe = meals.find((m) => m.recipe === recipeId)?.expand?.recipe;
           if (recipe) {
-            recipeDataMap.set(recipeId, {
+            baseRecipeData.set(recipeId, {
               recipe,
-              productNodes: productNodes,
+              productNodes,
               steps,
               productToStepEdges: ptsEdges,
               stepToProductEdges: stpEdges,
@@ -262,7 +282,26 @@ export default function Outputs() {
           }
         }
 
-        setRecipeData(recipeDataMap);
+        // Create meal-keyed data with variants applied
+        const mealKeyedRecipeData = new Map<string, RecipeGraphData>();
+
+        for (const meal of meals) {
+          const baseData = baseRecipeData.get(meal.recipe);
+          if (!baseData) continue;
+
+          const mealOverrides = overridesByMeal.get(meal.id) || [];
+
+          if (mealOverrides.length > 0) {
+            // Apply overrides to create variant graph
+            const variantData = applyVariantOverrides(baseData, mealOverrides);
+            mealKeyedRecipeData.set(meal.id, variantData);
+          } else {
+            // No overrides - use base data
+            mealKeyedRecipeData.set(meal.id, baseData);
+          }
+        }
+
+        setRecipeData(mealKeyedRecipeData);
       } catch {
         setError(ERROR_MESSAGES.failedToLoadPlanData);
       } finally {

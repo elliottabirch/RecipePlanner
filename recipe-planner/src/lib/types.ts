@@ -161,3 +161,20 @@ export interface PlannedMealExpanded extends PlannedMeal {
     weekly_plan?: WeeklyPlan;
   };
 }
+
+export interface MealVariantOverride extends BaseRecord {
+  planned_meal: string; // relation ID
+  original_node: string; // relation ID (recipe_product_node being replaced)
+  replacement_product: string; // relation ID (product to use instead)
+}
+
+export interface MealVariantOverrideExpanded extends MealVariantOverride {
+  expand?: {
+    planned_meal?: PlannedMeal;
+    original_node?: RecipeProductNode & {
+      expand?: { product?: Product };
+    };
+    replacement_product?: Product;
+  };
+}
+

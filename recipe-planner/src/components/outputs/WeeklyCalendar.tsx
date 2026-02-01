@@ -102,11 +102,11 @@ export function WeeklyCalendar({
                   !m.day && m.meal_slot !== "snack" && m.meal_slot !== "micah"
               )
               .filter((m) => {
-                const data = recipeData.get(m.recipe);
+                const data = recipeData.get(m.id);
                 return data?.recipe.recipe_type !== "batch_prep";
               })
               .map((meal) => {
-                const data = recipeData.get(meal.recipe);
+                const data = recipeData.get(meal.id);
                 const isPerishable = data ? isRecipePerishable(data) : false;
                 return (
                   <Chip
@@ -151,11 +151,11 @@ export function WeeklyCalendar({
             {plannedMeals
               .filter((m) => !m.day && m.meal_slot === "snack")
               .filter((m) => {
-                const data = recipeData.get(m.recipe);
+                const data = recipeData.get(m.id);
                 return data?.recipe.recipe_type !== "batch_prep";
               })
               .map((meal) => {
-                const data = recipeData.get(meal.recipe);
+                const data = recipeData.get(meal.id);
                 const isPerishable = data ? isRecipePerishable(data) : false;
                 return (
                   <Chip
@@ -230,7 +230,7 @@ export function WeeklyCalendar({
 
                   // Filter to only include meal recipes (not batch_prep)
                   const mealRecipes = meals.filter((m) => {
-                    const data = recipeData.get(m.recipe);
+                    const data = recipeData.get(m.id);
                     return data?.recipe.recipe_type !== "batch_prep";
                   });
 
@@ -247,7 +247,7 @@ export function WeeklyCalendar({
                     >
                       {mealRecipes.map((meal) => {
                         const isMicah = isMicahMeal(meal);
-                        const data = recipeData.get(meal.recipe);
+                        const data = recipeData.get(meal.id);
                         const isPerishable = data
                           ? isRecipePerishable(data)
                           : false;
