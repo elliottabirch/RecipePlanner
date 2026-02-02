@@ -1,0 +1,136 @@
+{
+  "existing": [
+    {
+      "search": "Parsley",
+      "found": "parsley",
+      "id": "4a3mv36va1b8725",
+      "type": "raw"
+    },
+    {
+      "search": "Lemon",
+      "found": "lemon",
+      "id": "1oz6u19730m3e6z",
+      "type": "raw"
+    },
+    {
+      "search": "Olive oil",
+      "found": "olive oil",
+      "id": "6m06pr6cyq0e277",
+      "type": "raw"
+    }
+  ],
+  "missing": [
+    {
+      "search": "Cherry tomatoes",
+      "type": "raw",
+      "similarMatches": []
+    },
+    {
+      "search": "Thyme",
+      "type": "raw",
+      "similarMatches": [
+        "thyme (fresh) (raw)"
+      ]
+    },
+    {
+      "search": "Yellow onion",
+      "type": "raw",
+      "similarMatches": []
+    },
+    {
+      "search": "Frozen garlic cubes",
+      "type": "inventory",
+      "similarMatches": []
+    },
+    {
+      "search": "Red pepper flakes",
+      "type": "raw",
+      "similarMatches": []
+    },
+    {
+      "search": "White beans",
+      "type": "raw",
+      "similarMatches": []
+    },
+    {
+      "search": "Broth",
+      "type": "inventory",
+      "similarMatches": []
+    },
+    {
+      "search": "Salt",
+      "type": "raw",
+      "similarMatches": []
+    },
+    {
+      "search": "Pepper",
+      "type": "raw",
+      "similarMatches": []
+    },
+    {
+      "search": "Chopped parsley",
+      "type": "transient",
+      "similarMatches": [
+        "parsley (raw)"
+      ]
+    },
+    {
+      "search": "Lemon zest",
+      "type": "transient",
+      "similarMatches": [
+        "lemon (raw)"
+      ]
+    },
+    {
+      "search": "Diced onion",
+      "type": "transient",
+      "similarMatches": []
+    },
+    {
+      "search": "Garlic cube",
+      "type": "transient",
+      "similarMatches": []
+    },
+    {
+      "search": "Rinsed white beans",
+      "type": "transient",
+      "similarMatches": []
+    },
+    {
+      "search": "Roasted tomatoes",
+      "type": "transient",
+      "similarMatches": []
+    },
+    {
+      "search": "Sautéed aromatics",
+      "type": "transient",
+      "similarMatches": []
+    },
+    {
+      "search": "Bean mixture",
+      "type": "transient",
+      "similarMatches": []
+    },
+    {
+      "search": "Lemon-parsley mixture",
+      "type": "stored",
+      "similarMatches": [
+        "lemon (raw)",
+        "parsley (raw)"
+      ]
+    },
+    {
+      "search": "White Bean Tomato Stew Base",
+      "type": "stored",
+      "similarMatches": []
+    },
+    {
+      "search": "White Bean Stew with Lemon-Parsley",
+      "type": "transient",
+      "similarMatches": [
+        "lemon (raw)",
+        "parsley (raw)"
+      ]
+    }
+  ]
+}

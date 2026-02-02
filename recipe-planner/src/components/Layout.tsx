@@ -30,6 +30,7 @@ import {
   Settings as RegistryIcon,
   Inventory2 as InventoryIcon,
 } from "@mui/icons-material";
+import DatabaseSwitcher from "./DatabaseSwitcher";
 
 const DRAWER_WIDTH = 260;
 
@@ -181,6 +182,8 @@ export default function Layout() {
               ? "Outputs"
               : "Meal Planner"}
           </Typography>
+          <Box sx={{ flexGrow: 1 }} />
+          <DatabaseSwitcher />
         </Toolbar>
       </AppBar>
 
