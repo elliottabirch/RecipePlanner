@@ -168,7 +168,7 @@ export const BatchPrepPrintView = forwardRef<
                   {group.inputProduct}
                 </Typography>
 
-                {group.steps.map((step, stepIdx) => (
+                {group.steps.map((step) => (
                   <Box
                     key={step.stepId}
                     sx={{
@@ -267,7 +267,7 @@ export const BatchPrepPrintView = forwardRef<
                   {group.inputProduct}
                 </Typography>
 
-                {group.steps.map((step, stepIdx) => (
+                {group.steps.map((step) => (
                   <Box
                     key={step.stepId}
                     sx={{

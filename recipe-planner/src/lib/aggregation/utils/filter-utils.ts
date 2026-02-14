@@ -5,7 +5,7 @@ import type {
   RecipeGraphData,
   ExpandedProductNode,
 } from "../types";
-import { STORAGE_LOCATIONS } from "./constants";
+import { STORAGE_LOCATIONS, SECTION_ORDER } from "./constants";
 
 // ============================================================================
 // Filtering & Grouping Utilities
@@ -40,13 +40,23 @@ export function groupByStorageLocation<
 }
 
 /**
- * Group items by store and section
+ * Get section sort index (lower = earlier in list)
+ */
+function getSectionSortIndex(sectionName: string): number {
+  const index = SECTION_ORDER.indexOf(sectionName.toLowerCase());
+  // Unknown sections go to the end
+  return index === -1 ? SECTION_ORDER.length : index;
+}
+
+/**
+ * Group items by store and section, with sections sorted by SECTION_ORDER
  */
 export function groupByStoreAndSection(
   items: AggregatedProduct[]
 ): Map<string, Map<string, AggregatedProduct[]>> {
   const byStore = new Map<string, Map<string, AggregatedProduct[]>>();
 
+  // First pass: group items
   items.forEach((item) => {
     const storeName = item.storeName || "Other";
     const sectionName = item.sectionName || "Other";
@@ -62,7 +72,26 @@ export function groupByStoreAndSection(
     storeMap.get(sectionName)!.push(item);
   });
 
-  return byStore;
+  // Second pass: sort sections within each store
+  const sortedByStore = new Map<string, Map<string, AggregatedProduct[]>>();
+
+  byStore.forEach((sectionsMap, storeName) => {
+    const sortedSections = new Map<string, AggregatedProduct[]>();
+    const sectionEntries = Array.from(sectionsMap.entries());
+
+    // Sort by SECTION_ORDER
+    sectionEntries.sort((a, b) => {
+      return getSectionSortIndex(a[0]) - getSectionSortIndex(b[0]);
+    });
+
+    sectionEntries.forEach(([sectionName, products]) => {
+      sortedSections.set(sectionName, products);
+    });
+
+    sortedByStore.set(storeName, sortedSections);
+  });
+
+  return sortedByStore;
 }
 
 /**

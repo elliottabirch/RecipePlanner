@@ -37,3 +37,16 @@ export const SLOT_ORDER: readonly MealSlot[] = [
   "snack",
   "micah",
 ] as const;
+
+/**
+ * Store sections in shopping order
+ */
+export const SECTION_ORDER: readonly string[] = [
+  "produce",
+  "bakery",
+  "dairy",
+  "frozen",
+  "baking supplies",
+  "international",
+  "meat",
+] as const;
