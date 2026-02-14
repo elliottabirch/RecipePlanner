@@ -115,11 +115,6 @@ export default function Outputs() {
     severity: "success",
   });
 
-  // Handle print for batch prep list
-  const handlePrint = () => {
-    window.print();
-  };
-
   // Handle export to list providers
   const handleExport = async () => {
     const providers = getAvailableProviders();
@@ -710,7 +705,6 @@ export default function Outputs() {
                   batchPrepSteps={batchPrepSteps}
                   checkedItems={checkedItems}
                   onToggleChecked={toggleChecked}
-                  onPrint={handlePrint}
                 />
               </Paper>
             )}
