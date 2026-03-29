@@ -1,7 +1,7 @@
 import { forwardRef } from "react";
 import { Box, Typography, Divider } from "@mui/material";
 import type { AggregatedStep } from "../../lib/aggregation";
-import { StepType } from "../../lib/types";
+import { StepType, ProductType, StorageLocation } from "../../lib/types";
 
 interface BatchPrepPrintViewProps {
   batchPrepSteps: AggregatedStep[];
@@ -11,6 +11,7 @@ interface AggregatedInput {
   productName: string;
   totalQuantity: number;
   unit: string;
+  storageLocation: StorageLocation | "pantry";
 }
 
 interface GroupedSteps {
@@ -19,13 +20,34 @@ interface GroupedSteps {
 }
 
 /**
+ * Storage location display order and labels
+ */
+const STORAGE_LOCATION_ORDER: (StorageLocation | "pantry")[] = [
+  StorageLocation.Fridge,
+  StorageLocation.Freezer,
+  StorageLocation.Dry,
+  "pantry",
+];
+
+const STORAGE_LOCATION_LABELS: Record<StorageLocation | "pantry", string> = {
+  [StorageLocation.Fridge]: "Fridge",
+  [StorageLocation.Freezer]: "Freezer",
+  [StorageLocation.Dry]: "Dry Storage",
+  pantry: "Pantry",
+};
+
+/**
  * Aggregate all inputs across all steps into a single pull list
+ * Only includes raw products (ingredients to pull from storage)
  */
 function aggregateInputs(steps: AggregatedStep[]): AggregatedInput[] {
   const inputMap = new Map<string, AggregatedInput>();
 
   steps.forEach((step) => {
     step.inputs.forEach((input) => {
+      // Only include raw products - these are items we need to pull from storage
+      if (input.productType !== ProductType.Raw) return;
+
       const key = `${input.productName}|${input.unit || ""}`;
       const existing = inputMap.get(key);
 
@@ -36,6 +58,7 @@ function aggregateInputs(steps: AggregatedStep[]): AggregatedInput[] {
           productName: input.productName,
           totalQuantity: input.quantity || 0,
           unit: input.unit || "",
+          storageLocation: input.storageLocation,
         });
       }
     });
@@ -44,6 +67,28 @@ function aggregateInputs(steps: AggregatedStep[]): AggregatedInput[] {
   return Array.from(inputMap.values()).sort((a, b) =>
     a.productName.localeCompare(b.productName)
   );
+}
+
+/**
+ * Group inputs by storage location
+ */
+function groupInputsByLocation(
+  inputs: AggregatedInput[]
+): Map<StorageLocation | "pantry", AggregatedInput[]> {
+  const grouped = new Map<StorageLocation | "pantry", AggregatedInput[]>();
+
+  inputs.forEach((input) => {
+    const location = input.storageLocation;
+    const existing = grouped.get(location);
+
+    if (existing) {
+      existing.push(input);
+    } else {
+      grouped.set(location, [input]);
+    }
+  });
+
+  return grouped;
 }
 
 /**
@@ -86,6 +131,7 @@ export const BatchPrepPrintView = forwardRef<
   );
 
   const pullList = aggregateInputs(batchPrepSteps);
+  const groupedPullList = groupInputsByLocation(pullList);
   const groupedPrep = groupStepsByInput(prepSteps);
   const groupedAssembly = groupStepsByInput(assemblySteps);
 
@@ -97,43 +143,67 @@ export const BatchPrepPrintView = forwardRef<
           Batch Prep — Pull List
         </Typography>
 
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 0.5,
-          }}
-        >
-          {pullList.map((item, idx) => (
-            <Box
-              key={idx}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-                py: 0.25,
-              }}
-            >
+        {STORAGE_LOCATION_ORDER.map((location) => {
+          const items = groupedPullList.get(location);
+          if (!items || items.length === 0) return null;
+
+          return (
+            <Box key={location} sx={{ mb: 2 }}>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  fontWeight: "bold",
+                  color: "#555",
+                  textTransform: "uppercase",
+                  fontSize: "0.75rem",
+                  mb: 0.5,
+                  pb: 0.25,
+                  borderBottom: "1px solid #ddd",
+                }}
+              >
+                {STORAGE_LOCATION_LABELS[location]}
+              </Typography>
+
               <Box
                 sx={{
-                  width: 14,
-                  height: 14,
-                  border: "1.5px solid #666",
-                  borderRadius: 0.5,
-                  flexShrink: 0,
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, 1fr)",
+                  gap: 0.5,
                 }}
-              />
-              <Typography variant="body2" sx={{ fontSize: "0.8rem" }}>
-                <strong>{item.productName}</strong>
-                {item.totalQuantity > 0 && (
-                  <span style={{ color: "#666", marginLeft: 4 }}>
-                    ({formatQuantity(item.totalQuantity, item.unit)})
-                  </span>
-                )}
-              </Typography>
+              >
+                {items.map((item, idx) => (
+                  <Box
+                    key={idx}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      py: 0.25,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 14,
+                        height: 14,
+                        border: "1.5px solid #666",
+                        borderRadius: 0.5,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <Typography variant="body2" sx={{ fontSize: "0.8rem" }}>
+                      <strong>{item.productName}</strong>
+                      {item.totalQuantity > 0 && (
+                        <span style={{ color: "#666", marginLeft: 4 }}>
+                          ({formatQuantity(item.totalQuantity, item.unit)})
+                        </span>
+                      )}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
             </Box>
-          ))}
-        </Box>
+          );
+        })}
       </Box>
 
       {/* PAGE 2+: Prep & Assembly Steps */}

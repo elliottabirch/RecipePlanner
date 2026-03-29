@@ -290,6 +290,8 @@ export function buildBatchPrepListFromFlow(
         .join(", "),
       inputs: step.inputs.map((i) => ({
         productName: i.productName,
+        productType: i.productType,
+        storageLocation: i.storageLocation,
         quantity: i.quantity,
         unit: i.unit,
       })),

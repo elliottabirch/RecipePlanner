@@ -1,4 +1,4 @@
-import type { StepType } from "../../types";
+import type { StepType, ProductType, StorageLocation } from "../../types";
 import type {
   RecipeGraphData,
   PlannedMealWithRecipe,
@@ -11,6 +11,7 @@ import {
   createStepSource,
   addStepSource,
 } from "../utils/step-utils";
+import { determineStorageLocation } from "../utils/product-utils";
 
 // ============================================================================
 // Step Aggregation Builder Functions
@@ -26,6 +27,8 @@ export function extractStepInputs(
 ): {
   productId: string;
   productName: string;
+  productType: ProductType;
+  storageLocation: StorageLocation | "pantry";
   quantity: number;
   unit: string;
 }[] {
@@ -43,6 +46,8 @@ export function extractStepInputs(
       return {
         productId: product.id,
         productName: product.name,
+        productType: product.type,
+        storageLocation: determineStorageLocation(product),
         quantity: (node.quantity || 0) * mealCount,
         unit: node.unit || "",
       };
@@ -98,6 +103,8 @@ export function addOrMergeStep(
   inputs: {
     productId: string;
     productName: string;
+    productType: ProductType;
+    storageLocation: StorageLocation | "pantry";
     quantity: number;
     unit: string;
   }[],

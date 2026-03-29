@@ -89,6 +89,8 @@ export interface AggregatedFlowStep {
   inputs: {
     productId: string;
     productName: string;
+    productType: ProductType;
+    storageLocation: StorageLocation | "pantry";
     quantity: number;
     unit: string;
   }[];
@@ -135,7 +137,13 @@ export interface AggregatedStep {
   stepType: StepType;
   timing?: Timing;
   recipeName: string;
-  inputs: { productName: string; quantity?: number; unit?: string }[];
+  inputs: {
+    productName: string;
+    productType: ProductType;
+    storageLocation: StorageLocation | "pantry";
+    quantity?: number;
+    unit?: string;
+  }[];
   outputs: {
     productName: string;
     quantity?: number;
