@@ -24,7 +24,7 @@ import {
 } from "@mui/icons-material";
 import { Position, type Node, type Edge } from "@xyflow/react";
 import dagre from "dagre";
-import { getAll, collections } from "../lib/api";
+import { getAll, create, collections } from "../lib/api";
 import "../styles/printStyles.css";
 import {
   groupShoppingList,
@@ -100,6 +100,14 @@ export default function Outputs() {
   const [inventoryItems, setInventoryItems] = useState<InventoryItemExpanded[]>(
     []
   );
+
+  // Refresh counter to trigger data reload after mutations
+  const [refreshCounter, setRefreshCounter] = useState(0);
+
+  // Manual shopping items added from out-of-stock resolution
+  const [manualShoppingItems, setManualShoppingItems] = useState<
+    { productId: string; productName: string }[]
+  >([]);
 
   // Checkbox states
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
@@ -192,10 +200,10 @@ export default function Outputs() {
         );
         setPlannedMeals(meals);
 
-        // Load inventory items
+        // Load inventory items with nested expansion for resolution info
         const inventory = await getAll<InventoryItemExpanded>(
           collections.inventoryItems,
-          { expand: "product" }
+          { expand: "product,product.source_recipe,product.store_bought_product" }
         );
         setInventoryItems(inventory);
 
@@ -305,7 +313,7 @@ export default function Outputs() {
     };
 
     loadPlanData();
-  }, [selectedPlanId]);
+  }, [selectedPlanId, refreshCounter]);
 
   // Build the product flow graph as the single source of truth
   const productFlowGraph = useMemo(
@@ -551,6 +559,30 @@ export default function Outputs() {
     return { flowNodes: layoutedNodes, flowEdges: edges };
   }, [productFlowGraph]);
 
+  // Handler: add a batch prep recipe to the weekly plan
+  const handleAddRecipeToPlan = async (recipeId: string) => {
+    if (!selectedPlanId) return;
+    try {
+      await create(collections.plannedMeals, {
+        weekly_plan: selectedPlanId,
+        recipe: recipeId,
+        meal_slot: "snack",
+        quantity: 1,
+      });
+      setRefreshCounter((c) => c + 1);
+    } catch {
+      setError("Failed to add recipe to plan");
+    }
+  };
+
+  // Handler: add a store-bought product to the manual shopping list
+  const handleAddToShoppingList = (productId: string, productName: string) => {
+    setManualShoppingItems((prev) => {
+      if (prev.some((item) => item.productId === productId)) return prev;
+      return [...prev, { productId, productName }];
+    });
+  };
+
   const toggleChecked = (key: string) => {
     setCheckedItems((prev) => {
       const next = new Set(prev);
@@ -621,19 +653,12 @@ export default function Outputs() {
           </Alert>
         )}
 
-        {/* Out-of-Stock Warnings */}
+        {/* Out-of-Stock Warning Banner */}
         {stockWarnings.some((w) => !w.inStock) && (
           <Alert severity="warning" sx={{ mb: 2 }}>
-            <Typography variant="subtitle2" gutterBottom fontWeight="bold">
+            <Typography variant="body2">
               {UI_TEXT.outOfStockWarning}
             </Typography>
-            {stockWarnings
-              .filter((w) => !w.inStock)
-              .map((w, i) => (
-                <Typography key={i} variant="body2">
-                  • {w.recipeName}: {w.productName}
-                </Typography>
-              ))}
           </Alert>
         )}
 
@@ -694,6 +719,12 @@ export default function Outputs() {
                   checkedItems={checkedItems}
                   onToggleChecked={toggleChecked}
                   onExport={handleExport}
+                  stockWarnings={stockWarnings}
+                  plannedMeals={plannedMeals}
+                  recipeData={recipeData}
+                  onAddRecipeToPlan={handleAddRecipeToPlan}
+                  onAddToShoppingList={handleAddToShoppingList}
+                  manualShoppingItems={manualShoppingItems}
                 />
               </Paper>
             )}

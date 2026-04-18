@@ -1,8 +1,9 @@
 import { Box, Typography, Button, List } from "@mui/material";
 import { ContentCopy as ContentCopyIcon } from "@mui/icons-material";
-import type { AggregatedProduct } from "../../lib/aggregation";
+import type { AggregatedProduct, InventoryStockWarning, RecipeGraphData, PlannedMealWithRecipe } from "../../lib/aggregation";
 import { CheckableListItem } from "../CheckableListItem";
 import { EmptyState } from "../EmptyState";
+import { OutOfStockSection } from "./OutOfStockSection";
 import {
   UI_TEXT,
   getPantryCheckboxKey,
@@ -14,11 +15,22 @@ interface GroupedShoppingList {
   pantryItems: AggregatedProduct[];
 }
 
+interface ManualShoppingItem {
+  productId: string;
+  productName: string;
+}
+
 interface ShoppingListTabProps {
   groupedShoppingList: GroupedShoppingList;
   checkedItems: Set<string>;
   onToggleChecked: (key: string) => void;
   onExport: () => void;
+  stockWarnings?: InventoryStockWarning[];
+  plannedMeals?: PlannedMealWithRecipe[];
+  recipeData?: Map<string, RecipeGraphData>;
+  onAddRecipeToPlan?: (recipeId: string) => void;
+  onAddToShoppingList?: (productId: string, productName: string) => void;
+  manualShoppingItems?: ManualShoppingItem[];
 }
 
 export function ShoppingListTab({
@@ -26,10 +38,19 @@ export function ShoppingListTab({
   checkedItems,
   onToggleChecked,
   onExport,
+  stockWarnings,
+  plannedMeals,
+  recipeData,
+  onAddRecipeToPlan,
+  onAddToShoppingList,
+  manualShoppingItems,
 }: ShoppingListTabProps) {
+  const hasOutOfStock = stockWarnings?.some((w) => !w.inStock) ?? false;
   const hasItems =
     groupedShoppingList.byStore.size > 0 ||
-    groupedShoppingList.pantryItems.length > 0;
+    groupedShoppingList.pantryItems.length > 0 ||
+    hasOutOfStock ||
+    (manualShoppingItems && manualShoppingItems.length > 0);
 
   if (!hasItems) {
     return <EmptyState message={UI_TEXT.noShoppingItems} />;
@@ -53,6 +74,22 @@ export function ShoppingListTab({
           {UI_TEXT.copyToClipboard}
         </Button>
       </Box>
+
+      {/* Out of Stock Inventory Items */}
+      {hasOutOfStock &&
+        stockWarnings &&
+        plannedMeals &&
+        recipeData &&
+        onAddRecipeToPlan &&
+        onAddToShoppingList && (
+          <OutOfStockSection
+            stockWarnings={stockWarnings}
+            plannedMeals={plannedMeals}
+            recipeData={recipeData}
+            onAddRecipeToPlan={onAddRecipeToPlan}
+            onAddToShoppingList={onAddToShoppingList}
+          />
+        )}
 
       {/* Items by Store/Section */}
       {Array.from(groupedShoppingList.byStore.entries()).map(
@@ -135,6 +172,30 @@ export function ShoppingListTab({
                   onToggle={onToggleChecked}
                   primary={primary}
                   secondary={secondary}
+                  disablePadding
+                />
+              );
+            })}
+          </List>
+        </Box>
+      )}
+
+      {/* Store-bought Items (manually added from out-of-stock resolution) */}
+      {manualShoppingItems && manualShoppingItems.length > 0 && (
+        <Box mt={2}>
+          <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>
+            {UI_TEXT.storeBoughtSectionTitle}
+          </Typography>
+          <List dense>
+            {manualShoppingItems.map((item) => {
+              const key = getShoppingCheckboxKey(`manual-${item.productId}`);
+              return (
+                <CheckableListItem
+                  key={item.productId}
+                  itemKey={key}
+                  checked={checkedItems.has(key)}
+                  onToggle={onToggleChecked}
+                  primary={item.productName}
                   disablePadding
                 />
               );
