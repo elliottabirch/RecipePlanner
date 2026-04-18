@@ -1166,6 +1166,32 @@
         "system": false,
         "type": "select",
         "values": ["snack", "meal"]
+      },
+      {
+        "cascadeDelete": false,
+        "collectionId": "pbc_5183946072",
+        "hidden": false,
+        "id": "relation_source_recipe",
+        "maxSelect": 1,
+        "minSelect": 0,
+        "name": "source_recipe",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "relation"
+      },
+      {
+        "cascadeDelete": false,
+        "collectionId": "pbc_7402169584",
+        "hidden": false,
+        "id": "relation_store_bought_product",
+        "maxSelect": 1,
+        "minSelect": 0,
+        "name": "store_bought_product",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "relation"
       }
     ],
     "indexes": [],
