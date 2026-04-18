@@ -6,6 +6,7 @@ import {
 } from "@mui/icons-material";
 import type { InventoryStockWarning } from "../../lib/aggregation";
 import type { RecipeGraphData, PlannedMealWithRecipe } from "../../lib/aggregation";
+import type { ManualShoppingItem } from "./ShoppingListTab";
 import { ProductType } from "../../lib/types";
 import { UI_TEXT } from "../../constants/outputs";
 
@@ -14,7 +15,7 @@ interface OutOfStockSectionProps {
   plannedMeals: PlannedMealWithRecipe[];
   recipeData: Map<string, RecipeGraphData>;
   onAddRecipeToPlan: (recipeId: string) => void;
-  onAddToShoppingList: (productId: string, productName: string) => void;
+  onAddToShoppingList: (item: ManualShoppingItem) => void;
 }
 
 /**
@@ -153,10 +154,12 @@ export function OutOfStockSection({
                     color="secondary"
                     startIcon={<CartIcon />}
                     onClick={() =>
-                      onAddToShoppingList(
-                        item.storeBoughtProductId!,
-                        item.storeBoughtProductName!
-                      )
+                      onAddToShoppingList({
+                        productId: item.storeBoughtProductId!,
+                        productName: item.storeBoughtProductName!,
+                        storeName: item.storeBoughtStoreName,
+                        sectionName: item.storeBoughtSectionName,
+                      })
                     }
                   >
                     {UI_TEXT.outOfStockAddToShoppingList}: {item.storeBoughtProductName}

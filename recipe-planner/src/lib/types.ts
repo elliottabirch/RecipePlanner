@@ -141,7 +141,12 @@ export interface InventoryItemExpanded extends InventoryItem {
     product?: Product & {
       expand?: {
         source_recipe?: Recipe;
-        store_bought_product?: Product;
+        store_bought_product?: Product & {
+          expand?: {
+            store?: Store;
+            section?: Section;
+          };
+        };
       };
     };
   };

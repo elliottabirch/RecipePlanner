@@ -176,7 +176,6 @@ export const UI_TEXT = {
   outOfStockAddRecipe: "Add to Plan",
   outOfStockAddToShoppingList: "Add to Shopping List",
   outOfStockNoResolution: "No resolution configured for this item. Edit the product to add a source recipe or store-bought alternative.",
-  storeBoughtSectionTitle: "Store-bought Items (added manually)",
 
   // Export
   exportSuccess: "Export completed",

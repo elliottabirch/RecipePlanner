@@ -444,6 +444,8 @@ export interface InventoryStockWarning {
   sourceRecipeName?: string;
   storeBoughtProductId?: string;
   storeBoughtProductName?: string;
+  storeBoughtStoreName?: string;
+  storeBoughtSectionName?: string;
 }
 
 /**
@@ -464,17 +466,22 @@ export function checkInventoryStock(
       sourceRecipeName?: string;
       storeBoughtProductId?: string;
       storeBoughtProductName?: string;
+      storeBoughtStoreName?: string;
+      storeBoughtSectionName?: string;
     }
   >();
   inventoryItems.forEach((item) => {
     const product = item.expand?.product;
     if (product) {
+      const sbp = product.expand?.store_bought_product;
       stockMap.set(item.product, {
         inStock: item.in_stock,
         sourceRecipeId: product.source_recipe || product.expand?.source_recipe?.id,
         sourceRecipeName: product.expand?.source_recipe?.name,
-        storeBoughtProductId: product.store_bought_product || product.expand?.store_bought_product?.id,
-        storeBoughtProductName: product.expand?.store_bought_product?.name,
+        storeBoughtProductId: product.store_bought_product || sbp?.id,
+        storeBoughtProductName: sbp?.name,
+        storeBoughtStoreName: sbp?.expand?.store?.name,
+        storeBoughtSectionName: sbp?.expand?.section?.name,
       });
     }
   });
@@ -494,6 +501,8 @@ export function checkInventoryStock(
           sourceRecipeName: stockInfo?.sourceRecipeName,
           storeBoughtProductId: stockInfo?.storeBoughtProductId,
           storeBoughtProductName: stockInfo?.storeBoughtProductName,
+          storeBoughtStoreName: stockInfo?.storeBoughtStoreName,
+          storeBoughtSectionName: stockInfo?.storeBoughtSectionName,
         });
       }
     });

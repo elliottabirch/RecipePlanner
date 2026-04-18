@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Box, Typography, Button, List } from "@mui/material";
 import { ContentCopy as ContentCopyIcon } from "@mui/icons-material";
 import type { AggregatedProduct, InventoryStockWarning, RecipeGraphData, PlannedMealWithRecipe } from "../../lib/aggregation";
@@ -15,9 +16,57 @@ interface GroupedShoppingList {
   pantryItems: AggregatedProduct[];
 }
 
-interface ManualShoppingItem {
+export interface ManualShoppingItem {
   productId: string;
   productName: string;
+  storeName?: string;
+  sectionName?: string;
+}
+
+const UNCATEGORIZED_STORE = "Other";
+const UNCATEGORIZED_SECTION = "Uncategorized";
+
+function mergeManualItemsIntoGroups(
+  byStore: Map<string, Map<string, AggregatedProduct[]>>,
+  manualItems: ManualShoppingItem[]
+): Map<string, Map<string, AggregatedProduct[]>> {
+  if (manualItems.length === 0) return byStore;
+
+  const merged = new Map(
+    Array.from(byStore.entries()).map(([store, sections]) => [
+      store,
+      new Map(
+        Array.from(sections.entries()).map(([section, items]) => [
+          section,
+          [...items],
+        ])
+      ),
+    ])
+  );
+
+  for (const item of manualItems) {
+    const storeName = item.storeName || UNCATEGORIZED_STORE;
+    const sectionName = item.sectionName || UNCATEGORIZED_SECTION;
+
+    if (!merged.has(storeName)) {
+      merged.set(storeName, new Map());
+    }
+    const sections = merged.get(storeName)!;
+    if (!sections.has(sectionName)) {
+      sections.set(sectionName, []);
+    }
+    sections.get(sectionName)!.push({
+      productId: `manual-${item.productId}`,
+      productName: item.productName,
+      productType: "raw" as AggregatedProduct["productType"],
+      isPantry: false,
+      totalQuantity: 1,
+      unit: "",
+      sources: [{ recipeName: "Store-bought", quantity: 1, unit: "" }],
+    });
+  }
+
+  return merged;
 }
 
 interface ShoppingListTabProps {
@@ -29,7 +78,7 @@ interface ShoppingListTabProps {
   plannedMeals?: PlannedMealWithRecipe[];
   recipeData?: Map<string, RecipeGraphData>;
   onAddRecipeToPlan?: (recipeId: string) => void;
-  onAddToShoppingList?: (productId: string, productName: string) => void;
+  onAddToShoppingList?: (item: ManualShoppingItem) => void;
   manualShoppingItems?: ManualShoppingItem[];
 }
 
@@ -46,11 +95,20 @@ export function ShoppingListTab({
   manualShoppingItems,
 }: ShoppingListTabProps) {
   const hasOutOfStock = stockWarnings?.some((w) => !w.inStock) ?? false;
+
+  const mergedByStore = useMemo(
+    () =>
+      mergeManualItemsIntoGroups(
+        groupedShoppingList.byStore,
+        manualShoppingItems || []
+      ),
+    [groupedShoppingList.byStore, manualShoppingItems]
+  );
+
   const hasItems =
-    groupedShoppingList.byStore.size > 0 ||
+    mergedByStore.size > 0 ||
     groupedShoppingList.pantryItems.length > 0 ||
-    hasOutOfStock ||
-    (manualShoppingItems && manualShoppingItems.length > 0);
+    hasOutOfStock;
 
   if (!hasItems) {
     return <EmptyState message={UI_TEXT.noShoppingItems} />;
@@ -92,14 +150,13 @@ export function ShoppingListTab({
         )}
 
       {/* Items by Store/Section */}
-      {Array.from(groupedShoppingList.byStore.entries()).map(
+      {Array.from(mergedByStore.entries()).map(
         ([storeName, sections]) => (
           <Box key={storeName} mb={3}>
             <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>
               {storeName}
             </Typography>
             {Array.from(sections.entries()).map(([sectionName, items]) => {
-              // Filter out pantry items checked in the pantry section
               const visibleItems = items.filter((item) => {
                 if (item.isPantry) {
                   const pantryKey = getPantryCheckboxKey(item.productId);
@@ -122,7 +179,9 @@ export function ShoppingListTab({
                   <List dense>
                     {visibleItems.map((item) => {
                       const key = getShoppingCheckboxKey(item.productId);
-                      const primary = `${item.productName} — ${item.totalQuantity} ${item.unit}`;
+                      const primary = item.totalQuantity && item.unit
+                        ? `${item.productName} — ${item.totalQuantity} ${item.unit}`
+                        : item.productName;
                       const secondary = item.sources
                         .map((s) => s.recipeName)
                         .join(", ");
@@ -172,30 +231,6 @@ export function ShoppingListTab({
                   onToggle={onToggleChecked}
                   primary={primary}
                   secondary={secondary}
-                  disablePadding
-                />
-              );
-            })}
-          </List>
-        </Box>
-      )}
-
-      {/* Store-bought Items (manually added from out-of-stock resolution) */}
-      {manualShoppingItems && manualShoppingItems.length > 0 && (
-        <Box mt={2}>
-          <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>
-            {UI_TEXT.storeBoughtSectionTitle}
-          </Typography>
-          <List dense>
-            {manualShoppingItems.map((item) => {
-              const key = getShoppingCheckboxKey(`manual-${item.productId}`);
-              return (
-                <CheckableListItem
-                  key={item.productId}
-                  itemKey={key}
-                  checked={checkedItems.has(key)}
-                  onToggle={onToggleChecked}
-                  primary={item.productName}
                   disablePadding
                 />
               );

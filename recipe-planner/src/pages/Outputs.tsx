@@ -106,7 +106,7 @@ export default function Outputs() {
 
   // Manual shopping items added from out-of-stock resolution
   const [manualShoppingItems, setManualShoppingItems] = useState<
-    { productId: string; productName: string }[]
+    { productId: string; productName: string; storeName?: string; sectionName?: string }[]
   >([]);
 
   // Checkbox states
@@ -203,7 +203,7 @@ export default function Outputs() {
         // Load inventory items with nested expansion for resolution info
         const inventory = await getAll<InventoryItemExpanded>(
           collections.inventoryItems,
-          { expand: "product,product.source_recipe,product.store_bought_product" }
+          { expand: "product,product.source_recipe,product.store_bought_product,product.store_bought_product.store,product.store_bought_product.section" }
         );
         setInventoryItems(inventory);
 
@@ -576,10 +576,16 @@ export default function Outputs() {
   };
 
   // Handler: add a store-bought product to the manual shopping list
-  const handleAddToShoppingList = (productId: string, productName: string) => {
+  const handleAddToShoppingList = (item: {
+    productId: string;
+    productName: string;
+    storeName?: string;
+    sectionName?: string;
+  }) => {
     setManualShoppingItems((prev) => {
-      if (prev.some((item) => item.productId === productId)) return prev;
-      return [...prev, { productId, productName }];
+      if (prev.some((existing) => existing.productId === item.productId))
+        return prev;
+      return [...prev, item];
     });
   };
 
