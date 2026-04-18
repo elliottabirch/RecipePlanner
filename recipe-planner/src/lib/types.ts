@@ -51,6 +51,8 @@ export interface Product extends BaseRecord {
   // New fields for inventory
   ready_to_eat?: boolean;
   meal_slot?: "snack" | "meal";
+  source_recipe?: string; // relation ID to recipes (batch prep that produces this)
+  store_bought_product?: string; // relation ID to products (store-bought alternative)
 }
 
 // Recipes
@@ -136,7 +138,12 @@ export interface InventoryItem extends BaseRecord {
 
 export interface InventoryItemExpanded extends InventoryItem {
   expand?: {
-    product?: Product;
+    product?: Product & {
+      expand?: {
+        source_recipe?: Recipe;
+        store_bought_product?: Product;
+      };
+    };
   };
 }
 
@@ -146,6 +153,8 @@ export interface ProductExpanded extends Product {
     store?: Store;
     section?: Section;
     container_type?: ContainerType;
+    source_recipe?: Recipe;
+    store_bought_product?: Product;
   };
 }
 

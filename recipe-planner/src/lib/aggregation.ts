@@ -23,6 +23,7 @@ export type {
   MealKeyedRecipeData,
 } from "./aggregation/types.js";
 
+
 // Re-export variant utilities
 export {
   applyVariantOverrides,
@@ -431,29 +432,50 @@ export function getReadyToEatInventory(
 }
 
 /**
+ * Stock warning with resolution info for inventory products used in recipes
+ */
+export interface InventoryStockWarning {
+  recipeId: string;
+  recipeName: string;
+  productId: string;
+  productName: string;
+  inStock: boolean;
+  sourceRecipeId?: string;
+  sourceRecipeName?: string;
+  storeBoughtProductId?: string;
+  storeBoughtProductName?: string;
+}
+
+/**
  * Check stock status for inventory products used in recipes
  */
 export function checkInventoryStock(
   recipeDataMap: Map<string, RecipeGraphData>,
   inventoryItems: InventoryItemExpanded[]
-): {
-  recipeId: string;
-  recipeName: string;
-  productName: string;
-  inStock: boolean;
-}[] {
-  const warnings: {
-    recipeId: string;
-    recipeName: string;
-    productName: string;
-    inStock: boolean;
-  }[] = [];
+): InventoryStockWarning[] {
+  const warnings: InventoryStockWarning[] = [];
 
-  // Create a map of product IDs to stock status
-  const stockMap = new Map<string, boolean>();
+  // Create a map of product IDs to stock status and resolution info
+  const stockMap = new Map<
+    string,
+    {
+      inStock: boolean;
+      sourceRecipeId?: string;
+      sourceRecipeName?: string;
+      storeBoughtProductId?: string;
+      storeBoughtProductName?: string;
+    }
+  >();
   inventoryItems.forEach((item) => {
-    if (item.expand?.product) {
-      stockMap.set(item.product, item.in_stock);
+    const product = item.expand?.product;
+    if (product) {
+      stockMap.set(item.product, {
+        inStock: item.in_stock,
+        sourceRecipeId: product.source_recipe || product.expand?.source_recipe?.id,
+        sourceRecipeName: product.expand?.source_recipe?.name,
+        storeBoughtProductId: product.store_bought_product || product.expand?.store_bought_product?.id,
+        storeBoughtProductName: product.expand?.store_bought_product?.name,
+      });
     }
   });
 
@@ -461,12 +483,17 @@ export function checkInventoryStock(
     data.productNodes.forEach((node) => {
       const product = node.expand?.product;
       if (product?.type === ProductType.Inventory) {
-        const inStock = stockMap.get(product.id) ?? false;
+        const stockInfo = stockMap.get(product.id);
         warnings.push({
           recipeId: data.recipe.id,
           recipeName: data.recipe.name,
+          productId: product.id,
           productName: product.name,
-          inStock,
+          inStock: stockInfo?.inStock ?? false,
+          sourceRecipeId: stockInfo?.sourceRecipeId,
+          sourceRecipeName: stockInfo?.sourceRecipeName,
+          storeBoughtProductId: stockInfo?.storeBoughtProductId,
+          storeBoughtProductName: stockInfo?.storeBoughtProductName,
         });
       }
     });
