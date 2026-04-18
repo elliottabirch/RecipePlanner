@@ -11,7 +11,7 @@ export function useRecipeQueue() {
       setLoading(true);
       const items = await getAll<RecipeQueueItemExpanded>(
         collections.recipeQueue,
-        { expand: "recipe", sort: "sort_order,created" }
+        { expand: "recipe", sort: "sort_order" }
       );
       setQueueItems(items);
     } catch (err) {
