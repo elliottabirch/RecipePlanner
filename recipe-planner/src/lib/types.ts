@@ -152,6 +152,18 @@ export interface InventoryItemExpanded extends InventoryItem {
   };
 }
 
+// Recipe Queue
+export interface RecipeQueueItem extends BaseRecord {
+  recipe: string;
+  sort_order?: number;
+}
+
+export interface RecipeQueueItemExpanded extends RecipeQueueItem {
+  expand?: {
+    recipe?: Recipe;
+  };
+}
+
 // Expanded types (with relations populated)
 export interface ProductExpanded extends Product {
   expand?: {

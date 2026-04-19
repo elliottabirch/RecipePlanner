@@ -19,6 +19,7 @@ import {
   Chip,
   Autocomplete,
   List,
+  ListItem,
   ListItemButton,
   ListItemText,
   Table,
@@ -27,11 +28,17 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Collapse,
 } from "@mui/material";
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
+  PlaylistAddCheck as QueuedIcon,
+  Close as CloseIcon,
+  AssignmentTurnedIn as AssignIcon,
 } from "@mui/icons-material";
 import { getAll, create, update, remove, collections } from "../lib/api";
 import type {
@@ -53,6 +60,7 @@ import { DAYS, MEAL_SLOTS, SLOT_COLORS } from "../constants/mealPlanning";
 import { VariantsList } from "../components/VariantsList";
 import { VariantEditorDialog } from "../components/VariantEditorDialog";
 import type { RecipeGraphData } from "../lib/aggregation";
+import { useRecipeQueue } from "../hooks/useRecipeQueue";
 
 interface PlannedMealExpanded extends PlannedMeal {
   expand?: {
@@ -97,6 +105,17 @@ export default function WeeklyPlans() {
   const [selectedDay, setSelectedDay] = useState<Day | "">("");
   const [mealQuantity, setMealQuantity] = useState<number | "">(1);
   const [savingMeal, setSavingMeal] = useState(false);
+
+  // Queue
+  const [queuePanelOpen, setQueuePanelOpen] = useState(true);
+  const {
+    queueItems,
+    removeFromQueue,
+    removeByRecipeId,
+  } = useRecipeQueue();
+  const [assigningFromQueue, setAssigningFromQueue] = useState<string | null>(
+    null
+  );
 
   // Delete confirmation
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -376,6 +395,17 @@ export default function WeeklyPlans() {
     setSelectedSlot("dinner");
     setSelectedDay("");
     setMealQuantity(1);
+    setAssigningFromQueue(null);
+    setMealDialogOpen(true);
+  };
+
+  const handleAssignFromQueue = (recipeId: string) => {
+    const recipe = recipes.find((r) => r.id === recipeId) || null;
+    setSelectedRecipe(recipe);
+    setSelectedSlot("dinner");
+    setSelectedDay("");
+    setMealQuantity(1);
+    setAssigningFromQueue(recipeId);
     setMealDialogOpen(true);
   };
 
@@ -391,6 +421,10 @@ export default function WeeklyPlans() {
         day: selectedDay || null,
         quantity: mealQuantity || 1,
       });
+      if (assigningFromQueue) {
+        await removeByRecipeId(assigningFromQueue);
+        setAssigningFromQueue(null);
+      }
       setMealDialogOpen(false);
       loadPlannedMeals();
     } catch (err) {
@@ -576,6 +610,77 @@ export default function WeeklyPlans() {
             </List>
           )}
         </Paper>
+
+        {/* Queue Panel */}
+        {selectedPlan && queueItems.length > 0 && (
+          <Paper
+            sx={{
+              p: 2,
+              width: 260,
+              flexShrink: 0,
+              maxHeight: "calc(100vh - 200px)",
+              overflow: "auto",
+            }}
+          >
+            <Box
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+              mb={1}
+            >
+              <Box display="flex" alignItems="center" gap={1}>
+                <QueuedIcon color="primary" fontSize="small" />
+                <Typography variant="subtitle1" fontWeight="bold">
+                  Queue ({queueItems.length})
+                </Typography>
+              </Box>
+              <IconButton
+                size="small"
+                onClick={() => setQueuePanelOpen(!queuePanelOpen)}
+              >
+                {queuePanelOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+              </IconButton>
+            </Box>
+            <Collapse in={queuePanelOpen}>
+              <List dense disablePadding>
+                {queueItems.map((item) => (
+                  <ListItem
+                    key={item.id}
+                    disablePadding
+                    sx={{
+                      py: 0.5,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 0.5,
+                    }}
+                  >
+                    <ListItemText
+                      primary={item.expand?.recipe?.name || "Unknown"}
+                      primaryTypographyProps={{ variant: "body2" }}
+                    />
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={() =>
+                        handleAssignFromQueue(item.recipe)
+                      }
+                      title="Assign to meal slot"
+                    >
+                      <AssignIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => removeFromQueue(item.id)}
+                      title="Remove from queue"
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </ListItem>
+                ))}
+              </List>
+            </Collapse>
+          </Paper>
+        )}
 
         {/* Variants List */}
         {selectedPlan && (

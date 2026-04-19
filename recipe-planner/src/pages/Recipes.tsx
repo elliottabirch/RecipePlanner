@@ -20,6 +20,13 @@ import {
   Chip,
   InputAdornment,
   Divider,
+  Collapse,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
+  Badge,
+  Tooltip,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -27,12 +34,17 @@ import {
   Delete as DeleteIcon,
   Search as SearchIcon,
   Restaurant as RecipeIcon,
+  PlaylistAdd as QueueAddIcon,
+  PlaylistAddCheck as QueuedIcon,
+  ClearAll as ClearAllIcon,
+  Close as CloseIcon,
 } from "@mui/icons-material";
 import { getAll, create, remove, collections } from "../lib/api";
 import type { Recipe, RecipeTag, Tag } from "../lib/types";
 import FilterGroup from "../components/FilterGroup";
 import type { FilterOption } from "../components/FilterGroup";
 import type { FilterState } from "../components/FilterChip";
+import { useRecipeQueue } from "../hooks/useRecipeQueue";
 
 export default function Recipes() {
   const navigate = useNavigate();
@@ -42,6 +54,14 @@ export default function Recipes() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [queuePanelOpen, setQueuePanelOpen] = useState(false);
+  const {
+    queueItems,
+    addToQueue,
+    removeFromQueue,
+    clearQueue,
+    isInQueue,
+  } = useRecipeQueue();
 
   // Filter states
   const [filterStates, setFilterStates] = useState<Record<string, FilterState>>(
@@ -233,13 +253,31 @@ export default function Recipes() {
         alignItems="center"
         mb={2}
       >
-        <Box>
-          <Typography variant="h4" gutterBottom>
-            Recipes
-          </Typography>
-          <Typography color="text.secondary" gutterBottom>
-            Manage your recipes with visual graph editor
-          </Typography>
+        <Box display="flex" alignItems="center" gap={2}>
+          <Box>
+            <Typography variant="h4" gutterBottom>
+              Recipes
+            </Typography>
+            <Typography color="text.secondary" gutterBottom>
+              Manage your recipes with visual graph editor
+            </Typography>
+          </Box>
+          <Chip
+            icon={
+              <Badge
+                badgeContent={queueItems.length}
+                color="primary"
+                sx={{ "& .MuiBadge-badge": { fontSize: "0.7rem", minWidth: 18, height: 18 } }}
+              >
+                <QueuedIcon />
+              </Badge>
+            }
+            label={`Queue (${queueItems.length})`}
+            onClick={() => setQueuePanelOpen(!queuePanelOpen)}
+            variant={queuePanelOpen ? "filled" : "outlined"}
+            color="primary"
+            sx={{ cursor: "pointer" }}
+          />
         </Box>
         <Button
           variant="contained"
@@ -314,6 +352,50 @@ export default function Recipes() {
         </Box>
       </Paper>
 
+      <Collapse in={queuePanelOpen}>
+        <Paper sx={{ p: 2, mb: 3, backgroundColor: "primary.50" }}>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+            <Typography variant="subtitle1" fontWeight="bold">
+              Recipe Queue
+            </Typography>
+            {queueItems.length > 0 && (
+              <Button
+                size="small"
+                startIcon={<ClearAllIcon />}
+                onClick={clearQueue}
+                color="error"
+              >
+                Clear All
+              </Button>
+            )}
+          </Box>
+          {queueItems.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No recipes queued. Click the queue button on a recipe card to add
+              it.
+            </Typography>
+          ) : (
+            <List dense disablePadding>
+              {queueItems.map((item) => (
+                <ListItem key={item.id} disablePadding sx={{ py: 0.25 }}>
+                  <ListItemText
+                    primary={item.expand?.recipe?.name || "Unknown"}
+                  />
+                  <ListItemSecondaryAction>
+                    <IconButton
+                      size="small"
+                      onClick={() => removeFromQueue(item.id)}
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </ListItemSecondaryAction>
+                </ListItem>
+              ))}
+            </List>
+          )}
+        </Paper>
+      </Collapse>
+
       {filteredItems.length === 0 ? (
         <Paper sx={{ p: 4, textAlign: "center" }}>
           <RecipeIcon sx={{ fontSize: 64, color: "text.secondary", mb: 2 }} />
@@ -372,10 +454,32 @@ export default function Recipes() {
                   >
                     Edit
                   </Button>
+                  <Tooltip
+                    title={
+                      isInQueue(item.id)
+                        ? "Remove from queue"
+                        : "Add to queue"
+                    }
+                  >
+                    <IconButton
+                      size="small"
+                      onClick={() =>
+                        isInQueue(item.id)
+                          ? removeFromQueue(
+                              queueItems.find((q) => q.recipe === item.id)
+                                ?.id || ""
+                            )
+                          : addToQueue(item.id)
+                      }
+                      color={isInQueue(item.id) ? "primary" : "default"}
+                      sx={{ ml: "auto" }}
+                    >
+                      {isInQueue(item.id) ? <QueuedIcon /> : <QueueAddIcon />}
+                    </IconButton>
+                  </Tooltip>
                   <IconButton
                     size="small"
                     onClick={() => handleDeleteClick(item)}
-                    sx={{ ml: "auto" }}
                   >
                     <DeleteIcon />
                   </IconButton>
