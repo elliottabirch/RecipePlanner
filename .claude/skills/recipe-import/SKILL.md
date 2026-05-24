@@ -69,6 +69,23 @@ Review matches with user. Common reuse opportunities you might miss:
 - A recipe asking for "garlic" should typically pull from `garlic cubes (frozen)` (inventory) via a **`Pull out garlic cubes` assembly step** (not a prep step) producing `garlic cube (pulled)` (transient). This applies to any tracked inventory ingredient.
 - Distinct varieties (e.g. `paprika smoked` vs `paprika`) should stay as separate products.
 
+### Store + section assignment (REQUIRED for every new non-pantry product)
+
+Every newly-created `raw`, `inventory`, or `stored` product that the user actually buys (i.e. `pantry: false`) **must** be created with a `store` relation and, where applicable, a `section` relation. These power the shopping-list grouping in the UI; products with no store/section quietly fall out of the list and get missed at the store. This was missed on `chives`, `crema`, and `ancho chile` in the creamy-tomato-soup import — don't repeat it.
+
+Quick procedure when creating a new product:
+1. Ask the user (or infer, then confirm) which store sells it and which department/aisle it lives in.
+2. Look up the IDs in the `stores` and `sections` collections (one inline query, same pattern as the product check above).
+3. Pass `store` and `section` in the `products.create({...})` call alongside `name`/`type`/`pantry`.
+
+Rules of thumb:
+- **Safeway products**: almost always have a section (`produce`, `dairy`, `meat`, `bakery`, `frozen`, `baking supplies`, `international`, `prepared meals`). Don't leave section blank for a Safeway item.
+- **Online products** (Amazon / specialty): `section` is typically left blank — see existing entries like `garam masala`, `kasuri methi`, `parchment paper`. Store is still required.
+- **Costco / Trader Joes**: store required; section optional and usually omitted.
+- **`pantry: true` products**: store/section can be omitted — they're not in the active shopping list.
+
+Pre-import sanity check after building the product map: list every product you're about to create and confirm each has a store assigned. If any are missing, stop and resolve before running the import.
+
 ## Step 4: Create Import Script
 
 Create `recipe-planner/import-[recipe-name].js`. Keep existing product IDs in an `existing` const, create new products inline, then merge into a single `products` map for clarity. Use a `for` loop when many sources flow into the same step.
