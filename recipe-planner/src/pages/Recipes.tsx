@@ -329,9 +329,24 @@ export default function Recipes() {
             <Grid size={{ xs: 12, sm: 6, md: 4 }} key={item.id}>
               <Card>
                 <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    {item.name}
-                  </Typography>
+                  <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+                    <Typography variant="h6">
+                      {item.name}
+                    </Typography>
+                    {item.recipe_type === "batch_prep" && (
+                      <Chip
+                        label="Batch"
+                        size="small"
+                        sx={{
+                          backgroundColor: "#9c27b0",
+                          color: "white",
+                          fontWeight: 600,
+                          fontSize: "0.7rem",
+                          height: 22,
+                        }}
+                      />
+                    )}
+                  </Box>
                   {item.notes && (
                     <Typography
                       variant="body2"
