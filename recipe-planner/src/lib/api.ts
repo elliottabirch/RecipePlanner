@@ -64,4 +64,5 @@ export const collections = {
   plannedMeals: "planned_meals",
   inventoryItems: "inventory_items",
   mealVariantOverrides: "meal_variant_overrides",
+  recipeQueue: "recipe_queue",
 } as const;

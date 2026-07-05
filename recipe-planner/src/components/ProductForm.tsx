@@ -11,6 +11,7 @@ import {
   Box,
   Alert,
   Chip,
+  Autocomplete,
 } from "@mui/material";
 import {
   ProductType,
@@ -19,6 +20,7 @@ import {
   type Store,
   type Section,
   type ContainerType,
+  type Recipe,
 } from "../lib/types";
 
 interface ProductFormProps {
@@ -35,6 +37,10 @@ interface ProductFormProps {
 
   // Optional: ID of product being edited (to exclude from duplicate check)
   editingProductId?: string;
+
+  // For inventory product resolution fields
+  recipes?: Recipe[];
+  products?: Product[];
 }
 
 export interface ProductFormValues {
@@ -48,6 +54,8 @@ export interface ProductFormValues {
   containerTypeId: string;
   readyToEat: boolean;
   mealSlot: "snack" | "meal" | "";
+  sourceRecipeId: string;
+  storeBoughtProductId: string;
 }
 
 export function useProductForm(initialValues?: Partial<ProductFormValues>) {
@@ -73,6 +81,12 @@ export function useProductForm(initialValues?: Partial<ProductFormValues>) {
   const [mealSlot, setMealSlot] = useState<"snack" | "meal" | "">(
     initialValues?.mealSlot || ""
   );
+  const [sourceRecipeId, setSourceRecipeId] = useState(
+    initialValues?.sourceRecipeId || ""
+  );
+  const [storeBoughtProductId, setStoreBoughtProductId] = useState(
+    initialValues?.storeBoughtProductId || ""
+  );
 
   const resetForm = () => {
     setName("");
@@ -85,6 +99,8 @@ export function useProductForm(initialValues?: Partial<ProductFormValues>) {
     setContainerTypeId("");
     setReadyToEat(false);
     setMealSlot("");
+    setSourceRecipeId("");
+    setStoreBoughtProductId("");
   };
 
   const getValues = (): ProductFormValues => ({
@@ -98,6 +114,8 @@ export function useProductForm(initialValues?: Partial<ProductFormValues>) {
     containerTypeId,
     readyToEat,
     mealSlot,
+    sourceRecipeId,
+    storeBoughtProductId,
   });
 
   const getProductData = (): Partial<Product> => {
@@ -117,6 +135,8 @@ export function useProductForm(initialValues?: Partial<ProductFormValues>) {
       data.container_type = undefined;
       data.ready_to_eat = undefined;
       data.meal_slot = undefined;
+      data.source_recipe = undefined;
+      data.store_bought_product = undefined;
     } else if (type === ProductType.Stored) {
       data.storage_location = storageLocation || undefined;
       data.container_type = containerTypeId || undefined;
@@ -127,11 +147,15 @@ export function useProductForm(initialValues?: Partial<ProductFormValues>) {
       data.section = undefined;
       data.ready_to_eat = undefined;
       data.meal_slot = undefined;
+      data.source_recipe = undefined;
+      data.store_bought_product = undefined;
     } else if (type === ProductType.Inventory) {
       data.ready_to_eat = readyToEat;
       data.meal_slot =
         readyToEat && mealSlot ? (mealSlot as "snack" | "meal") : undefined;
       data.storage_location = storageLocation || undefined;
+      data.source_recipe = sourceRecipeId || undefined;
+      data.store_bought_product = storeBoughtProductId || undefined;
       // Clear other type fields
       data.pantry = false;
       data.track_quantity = false;
@@ -148,6 +172,8 @@ export function useProductForm(initialValues?: Partial<ProductFormValues>) {
       data.container_type = undefined;
       data.ready_to_eat = undefined;
       data.meal_slot = undefined;
+      data.source_recipe = undefined;
+      data.store_bought_product = undefined;
     }
 
     return data;
@@ -178,6 +204,10 @@ export function useProductForm(initialValues?: Partial<ProductFormValues>) {
     setReadyToEat,
     mealSlot,
     setMealSlot,
+    sourceRecipeId,
+    setSourceRecipeId,
+    storeBoughtProductId,
+    setStoreBoughtProductId,
     resetForm,
     getValues,
     getProductData,
@@ -192,6 +222,8 @@ export default function ProductForm({
   form,
   existingProducts = [],
   editingProductId,
+  recipes = [],
+  products = [],
 }: ProductFormProps) {
   // Find potential duplicates based on the current name input
   const potentialDuplicates = useMemo(() => {
@@ -447,6 +479,48 @@ export default function ProductForm({
               <MenuItem value={StorageLocation.Dry}>Dry Storage</MenuItem>
             </Select>
           </FormControl>
+
+          <Autocomplete
+            options={recipes.filter((r) => r.recipe_type === "batch_prep")}
+            getOptionLabel={(option) => option.name}
+            value={
+              recipes.find((r) => r.id === form.sourceRecipeId) || null
+            }
+            onChange={(_, newValue) =>
+              form.setSourceRecipeId(newValue?.id || "")
+            }
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Source Recipe (batch prep that produces this)"
+                margin="dense"
+              />
+            )}
+            sx={{ mb: 2 }}
+          />
+
+          <Autocomplete
+            options={products.filter(
+              (p) =>
+                (p.type === ProductType.Raw || p.type === ProductType.Transient) &&
+                p.id !== editingProductId
+            )}
+            getOptionLabel={(option) => option.name}
+            value={
+              products.find((p) => p.id === form.storeBoughtProductId) || null
+            }
+            onChange={(_, newValue) =>
+              form.setStoreBoughtProductId(newValue?.id || "")
+            }
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Store-bought Alternative"
+                margin="dense"
+              />
+            )}
+            sx={{ mb: 2 }}
+          />
 
           <Typography color="text.secondary" variant="body2" sx={{ mt: 1 }}>
             Inventory items are tracked long-term across multiple weeks.

@@ -21,8 +21,29 @@ export class ClipboardProvider implements ListProvider {
   icon = (<ContentCopyIcon />);
 
   isAvailable(): boolean {
-    // Clipboard API is available in most modern browsers
-    return typeof navigator !== "undefined" && !!navigator.clipboard;
+    // Always available - we have a fallback for non-HTTPS contexts
+    return typeof document !== "undefined";
+  }
+
+  private async copyToClipboard(text: string): Promise<void> {
+    // Prefer the modern Clipboard API (requires HTTPS or localhost)
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    // Fallback for non-secure contexts (e.g., HTTP on LAN)
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+      document.execCommand("copy");
+    } finally {
+      document.body.removeChild(textarea);
+    }
   }
 
   async export(
@@ -49,7 +70,7 @@ export class ClipboardProvider implements ListProvider {
       const formattedText = formatShoppingList(grouped, mergedOptions);
 
       // Copy to clipboard
-      await navigator.clipboard.writeText(formattedText);
+      await this.copyToClipboard(formattedText);
 
       return {
         success: true,

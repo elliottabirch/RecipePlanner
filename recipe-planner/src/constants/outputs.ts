@@ -168,7 +168,14 @@ export const UI_TEXT = {
     "No product flow data. Make sure your recipes have prep or batch assembly steps.",
 
   // Warnings
-  outOfStockWarning: "⚠️ Out of Stock Items:",
+  outOfStockWarning: "Some inventory items are out of stock. See the Shopping List tab to resolve.",
+
+  // Out of stock resolution
+  outOfStockSectionTitle: "Out of Stock Inventory Items",
+  outOfStockHandled: "Will be batch prepped this week",
+  outOfStockAddRecipe: "Add to Plan",
+  outOfStockAddToShoppingList: "Add to Shopping List",
+  outOfStockNoResolution: "No resolution configured for this item. Edit the product to add a source recipe or store-bought alternative.",
 
   // Export
   exportSuccess: "Export completed",

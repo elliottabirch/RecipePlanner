@@ -14,6 +14,7 @@ import {
   IconButton,
   useMediaQuery,
   useTheme,
+  Badge,
 } from "@mui/material";
 import {
   Menu as MenuIcon,
@@ -31,6 +32,7 @@ import {
   Inventory2 as InventoryIcon,
 } from "@mui/icons-material";
 import DatabaseSwitcher from "./DatabaseSwitcher";
+import { useRecipeQueue } from "../hooks/useRecipeQueue";
 
 const DRAWER_WIDTH = 260;
 
@@ -53,6 +55,7 @@ export default function Layout() {
   const [registriesOpen, setRegistriesOpen] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
+  const { queueItems } = useRecipeQueue();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -86,7 +89,13 @@ export default function Layout() {
           onClick={() => handleNavClick("/recipes")}
         >
           <ListItemIcon>
-            <RecipeIcon />
+            <Badge
+              badgeContent={queueItems.length}
+              color="primary"
+              max={99}
+            >
+              <RecipeIcon />
+            </Badge>
           </ListItemIcon>
           <ListItemText primary="Recipes" />
         </ListItemButton>

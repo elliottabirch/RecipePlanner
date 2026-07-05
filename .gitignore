@@ -1,2 +1,4 @@
 .vscode
 node_modules/pocketbase/dist/**/*
+.claude/worktrees/
+.claude/settings.local.json

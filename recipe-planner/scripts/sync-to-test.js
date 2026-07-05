@@ -7,129 +7,128 @@ const DB_URLS = {
   test: "http://192.168.50.95:8091",
 };
 
-// Connect to both databases
 const pbProd = new PocketBase(DB_URLS.production);
 const pbTest = new PocketBase(DB_URLS.test);
 
-async function syncToTest() {
-  console.log(
-    "================================================================================",
-  );
-  console.log("SYNCING PRODUCTION DATA TO TEST DATABASE");
-  console.log(
-    "================================================================================\n",
-  );
-  console.log(`Source (Production): ${DB_URLS.production}`);
-  console.log(`Target (Test):       ${DB_URLS.test}\n`);
+// Top-down dependency order (parents first). Used for create.
+// Reverse of this is used for delete so children are removed before parents
+// (PocketBase rejects deletes that would orphan a required relation).
+const COLLECTIONS_TOP_DOWN = [
+  "stores",
+  "sections",
+  "container_types",
+  "tags",
+  "products",
+  "recipes",
+  "recipe_tags",
+  "recipe_product_nodes",
+  "recipe_steps",
+  "product_to_step_edges",
+  "step_to_product_edges",
+  "weekly_plans",
+  "planned_meals",
+  "inventory_items",
+];
 
-  try {
-    // Collections to sync (in order to preserve relationships)
-    const collections = [
-      "stores",
-      "sections",
-      "container_types",
-      "tags",
-      "products",
-      "recipes",
-      "recipe_tags",
-      "recipe_product_nodes",
-      "recipe_steps",
-      "product_to_step_edges",
-      "step_to_product_edges",
-      "weekly_plans",
-      "planned_meals",
-      "inventory_items",
-    ];
+function fmtError(e) {
+  const parts = [e.message, e.status && `status=${e.status}`].filter(Boolean);
+  if (e.response?.data && Object.keys(e.response.data).length) {
+    parts.push(`data=${JSON.stringify(e.response.data)}`);
+  }
+  return parts.join(" ");
+}
 
-    let totalRecords = 0;
-
-    for (const collectionName of collections) {
-      console.log(`\n📦 Syncing collection: ${collectionName}`);
-
+async function clearAllTestCollections() {
+  console.log("\n--- Phase 1: clearing test DB (children → parents) ---");
+  const order = [...COLLECTIONS_TOP_DOWN].reverse();
+  for (const name of order) {
+    const records = await pbTest.collection(name).getFullList();
+    if (records.length === 0) {
+      console.log(`  ${name}: empty`);
+      continue;
+    }
+    let deleted = 0;
+    let failed = 0;
+    for (const r of records) {
       try {
-        // Get all records from production
-        const prodRecords = await pbProd
-          .collection(collectionName)
-          .getFullList({
-            sort: "created",
-          });
-
-        console.log(`  Found ${prodRecords.length} records in production`);
-
-        if (prodRecords.length === 0) {
-          console.log(`  ✓ Skipped (no records)`);
-          continue;
+        await pbTest.collection(name).delete(r.id);
+        deleted++;
+      } catch (e) {
+        failed++;
+        if (failed <= 3) {
+          console.log(`    ⚠️  delete ${name}/${r.id} failed: ${fmtError(e)}`);
         }
-
-        // Delete all existing records in test
-        const testRecords = await pbTest
-          .collection(collectionName)
-          .getFullList();
-
-        for (const record of testRecords) {
-          await pbTest.collection(collectionName).delete(record.id);
-        }
-
-        console.log(`  Cleared ${testRecords.length} existing test records`);
-
-        // Copy records to test (preserving IDs)
-        let copied = 0;
-        for (const record of prodRecords) {
-          try {
-            // Remove system fields
-            const {
-              id,
-              created,
-              updated,
-              collectionId,
-              collectionName: _collectionName,
-              expand,
-              ...data
-            } = record;
-
-            // Create record in test with same ID
-            await pbTest.collection(collectionName).create(
-              {
-                id, // Preserve the ID
-                ...data,
-              },
-              {
-                // Use create endpoint with ID specification
-                $autoCancel: false,
-              },
-            );
-            copied++;
-          } catch (error) {
-            console.error(
-              `    ⚠️  Failed to copy record ${record.id}:`,
-              error.message,
-            );
-          }
-        }
-
-        console.log(`  ✓ Copied ${copied} records`);
-        totalRecords += copied;
-      } catch (error) {
-        console.error(`  ❌ Error syncing ${collectionName}:`, error.message);
       }
     }
+    console.log(`  ${name}: deleted ${deleted}/${records.length}${failed ? ` (${failed} failed)` : ""}`);
+    if (failed > 0) {
+      throw new Error(`Could not fully clear ${name} — aborting before partial copy makes things worse`);
+    }
+  }
+}
 
-    console.log("\n");
-    console.log(
-      "================================================================================",
-    );
+async function copyAllFromProd() {
+  console.log("\n--- Phase 2: copying prod → test (parents → children) ---");
+  let totalCopied = 0;
+  for (const name of COLLECTIONS_TOP_DOWN) {
+    const prodRecords = await pbProd.collection(name).getFullList();
+    if (prodRecords.length === 0) {
+      console.log(`  ${name}: empty in prod`);
+      continue;
+    }
+    let copied = 0;
+    let failed = 0;
+    for (const record of prodRecords) {
+      const {
+        id,
+        created,
+        updated,
+        collectionId,
+        collectionName: _cn,
+        expand,
+        ...data
+      } = record;
+      try {
+        await pbTest.collection(name).create(
+          { id, ...data },
+          { $autoCancel: false },
+        );
+        copied++;
+      } catch (e) {
+        failed++;
+        if (failed <= 5) {
+          console.log(`    ⚠️  create ${name}/${id} failed: ${fmtError(e)}`);
+        }
+      }
+    }
+    console.log(`  ${name}: copied ${copied}/${prodRecords.length}${failed ? ` (${failed} failed)` : ""}`);
+    totalCopied += copied;
+    if (failed > 0) {
+      throw new Error(`Aborting at ${name} — ${failed} create failures would corrupt downstream collections`);
+    }
+  }
+  return totalCopied;
+}
+
+async function syncToTest() {
+  console.log("=".repeat(80));
+  console.log("SYNCING PRODUCTION DATA TO TEST DATABASE");
+  console.log("=".repeat(80));
+  console.log(`Source (Production): ${DB_URLS.production}`);
+  console.log(`Target (Test):       ${DB_URLS.test}`);
+
+  try {
+    await clearAllTestCollections();
+    const total = await copyAllFromProd();
+    console.log("\n" + "=".repeat(80));
     console.log("✨ SYNC COMPLETE");
-    console.log(
-      "================================================================================",
-    );
-    console.log(`Total records synced: ${totalRecords}`);
+    console.log("=".repeat(80));
+    console.log(`Total records synced: ${total}`);
     console.log("\n✅ Test database is now a copy of production\n");
   } catch (error) {
-    console.error("\n❌ SYNC FAILED:");
-    console.error(error);
+    console.error("\n❌ SYNC FAILED:", fmtError(error));
     process.exit(1);
   }
 }
 
-// Run the sync
 syncToTest();

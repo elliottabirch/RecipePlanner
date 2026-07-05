@@ -35,6 +35,7 @@ import type {
   Store,
   Section,
   ContainerType,
+  Recipe,
 } from "../../lib/types";
 import ProductForm, { useProductForm } from "../../components/ProductForm";
 
@@ -70,6 +71,7 @@ export default function Products() {
   const [stores, setStores] = useState<Store[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [containerTypes, setContainerTypes] = useState<ContainerType[]>([]);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -114,14 +116,17 @@ export default function Products() {
 
   const loadLookupData = async () => {
     try {
-      const [storesData, sectionsData, containerTypesData] = await Promise.all([
-        getAll<Store>(collections.stores, { sort: "name" }),
-        getAll<Section>(collections.sections, { sort: "name" }),
-        getAll<ContainerType>(collections.containerTypes, { sort: "name" }),
-      ]);
+      const [storesData, sectionsData, containerTypesData, recipesData] =
+        await Promise.all([
+          getAll<Store>(collections.stores, { sort: "name" }),
+          getAll<Section>(collections.sections, { sort: "name" }),
+          getAll<ContainerType>(collections.containerTypes, { sort: "name" }),
+          getAll<Recipe>(collections.recipes, { sort: "name" }),
+        ]);
       setStores(storesData);
       setSections(sectionsData);
       setContainerTypes(containerTypesData);
+      setRecipes(recipesData);
     } catch (err) {
       console.error("Failed to load lookup data:", err);
     }
@@ -145,6 +150,8 @@ export default function Products() {
       productForm.setContainerTypeId(item.container_type || "");
       productForm.setReadyToEat(item.ready_to_eat || false);
       productForm.setMealSlot(item.meal_slot || "");
+      productForm.setSourceRecipeId(item.source_recipe || "");
+      productForm.setStoreBoughtProductId(item.store_bought_product || "");
     } else {
       setEditingItem(null);
       productForm.resetForm();
@@ -427,6 +434,8 @@ export default function Products() {
             form={productForm}
             existingProducts={items}
             editingProductId={editingItem?.id}
+            recipes={recipes}
+            products={items}
           />
         </DialogContent>
         <DialogActions>
