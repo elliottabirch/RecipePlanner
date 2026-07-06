@@ -13,6 +13,17 @@ const pbTest = new PocketBase(DB_URLS.test);
 // Top-down dependency order (parents first). Used for create.
 // Reverse of this is used for delete so children are removed before parents
 // (PocketBase rejects deletes that would orphan a required relation).
+//
+// Some relation fields cannot be satisfied in a single top-down pass:
+//   - products.source_recipe   -> recipes (copied AFTER products)
+//   - products.store_bought_product -> products (self-reference; target may
+//     not be copied yet within the same collection pass)
+// These are stripped at create time and patched in a deferred second pass
+// after every collection has been copied.
+const DEFERRED_RELATION_FIELDS = {
+  products: ["source_recipe", "store_bought_product"],
+};
+
 const COLLECTIONS_TOP_DOWN = [
   "stores",
   "sections",
@@ -70,12 +81,15 @@ async function clearAllTestCollections() {
 async function copyAllFromProd() {
   console.log("\n--- Phase 2: copying prod → test (parents → children) ---");
   let totalCopied = 0;
+  // { collection, id, patch } entries applied after all collections copy.
+  const deferredPatches = [];
   for (const name of COLLECTIONS_TOP_DOWN) {
     const prodRecords = await pbProd.collection(name).getFullList();
     if (prodRecords.length === 0) {
       console.log(`  ${name}: empty in prod`);
       continue;
     }
+    const deferredFields = DEFERRED_RELATION_FIELDS[name] ?? [];
     let copied = 0;
     let failed = 0;
     for (const record of prodRecords) {
@@ -88,12 +102,22 @@ async function copyAllFromProd() {
         expand,
         ...data
       } = record;
+      const patch = {};
+      for (const field of deferredFields) {
+        if (data[field]) {
+          patch[field] = data[field];
+          delete data[field];
+        }
+      }
       try {
         await pbTest.collection(name).create(
           { id, ...data },
           { $autoCancel: false },
         );
         copied++;
+        if (Object.keys(patch).length > 0) {
+          deferredPatches.push({ collection: name, id, patch });
+        }
       } catch (e) {
         failed++;
         if (failed <= 5) {
@@ -105,6 +129,25 @@ async function copyAllFromProd() {
     totalCopied += copied;
     if (failed > 0) {
       throw new Error(`Aborting at ${name} — ${failed} create failures would corrupt downstream collections`);
+    }
+  }
+
+  if (deferredPatches.length > 0) {
+    console.log("\n--- Phase 3: patching deferred relation fields ---");
+    let patched = 0;
+    let failed = 0;
+    for (const { collection, id, patch } of deferredPatches) {
+      try {
+        await pbTest.collection(collection).update(id, patch, { $autoCancel: false });
+        patched++;
+      } catch (e) {
+        failed++;
+        console.log(`    ⚠️  patch ${collection}/${id} failed: ${fmtError(e)}`);
+      }
+    }
+    console.log(`  deferred relations patched: ${patched}/${deferredPatches.length}${failed ? ` (${failed} failed)` : ""}`);
+    if (failed > 0) {
+      throw new Error(`${failed} deferred relation patch(es) failed — test copy is incomplete`);
     }
   }
   return totalCopied;
