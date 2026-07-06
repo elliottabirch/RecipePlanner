@@ -6,6 +6,7 @@ import {
   type Product,
   type InventoryItemExpanded,
 } from "./types";
+import { convert, type Unit } from "./units";
 
 // Re-export types from aggregation module
 export type {
@@ -238,13 +239,26 @@ export function buildShoppingListFromFlow(
         trackQuantity: product.trackQuantity,
         totalQuantity: product.totalQuantity,
         unit: product.unit,
+        lineId: product.lineId,
         storeName: product.storeName,
         sectionName: product.sectionName,
-        sources: product.mealSources.map((s) => ({
-          recipeName: s.recipeName,
-          quantity: s.quantity,
-          unit: product.unit,
-        })),
+        // Convert each per-recipe source into the merged line's display
+        // unit so the breakdown visibly sums to the line total (DATA-01).
+        // Every source within one AggregatedFlowProduct entry is guaranteed
+        // to share a dimension with `product.unit` — convert-or-split
+        // already routed cross-dimension quantities to a separate lineId.
+        sources: product.mealSources.map((s) => {
+          const converted = convert(
+            s.quantity,
+            s.unit as Unit,
+            product.unit as Unit
+          );
+          return {
+            recipeName: s.recipeName,
+            quantity: converted ?? s.quantity,
+            unit: converted !== null ? product.unit : s.unit,
+          };
+        }),
       });
     }
   });

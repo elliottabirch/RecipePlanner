@@ -62,6 +62,7 @@ function mergeManualItemsIntoGroups(
       isPantry: false,
       totalQuantity: 1,
       unit: "",
+      lineId: `manual-${item.productId}`,
       sources: [{ recipeName: "Store-bought", quantity: 1, unit: "" }],
     });
   }
@@ -178,7 +179,7 @@ export function ShoppingListTab({
                   </Typography>
                   <List dense>
                     {visibleItems.map((item) => {
-                      const key = getShoppingCheckboxKey(item.productId);
+                      const key = getShoppingCheckboxKey(item.lineId);
                       const primary = item.totalQuantity && item.unit
                         ? `${item.productName} — ${item.totalQuantity} ${item.unit}`
                         : item.productName;
@@ -188,7 +189,7 @@ export function ShoppingListTab({
 
                       return (
                         <CheckableListItem
-                          key={item.productId}
+                          key={item.lineId}
                           itemKey={key}
                           checked={checkedItems.has(key)}
                           onToggle={onToggleChecked}
