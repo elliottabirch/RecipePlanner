@@ -40,7 +40,17 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Every product name in the registry is unique case-insensitively — attempting to create a duplicate name is rejected, and existing duplicates have been one-shot merged (DATA-04, DATA-05)
   4. Running the recipe linter on demand surfaces the four data-hygiene issues (unit mismatches, container-as-unit, missing store/section, prep words in raw names) instead of failing silently (DATA-06)
   5. `decisions.md` and the schema export accurately reflect the app's real step-aggregation behavior, so future development isn't misled by stale docs (DATA-07)
-**Plans**: TBD
+**Plans**: 8 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Test harness (Vitest) + units.ts enum/conversion/alias/display module + Product type fields [DATA-02]
+- [ ] 01-02-PLAN.md — Dedup + merge scripts: find-duplicates JSON/MD output + merge-products with backup/preflight/orphan-check [DATA-04]
+- [ ] 01-03-PLAN.md — Convert-or-split aggregation fix + stable lineId through the shopping list [DATA-01]
+- [ ] 01-04-PLAN.md — Recipe linter v1 (4 rules), Products.tsx panel + headless lint.js [DATA-06]
+- [ ] 01-05-PLAN.md — normalize-node-units + backfill-units scripts + decisions.md reconciliation [DATA-05, DATA-07]
+- [ ] 01-06-PLAN.md — Remove unit-as-container overload + enum-bound editor unit Select [DATA-03]
+- [ ] 01-07-PLAN.md — Add canonical_unit/dimension PB fields (both DBs) + full migration rehearsal on test [DATA-04, DATA-05]
+- [ ] 01-08-PLAN.md — One-shot prod migration + case-insensitive (name, type) unique index [DATA-04, DATA-05]
 
 ### Phase 2: Shopping State & Live Substitution
 **Goal**: The tablet becomes a durable, trustworthy shopping companion — state persists across refresh and device switch, and the user can adapt the list mid-shop without breaking downstream outputs.
@@ -111,7 +121,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6. Phases 2 and 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Data Hygiene | 0/TBD | Not started | - |
+| 1. Data Hygiene | 0/8 | Not started | - |
 | 2. Shopping State & Live Substitution | 0/TBD | Not started | - |
 | 3. Product Registry Seeding | 0/TBD | Not started | - |
 | 4. Weekly Planning Memory | 0/TBD | Not started | - |
