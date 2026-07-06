@@ -83,7 +83,7 @@ Plans:
   4. User can resolve a line as "make it at home," with an offer to add its source recipe to the week, and can quick-create a new product from a minimal phone-friendly dialog without leaving the flow (SHOP-04, SHOP-05)
   5. Outputs pages are touch-friendly on tablet and remain usable over the tailnet through a brief connectivity drop, showing a pending-sync indicator until queued writes land (SHOP-06, SHOP-07)
 
-**Plans**: 8/10 plans executed
+**Plans**: 9/10 plans executed
 
 Plans:
 **Wave 1** *(parallel — pure logic + schema)*
@@ -108,7 +108,7 @@ Plans:
 
 **Wave 5** *(blocked on 02-08)*
 
-- [ ] 02-09-PLAN.md — ShoppingListTab: have-N stepper, remaining-to-buy, resolved treatment, swap/make-it buttons [SHOP-02, SHOP-04, SHOP-06]
+- [x] 02-09-PLAN.md — ShoppingListTab: have-N stepper, remaining-to-buy, resolved treatment, swap/make-it buttons [SHOP-02, SHOP-04, SHOP-06]
 
 **Wave 6** *(blocked on 02-07/08/09)*
 
@@ -185,7 +185,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6. Phases 2 and 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Data Hygiene | 8/8 | Complete    | 2026-07-06 |
-| 2. Shopping State & Live Substitution | 8/10 | In Progress|  |
+| 2. Shopping State & Live Substitution | 9/10 | In Progress|  |
 | 3. Product Registry Seeding | 0/TBD | Not started | - |
 | 4. Weekly Planning Memory | 0/TBD | Not started | - |
 | 5. Prep-Day Engine | 0/TBD | Not started | - |

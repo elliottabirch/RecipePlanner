@@ -5,15 +5,15 @@ milestone_name: Workflow Redesign
 current_phase: 2
 current_phase_name: Shopping State & Live Substitution
 status: executing
-stopped_at: Completed 02-08-PLAN.md
-last_updated: "2026-07-06T22:14:33.138Z"
+stopped_at: Completed 02-09-PLAN.md
+last_updated: "2026-07-06T22:28:52.457Z"
 last_activity: 2026-07-06
 last_activity_desc: Completed 02-02-PLAN.md
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 18
-  completed_plans: 16
+  completed_plans: 17
   percent: 17
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-05)
 ## Current Position
 
 Phase: 2 (Shopping State & Live Substitution) — EXECUTING
-Plan: 9 of 10
+Plan: 10 of 10
 Status: Ready to execute
 Last activity: 2026-07-06 — Completed 02-02-PLAN.md
 
@@ -71,6 +71,7 @@ Progress: [██████░░░░] 56%
 | Phase 02 P06 | 5min | 2 tasks | 3 files |
 | Phase 02-shopping-state-live-substitution P07 | 6min | 2 tasks | 1 files |
 | Phase 02 P08 | 35min | 3 tasks | 5 files |
+| Phase 02 P09 | 25min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -119,6 +120,9 @@ Recent decisions affecting current work:
 - [Phase 02]: swap-save scopes delete+recreate of meal_variant_overrides to the touched node IDs (not the whole meal), unlike WeeklyPlans.handleSaveVariants — prevents a store-time single-product swap from clobbering an unrelated planning-time override in the same meal
 - [Phase 02]: onSwap/onMakeIt pass the full AggregatedProduct item (not just productId) so make-it can resolve both product/source_recipe lookup and the shopping_state lineId key without a second lookup
 - [Phase 02]: ShoppingListTabProps extended with optional onSwap/onMakeIt/canMakeIt in 02-08 (declaration only, no rendering) so 02-09's call site compiles ahead of its own rendering work
+- [Phase 02]: Non-pantry shopping lines drop the manual checkbox in favor of the have-N stepper as the SHOP-02 completion signal; pantry-style lines are unchanged
+- [Phase 02]: have-N stepper clamps to [0, totalQuantity]; remaining caption always uses text.secondary (never success.main, which is byte-identical to this app's accent green) to avoid overloading the 10% accent budget
+- [Phase 02]: Swap/Make-it buttons render on every line in the byStore/section groups (pantry-style included) but not in the separate bottom Pantry Check section, which verifies stock rather than buying/substituting
 
 ### Pending Todos
 
@@ -144,6 +148,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-06T22:14:17.621Z
-Stopped at: Completed 02-08-PLAN.md
+Last session: 2026-07-06T22:28:52.451Z
+Stopped at: Completed 02-09-PLAN.md
 Resume file: None

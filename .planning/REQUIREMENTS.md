@@ -24,7 +24,7 @@ Requirements for milestone v1.1 Workflow Redesign. Each maps to roadmap phases. 
 - [x] **SHOP-03**: User can swap a product mid-shop — picking affected meals and entering per-meal quantity/unit — with all outputs re-derived
 - [x] **SHOP-04**: User can resolve a line as "make it at home", with offer to add the source recipe to the week
 - [x] **SHOP-05**: User can quick-create a product from a phone-friendly minimal dialog (name + store/section + unit)
-- [ ] **SHOP-06**: Outputs pages are tablet touch-friendly
+- [x] **SHOP-06**: Outputs pages are tablet touch-friendly
 - [x] **SHOP-07**: Shopping UI works over the tailnet with optimistic updates, retry, and a pending-sync indicator
 
 ### Registry Seeding
@@ -109,7 +109,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SHOP-03 | Phase 2 | Complete |
 | SHOP-04 | Phase 2 | Complete |
 | SHOP-05 | Phase 2 | Complete |
-| SHOP-06 | Phase 2 | Pending |
+| SHOP-06 | Phase 2 | Complete |
 | SHOP-07 | Phase 2 | Complete |
 | REG-01 | Phase 3 | Pending |
 | REG-02 | Phase 3 | Pending |
