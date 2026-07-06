@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { runLint, type ProductExpanded } from "./index";
 import { SECTION_REQUIRED_STORES } from "./rules/missing-store-section";
+import { ProductType } from "../types";
 import type { Store, Section } from "../types";
 
 function baseRecord(idSuffix: string) {
@@ -25,7 +26,7 @@ function makeProduct(overrides: Partial<ProductExpanded> = {}): ProductExpanded 
   return {
     ...baseRecord("product"),
     name: "test product",
-    type: "raw",
+    type: ProductType.Raw,
     pantry: false,
     canonical_unit: "each",
     expand: {
@@ -73,19 +74,22 @@ describe("cross-dimension rule", () => {
 
 describe("prep-words rule", () => {
   it("flags a raw product name containing a controlled prep verb", () => {
-    const product = makeProduct({ type: "raw", name: "onion sliced" });
+    const product = makeProduct({ type: ProductType.Raw, name: "onion sliced" });
     const findings = runLint([product]).filter((f) => f.rule === "prep-words");
     expect(findings).toHaveLength(1);
   });
 
   it("flags a raw product name with a (raw) suffix", () => {
-    const product = makeProduct({ type: "raw", name: "chicken breast (raw)" });
+    const product = makeProduct({
+      type: ProductType.Raw,
+      name: "chicken breast (raw)",
+    });
     const findings = runLint([product]).filter((f) => f.rule === "prep-words");
     expect(findings).toHaveLength(1);
   });
 
   it("does not flag a clean raw product name", () => {
-    const product = makeProduct({ type: "raw", name: "onion" });
+    const product = makeProduct({ type: ProductType.Raw, name: "onion" });
     const findings = runLint([product]).filter((f) => f.rule === "prep-words");
     expect(findings).toHaveLength(0);
   });
@@ -97,7 +101,11 @@ describe("missing-store-section rule", () => {
   });
 
   it("flags a non-pantry, non-transient product with no store", () => {
-    const product = makeProduct({ type: "raw", pantry: false, expand: {} });
+    const product = makeProduct({
+      type: ProductType.Raw,
+      pantry: false,
+      expand: {},
+    });
     const findings = runLint([product]).filter(
       (f) => f.rule === "missing-store-section"
     );
@@ -106,7 +114,7 @@ describe("missing-store-section rule", () => {
 
   it("flags a safeway product with no section", () => {
     const product = makeProduct({
-      type: "raw",
+      type: ProductType.Raw,
       pantry: false,
       expand: { store: makeStore("safeway") },
     });
@@ -118,17 +126,17 @@ describe("missing-store-section rule", () => {
 
   it("does not flag a costco/trader joes/online product with no section", () => {
     const costco = makeProduct({
-      type: "raw",
+      type: ProductType.Raw,
       pantry: false,
       expand: { store: makeStore("costco") },
     });
     const traderJoes = makeProduct({
-      type: "raw",
+      type: ProductType.Raw,
       pantry: false,
       expand: { store: makeStore("trader joes") },
     });
     const online = makeProduct({
-      type: "raw",
+      type: ProductType.Raw,
       pantry: false,
       expand: { store: makeStore("online") },
     });
@@ -140,7 +148,7 @@ describe("missing-store-section rule", () => {
 
   it("does not flag a safeway product that has a section", () => {
     const product = makeProduct({
-      type: "raw",
+      type: ProductType.Raw,
       pantry: false,
       expand: { store: makeStore("safeway"), section: makeSection("produce") },
     });
@@ -173,7 +181,7 @@ describe("fully-clean product", () => {
   it("produces zero findings across all rules", () => {
     const product = makeProduct({
       name: "onion",
-      type: "raw",
+      type: ProductType.Raw,
       pantry: false,
       canonical_unit: "each",
       expand: { store: makeStore("costco") },
