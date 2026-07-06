@@ -120,7 +120,11 @@ async function preflightValidate(confirmed) {
  */
 async function backupBeforeMerge() {
   console.log("\n--- Creating pre-merge backup ---");
-  const basename = `pre-merge-products-${new Date().toISOString().replace(/[:.]/g, "-")}`;
+  // PocketBase backup names must match ^[a-z0-9_-]+\.zip$ — lowercase only,
+  // .zip suffix required. Raw ISO timestamps (uppercase T/Z, no suffix) get
+  // rejected with validation_match_invalid; caught during the D-06 rehearsal.
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-").toLowerCase();
+  const basename = `pre-merge-products-${stamp}.zip`;
   const ok = await pb.backups.create(basename);
   if (!ok) {
     throw new Error("pb.backups.create() did not confirm success — aborting before any mutation");
