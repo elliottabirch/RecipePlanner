@@ -25,3 +25,4 @@ scripts/dedup-output/
 *.njsproj
 *.sln
 *.sw?
+.env.local
