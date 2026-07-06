@@ -13,7 +13,7 @@ A meal planning app focused on batch prep workflows. The core problem: given a l
 - Manually flagged as prep
 - **Inputs:** raw ingredients only
 - **Outputs:** transient (flows to assembly) and/or stored (fridge/freezer container with size)
-- Aggregated across recipes by exact string match
+- Aggregated across recipes by input/output product-ID signature (see Step Aggregation below), not by name
 - Allocation displayed so user knows where each portion goes
 
 ### Assembly Steps
@@ -31,7 +31,11 @@ A meal planning app focused on batch prep workflows. The core problem: given a l
 
 ### Ingredient Handling
 
-- User standardizes units manually at recipe authoring time; no conversion layer needed
+- Ingredients specify quantity + unit at recipe authoring time. `src/lib/units.ts`
+  provides a within-dimension conversion layer (Phase 1 data hygiene, DATA-01/DATA-02):
+  mismatched-but-compatible units (e.g. `cup` vs `tbsp`) convert and merge correctly;
+  cross-dimension mismatches (e.g. volume vs mass) are never guessed — the recipe
+  linter flags them instead
 - Ingredients are raw purchasable items; preparation is handled by prep steps
 
 ### Shopping List
@@ -40,7 +44,23 @@ A meal planning app focused on batch prep workflows. The core problem: given a l
 
 ### Step Aggregation
 
-- Exact string match only; no fuzzy matching
+- Steps merge across recipes when their sorted input-product-ID + output-product-ID
+  signature matches (`createStepSignature`, `step-utils.ts:20-27`) — not by exact
+  string match on the step name
+- Step names are collected across every merged source for display only; they never
+  affect whether steps merge, so differently-named steps with the same
+  inputs/outputs still aggregate together
+
+### Container Type Granularity (Revisit Trigger)
+
+- Container type stays **product-level only** (`products.container_type`) — Phase 1
+  data hygiene deliberately did not add a per-node `container_type` relation, since no
+  current recipe data demonstrates the need and manual two-database schema edits are a
+  standing risk to minimize
+- Revisit trigger: add a per-node `recipe_product_nodes.container_type` relation
+  if/when a real recipe needs to store the *same* stored product in *different*
+  containers across recipes. This is a deliberate, deferred future decision — not an
+  implicit gap in the data model
 
 ### Recipe Scope
 
@@ -73,7 +93,8 @@ A meal planning app focused on batch prep workflows. The core problem: given a l
 
 ### Step Node
 
-- **Name** (key for aggregation; exact string match)
+- **Name** (display label only — aggregation key is the input/output product-ID
+  signature, see Step Aggregation)
 - **Type:** prep or assembly
 - If assembly: **batch or just-in-time** flag
 - **Inputs:** edges from products (raw or transient)
@@ -82,9 +103,12 @@ A meal planning app focused on batch prep workflows. The core problem: given a l
 ### Aggregation
 
 - Aggregation is computed automatically from planned recipes
-- Matching keys: product name, step name (exact string match)
+- Matching keys: products aggregate by product identity; steps aggregate by their
+  sorted input-product-ID + output-product-ID signature (see Step Aggregation above),
+  not by step name
 - User is responsible for consistent naming and compatible units across recipes
-- Step aggregation is name-only (inputs not considered); user manages naming to avoid unintended collisions
+- Step names are display-only labels collected from every merged source; they do not
+  gate whether steps merge — only the input/output signature does
 
 ---
 
