@@ -71,6 +71,10 @@ export interface AggregatedFlowProduct {
   productType: ProductType;
   totalQuantity: number;
   unit: string;
+  /** Real container name sourced from `Product.container_type` (via the
+   * `container_type` expand path), threaded onto stored products only.
+   * Never derived from `unit` — see D-01 (container stays product-level). */
+  containerTypeName?: string;
   /**
    * Stable line identity: `productId` for the common (non-split) case,
    * `${productId}|${dimension}` when a cross-dimension merge splits this

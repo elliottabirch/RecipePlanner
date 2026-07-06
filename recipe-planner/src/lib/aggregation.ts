@@ -345,7 +345,7 @@ export function buildStoredItemsListFromFlow(
         quantity: product.totalQuantity,
         unit: product.unit,
         recipeName: product.mealSources.map((s) => s.recipeName).join(", "),
-        containerTypeName: product.unit, // unit is now the container type
+        containerTypeName: product.containerTypeName,
       });
     }
   });
@@ -389,7 +389,7 @@ export function buildMealContainersList(
         }
 
         const productsInRecipe = recipeProductMap.get(recipeName)!;
-        const productKey = `${cleanName}-${product.storageLocation}-${product.unit}`;
+        const productKey = `${cleanName}-${product.storageLocation}-${product.containerTypeName}`;
 
         if (productsInRecipe.has(productKey)) {
           // Aggregate quantity for same product
@@ -399,7 +399,7 @@ export function buildMealContainersList(
           // Add new product
           productsInRecipe.set(productKey, {
             productName: cleanName,
-            containerTypeName: product.unit, // unit is the container type
+            containerTypeName: product.containerTypeName,
             storageLocation: product.storageLocation || StorageLocation.Fridge,
             quantity: product.totalQuantity,
           });

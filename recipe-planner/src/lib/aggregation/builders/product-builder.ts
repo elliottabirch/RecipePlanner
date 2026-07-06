@@ -44,6 +44,7 @@ export function buildAggregatedProduct(
     productType: product.type,
     totalQuantity,
     unit: nodeUnit,
+    containerTypeName: node.expand?.product?.expand?.container_type?.name,
     lineId: product.id,
     canonicalUnit: product.canonical_unit,
     mealSources: [
