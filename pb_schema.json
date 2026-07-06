@@ -941,9 +941,140 @@
         "required": true,
         "system": false,
         "type": "relation"
+      },
+      {
+        "hidden": false,
+        "id": "number_mvo_quantity",
+        "max": null,
+        "min": null,
+        "name": "quantity",
+        "onlyInt": false,
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "number"
+      },
+      {
+        "hidden": false,
+        "id": "select_mvo_unit",
+        "maxSelect": 1,
+        "name": "unit",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "select",
+        "values": [
+          "tsp",
+          "tbsp",
+          "fl_oz",
+          "cup",
+          "pint",
+          "qt",
+          "gal",
+          "ml",
+          "l",
+          "g",
+          "kg",
+          "oz",
+          "lb",
+          "each"
+        ]
       }
     ],
     "indexes": [],
+    "system": false
+  },
+  {
+    "id": "pbc_shopping_state",
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "",
+    "updateRule": "",
+    "deleteRule": "",
+    "name": "shopping_state",
+    "type": "base",
+    "fields": [
+      {
+        "autogeneratePattern": "[a-z0-9]{15}",
+        "hidden": false,
+        "id": "text3208210256",
+        "max": 15,
+        "min": 15,
+        "name": "id",
+        "pattern": "^[a-z0-9]+$",
+        "presentable": false,
+        "primaryKey": true,
+        "required": true,
+        "system": true,
+        "type": "text"
+      },
+      {
+        "cascadeDelete": true,
+        "collectionId": "pbc_6291058473",
+        "hidden": false,
+        "id": "relation_ss_weekly_plan",
+        "maxSelect": 1,
+        "minSelect": 0,
+        "name": "weekly_plan",
+        "presentable": false,
+        "required": true,
+        "system": false,
+        "type": "relation"
+      },
+      {
+        "autogeneratePattern": "",
+        "hidden": false,
+        "id": "text_ss_line_key",
+        "max": 0,
+        "min": 0,
+        "name": "line_key",
+        "pattern": "",
+        "presentable": false,
+        "primaryKey": false,
+        "required": true,
+        "system": false,
+        "type": "text"
+      },
+      {
+        "hidden": false,
+        "id": "bool_ss_checked",
+        "name": "checked",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "bool"
+      },
+      {
+        "hidden": false,
+        "id": "number_ss_have_quantity",
+        "max": null,
+        "min": null,
+        "name": "have_quantity",
+        "onlyInt": false,
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "number"
+      },
+      {
+        "hidden": false,
+        "id": "select_ss_resolution",
+        "maxSelect": 1,
+        "name": "resolution",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "select",
+        "values": [
+          "buy",
+          "make",
+          "skip"
+        ]
+      }
+    ],
+    "indexes": [
+      "CREATE UNIQUE INDEX `idx_shopping_state_plan_line` ON `shopping_state` (`weekly_plan`, `line_key`)"
+    ],
     "system": false
   },
   {
@@ -1162,7 +1293,12 @@
         "required": true,
         "system": false,
         "type": "select",
-        "values": ["raw", "transient", "stored", "inventory"]
+        "values": [
+          "raw",
+          "transient",
+          "stored",
+          "inventory"
+        ]
       },
       {
         "hidden": false,
@@ -1208,7 +1344,11 @@
         "required": false,
         "system": false,
         "type": "select",
-        "values": ["fridge", "freezer", "dry"]
+        "values": [
+          "fridge",
+          "freezer",
+          "dry"
+        ]
       },
       {
         "cascadeDelete": false,
@@ -1250,7 +1390,10 @@
         "required": false,
         "system": false,
         "type": "select",
-        "values": ["snack", "meal"]
+        "values": [
+          "snack",
+          "meal"
+        ]
       },
       {
         "cascadeDelete": false,
@@ -1313,7 +1456,11 @@
         "required": false,
         "system": false,
         "type": "select",
-        "values": ["volume", "mass", "count"]
+        "values": [
+          "volume",
+          "mass",
+          "count"
+        ]
       }
     ],
     "indexes": [
