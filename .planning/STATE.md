@@ -5,15 +5,15 @@ milestone_name: Workflow Redesign
 current_phase: 1
 current_phase_name: Data Hygiene
 status: executing
-stopped_at: Completed 01-04-PLAN.md
-last_updated: "2026-07-06T07:27:58.179Z"
+stopped_at: Completed 01-05-PLAN.md
+last_updated: "2026-07-06T07:36:27.102Z"
 last_activity: 2026-07-06
 last_activity_desc: Phase 1 execution started
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 8
-  completed_plans: 4
+  completed_plans: 5
   percent: 0
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-05)
 ## Current Position
 
 Phase: 1 (Data Hygiene) — EXECUTING
-Plan: 5 of 8
+Plan: 6 of 8
 Status: Ready to execute
 Last activity: 2026-07-06 — Phase 1 execution started
 
@@ -59,6 +59,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01-data-hygiene P02 | 15min | 2 tasks | 3 files |
 | Phase 01 P03 | 24min | 3 tasks | 6 files |
 | Phase 01 P04 | 32min | 2 tasks | 9 files |
+| Phase 01 P05 | 20min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -84,6 +85,8 @@ Recent decisions affecting current work:
 - [Phase 01]: lineId = productId for the common case, productId|dimension for a split line, derived purely from the incoming unit's dimension name — Any number of distinct dimensions for the same product converge on a stable key without needing to search existing split entries; this is also the Phase 2 persisted-checkbox key
 - [Phase 01]: Cross-dimension rule needs recipe_product_nodes.unit data; both Products.tsx and scripts/lint.js fetch+group nodes by product id before calling runLint() — Neither surface's product-only query carries node-unit data naturally; without it the cross-dimension rule never fires against real data
 - [Phase 01]: Installed tsx as a devDependency for scripts/lint.js (direct node execution fails on extensionless relative imports) — Pre-approved fallback in the plan text; verified 68.6M weekly downloads, canonical github.com/privatenumber/tsx repo
+- [Phase 01]: Container-clearing scope in normalize-node-units.js stays exactly stored-type nodes per D-01 — Live data shows container-type strings mostly on raw/inventory-type nodes; widening scope would be an undiscussed architectural expansion, so those cases route to the unresolved report for Plan 08 human review instead
+- [Phase 01]: backfill-units.js canonical_unit heuristic: most-frequently-used normalized unit within a product's single inferred dimension — Deterministic (count desc, then alphabetical tie-break), matches how the product is actually used in recipes, independent of node fetch order
 
 ### Pending Todos
 
@@ -105,6 +108,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-06T07:27:58.174Z
-Stopped at: Completed 01-04-PLAN.md
+Last session: 2026-07-06T07:36:27.096Z
+Stopped at: Completed 01-05-PLAN.md
 Resume file: None

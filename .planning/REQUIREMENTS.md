@@ -13,9 +13,9 @@ Requirements for milestone v1.1 Workflow Redesign. Each maps to roadmap phases. 
 - [x] **DATA-02**: Units are an enum with canonical unit + dimension per product, with a within-dimension conversion module (`src/lib/units.ts`)
 - [ ] **DATA-03**: `recipe_product_nodes.unit` carries measurement units only — container-type semantics split into their own field
 - [x] **DATA-04**: Products are deduped one-shot and protected by a case-insensitive unique index on `products.name`
-- [ ] **DATA-05**: Existing node units are normalized to enum tokens
+- [x] **DATA-05**: Existing node units are normalized to enum tokens
 - [x] **DATA-06**: Linter v1 flags the 4 data-hygiene rule violations on demand
-- [ ] **DATA-07**: `decisions.md` reconciled with actual signature-based step aggregation; stale `pb_schema_updated.json` re-exported
+- [x] **DATA-07**: `decisions.md` reconciled with actual signature-based step aggregation; stale `pb_schema_updated.json` re-exported
 
 ### Shopping State
 
@@ -101,9 +101,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DATA-02 | Phase 1 | Complete |
 | DATA-03 | Phase 1 | Pending |
 | DATA-04 | Phase 1 | Complete |
-| DATA-05 | Phase 1 | Pending |
+| DATA-05 | Phase 1 | Complete |
 | DATA-06 | Phase 1 | Complete |
-| DATA-07 | Phase 1 | Pending |
+| DATA-07 | Phase 1 | Complete |
 | SHOP-01 | Phase 2 | Pending |
 | SHOP-02 | Phase 2 | Pending |
 | SHOP-03 | Phase 2 | Pending |
