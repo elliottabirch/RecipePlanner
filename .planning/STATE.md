@@ -5,15 +5,15 @@ milestone_name: Workflow Redesign
 current_phase: 2
 current_phase_name: Shopping State & Live Substitution
 status: executing
-stopped_at: Phase 2 UI-SPEC approved
-last_updated: "2026-07-06T20:12:51.435Z"
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-07-06T20:42:47.181Z"
 last_activity: 2026-07-06
-last_activity_desc: Phase 1 complete, transitioned to Phase 2
+last_activity_desc: Phase 2 execution started
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 18
+  completed_plans: 9
   percent: 17
 ---
 
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-05)
 
 **Core value:** The derived weekly outputs — shopping list and prep plan — must be trustworthy and low-friction for the real weekly shop-and-prep cycle.
-**Current focus:** Phase 1 — Data Hygiene
+**Current focus:** Phase 2 — Shopping State & Live Substitution
 
 ## Current Position
 
-Phase: 2 — Shopping State & Live Substitution
-Plan: Not started
+Phase: 2 (Shopping State & Live Substitution) — EXECUTING
+Plan: 2 of 10
 Status: Ready to execute
-Last activity: 2026-07-06 — Phase 1 complete, transitioned to Phase 2
+Last activity: 2026-07-06 — Phase 2 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -63,6 +63,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01-data-hygiene P06 | 14min | 2 tasks | 4 files |
 | Phase 01-data-hygiene P07 | 65min | 2 tasks | 5 files |
 | Phase 01-data-hygiene P08 | 22min | 3 tasks | 9 files |
+| Phase 02-shopping-state-live-substitution P01 | 20min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -96,6 +97,7 @@ Recent decisions affecting current work:
 - [Phase 01-data-hygiene]: PB superuser credentials live in gitignored recipe-planner/.env.local, sourced at run time; needed again for Plan 08's prod backup — merge-products.js pb.backups.create() requires superuser auth; values never printed or committed
 - [Phase 01-data-hygiene]: Schema exports consolidated to a single canonical pb_schema.json; pb_schema_updated.json deleted (user-directed at the Plan 08 Task 3 checkpoint) — Acceptance greps against pb_schema_updated.json are satisfied by pb_schema.json; later phases verify against pb_schema.json only
 - [Phase 01-data-hygiene]: Plan 08 prod backup taken explicitly via pb.backups.create because merge-products.js exits before its own backup step on an empty decisions file — Preserves the D-06.2 backup-before-any-mutation guarantee on the no-op merge path
+- [Phase 02-shopping-state-live-substitution]: MealContainer.containers[].lineId is recipe-name-scoped (not per-planned-meal), matching the builder's pre-existing grouping; strictly improves on the positional-key bug without expanding scope into a buildMealContainersList rework
 
 ### Pending Todos
 
@@ -103,7 +105,9 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
-None yet.
+yet.
+
+- REQUIREMENTS.md marks SHOP-01 fully Complete after 02-01, but SHOP-01's acceptance criterion (checkbox state persists across refresh/device switch) isn't realized until the shopping_state collection + useShoppingState hook land in 02-05/02-06 — 02-01 only built the lineId identity precondition. Re-verify SHOP-01 at full Phase 2 completion, not before.
 
 ## Deferred Items
 
@@ -117,6 +121,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-06T19:51:10.826Z
-Stopped at: Phase 2 UI-SPEC approved
-Resume file: .planning/phases/02-shopping-state-live-substitution/02-UI-SPEC.md
+Last session: 2026-07-06T20:42:14.268Z
+Stopped at: Completed 02-01-PLAN.md
+Resume file: None
