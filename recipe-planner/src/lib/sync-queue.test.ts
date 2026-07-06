@@ -60,21 +60,26 @@ describe("createSyncQueue", () => {
     });
 
     queue.enqueue("line-1", "payload-A");
-    await vi.waitFor(() => expect(process).toHaveBeenCalledTimes(1));
+    // Flush the synchronous initial call + its microtask rejection handling
+    // (advanceTimersByTimeAsync(0) awaits pending promise callbacks without
+    // advancing the clock — using vi.waitFor here would advance fake timers
+    // via its own internal polling and corrupt the timing assertions below).
+    await vi.advanceTimersByTimeAsync(0);
+    expect(process).toHaveBeenCalledTimes(1);
 
-    // First retry after 1000ms (baseDelayMs * 2**0)
+    // First retry scheduled at baseDelayMs * 2**0 = 1000ms.
     await vi.advanceTimersByTimeAsync(999);
     expect(process).toHaveBeenCalledTimes(1);
     await vi.advanceTimersByTimeAsync(1);
-    await vi.waitFor(() => expect(process).toHaveBeenCalledTimes(2));
+    expect(process).toHaveBeenCalledTimes(2);
 
-    // Second retry after 2000ms (baseDelayMs * 2**1)
+    // Second retry scheduled at baseDelayMs * 2**1 = 2000ms after that.
     await vi.advanceTimersByTimeAsync(1999);
     expect(process).toHaveBeenCalledTimes(2);
     await vi.advanceTimersByTimeAsync(1);
-    await vi.waitFor(() => expect(process).toHaveBeenCalledTimes(3));
+    expect(process).toHaveBeenCalledTimes(3);
 
-    await vi.waitFor(() => expect(queue.pending).toBe(0));
+    expect(queue.pending).toBe(0);
     expect(queue.failed).toBe(0);
   });
 
@@ -89,16 +94,17 @@ describe("createSyncQueue", () => {
     });
 
     queue.enqueue("line-1", "payload-A");
-    await vi.waitFor(() => expect(process).toHaveBeenCalledTimes(1));
+    await vi.advanceTimersByTimeAsync(0); // flush the initial (synchronous) call
+    expect(process).toHaveBeenCalledTimes(1);
 
     await vi.advanceTimersByTimeAsync(1000); // retry 1 (attempt 0 -> delay 1000*2**0)
-    await vi.waitFor(() => expect(process).toHaveBeenCalledTimes(2));
+    expect(process).toHaveBeenCalledTimes(2);
 
     await vi.advanceTimersByTimeAsync(2000); // retry 2 (attempt 1 -> delay 1000*2**1)
-    await vi.waitFor(() => expect(process).toHaveBeenCalledTimes(3));
+    expect(process).toHaveBeenCalledTimes(3);
 
     // maxAttempts=2 retries exhausted after 3 total invocations (initial + 2 retries)
-    await vi.waitFor(() => expect(queue.failed).toBe(1));
+    expect(queue.failed).toBe(1);
     expect(queue.pending).toBe(0);
     expect(onChange).toHaveBeenLastCalledWith({ pending: 0, failed: 1 });
 
