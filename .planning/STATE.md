@@ -5,15 +5,15 @@ milestone_name: Workflow Redesign
 current_phase: 2
 current_phase_name: Shopping State & Live Substitution
 status: executing
-stopped_at: Completed 02-05-PLAN.md
-last_updated: "2026-07-06T21:41:01.878Z"
+stopped_at: Completed 02-06-PLAN.md
+last_updated: "2026-07-06T21:47:45.294Z"
 last_activity: 2026-07-06
 last_activity_desc: Completed 02-02-PLAN.md
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 18
-  completed_plans: 13
+  completed_plans: 14
   percent: 17
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-05)
 ## Current Position
 
 Phase: 2 (Shopping State & Live Substitution) — EXECUTING
-Plan: 6 of 10
+Plan: 7 of 10
 Status: Ready to execute
 Last activity: 2026-07-06 — Completed 02-02-PLAN.md
 
@@ -68,6 +68,7 @@ Progress: [██████░░░░] 56%
 | Phase 02 P03 | 12min | 2 tasks | 4 files |
 | Phase 02 P04 | 18min | 1 tasks | 2 files |
 | Phase 02-shopping-state-live-substitution P05 | 12min | 2 tasks | 3 files |
+| Phase 02 P06 | 5min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -109,6 +110,8 @@ Recent decisions affecting current work:
 - [Phase 02]: sync-queue.ts clears failedKeys optimistically at enqueue time (not only after success confirms), keeping pending/failed as independent live counts for SyncIndicator
 - [Phase 02-shopping-state-live-substitution]: shopping_state collection created on both prod/test with pre-migration override count 0/0 — no backfill needed for meal_variant_overrides.quantity/unit
 - [Phase 02]: ShoppingState.resolution typed as buy|make|skip|null (not non-null) to match the actual nullable PocketBase select field
+- [Phase 02]: useShoppingState enqueues the full merged {checked, have_quantity, resolution} triple on every write (not a bare patch), since sync-queue.ts coalesces by replacing a key's pending payload — a partial-patch design would drop an earlier field's optimistic change if two setters fire before the first flush completes — Prevents silent data loss on rapid successive edits to the same shopping line before the sync queue flushes
+- [Phase 02]: SyncIndicator exported from components/outputs/index.ts alongside sibling tab components, matching the existing barrel-export convention — 02-07 needs to import it for Outputs.tsx wiring; keeps the directory's export pattern consistent
 
 ### Pending Todos
 
@@ -133,6 +136,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-06T21:41:01.872Z
-Stopped at: Completed 02-05-PLAN.md
+Last session: 2026-07-06T21:47:45.289Z
+Stopped at: Completed 02-06-PLAN.md
 Resume file: None
