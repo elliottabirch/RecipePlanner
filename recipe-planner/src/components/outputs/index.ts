@@ -10,3 +10,4 @@ export { WeeklyCalendar } from "./WeeklyCalendar";
 export { MicahMealsByTag } from "./MicahMealsByTag";
 export { ProductFlowTab } from "./ProductFlowTab";
 export { OutOfStockSection } from "./OutOfStockSection";
+export { SyncIndicator } from "./SyncIndicator";
