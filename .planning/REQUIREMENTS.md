@@ -9,7 +9,7 @@ Requirements for milestone v1.1 Workflow Redesign. Each maps to roadmap phases. 
 
 ### Data Hygiene
 
-- [ ] **DATA-01**: Shopping aggregation never sums mismatched units — converts within dimension to the product's canonical unit, or splits lines by dimension
+- [x] **DATA-01**: Shopping aggregation never sums mismatched units — converts within dimension to the product's canonical unit, or splits lines by dimension
 - [x] **DATA-02**: Units are an enum with canonical unit + dimension per product, with a within-dimension conversion module (`src/lib/units.ts`)
 - [ ] **DATA-03**: `recipe_product_nodes.unit` carries measurement units only — container-type semantics split into their own field
 - [x] **DATA-04**: Products are deduped one-shot and protected by a case-insensitive unique index on `products.name`
@@ -97,7 +97,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | Phase 1 | Pending |
+| DATA-01 | Phase 1 | Complete |
 | DATA-02 | Phase 1 | Complete |
 | DATA-03 | Phase 1 | Pending |
 | DATA-04 | Phase 1 | Complete |

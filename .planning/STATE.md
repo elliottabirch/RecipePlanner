@@ -5,15 +5,15 @@ milestone_name: Workflow Redesign
 current_phase: 1
 current_phase_name: Data Hygiene
 status: executing
-stopped_at: Completed 01-02-PLAN.md
-last_updated: "2026-07-06T07:02:45.304Z"
+stopped_at: Completed 01-03-PLAN.md
+last_updated: "2026-07-06T07:17:24.356Z"
 last_activity: 2026-07-06
 last_activity_desc: Phase 1 execution started
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 8
-  completed_plans: 2
+  completed_plans: 3
   percent: 0
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-05)
 ## Current Position
 
 Phase: 1 (Data Hygiene) — EXECUTING
-Plan: 3 of 8
+Plan: 4 of 8
 Status: Ready to execute
 Last activity: 2026-07-06 — Phase 1 execution started
 
@@ -57,6 +57,7 @@ Progress: [░░░░░░░░░░] 0%
 *Updated after each plan completion*
 | Phase 01 P01 | 4min | 3 tasks | 6 files |
 | Phase 01-data-hygiene P02 | 15min | 2 tasks | 3 files |
+| Phase 01 P03 | 24min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,8 @@ Recent decisions affecting current work:
 - [Phase 01]: D-05 review format implemented as JSON decisions skeleton + companion Markdown report in scripts/dedup-output/ (gitignored)
 - [Phase 01]: Cross-type same-name collisions quarantined into a separate MD section and excluded from the JSON decisions array (D-12, Pitfall #1)
 - [Phase 01]: merge-products.js hardcodes the four D-07 reference collections rather than deriving them from the stale pb_schema_updated.json
+- [Phase 01]: convert-or-split display-unit re-derivation only fires on an actual merge (2+ nodes), not on first insertion — Keeps single-ingredient shopping lines showing their as-entered unit unchanged; scopes the D-10 formatting change to the merge bug this plan fixes, avoiding scope creep
+- [Phase 01]: lineId = productId for the common case, productId|dimension for a split line, derived purely from the incoming unit's dimension name — Any number of distinct dimensions for the same product converge on a stable key without needing to search existing split entries; this is also the Phase 2 persisted-checkbox key
 
 ### Pending Todos
 
@@ -99,6 +102,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-06T07:02:23.833Z
-Stopped at: Completed 01-02-PLAN.md
+Last session: 2026-07-06T07:17:16.477Z
+Stopped at: Completed 01-03-PLAN.md
 Resume file: None
