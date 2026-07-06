@@ -5,16 +5,16 @@ milestone_name: Workflow Redesign
 current_phase: 2
 current_phase_name: Shopping State & Live Substitution
 status: executing
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-07-06T20:42:47.181Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-07-06T20:53:15.305Z"
 last_activity: 2026-07-06
-last_activity_desc: Phase 2 execution started
+last_activity_desc: Phase 2 execution — completed 02-02-PLAN.md
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 18
-  completed_plans: 9
-  percent: 17
+  completed_plans: 10
+  percent: 56
 ---
 
 # Project State
@@ -29,11 +29,11 @@ See: .planning/PROJECT.md (updated 2026-07-05)
 ## Current Position
 
 Phase: 2 (Shopping State & Live Substitution) — EXECUTING
-Plan: 2 of 10
+Plan: 3 of 10
 Status: Ready to execute
-Last activity: 2026-07-06 — Phase 2 execution started
+Last activity: 2026-07-06 — Completed 02-02-PLAN.md
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██████░░░░] 56%
 
 ## Performance Metrics
 
@@ -64,6 +64,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01-data-hygiene P07 | 65min | 2 tasks | 5 files |
 | Phase 01-data-hygiene P08 | 22min | 3 tasks | 9 files |
 | Phase 02-shopping-state-live-substitution P01 | 20min | 2 tasks | 8 files |
+| Phase 02 P02 | 10min | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -98,6 +99,7 @@ Recent decisions affecting current work:
 - [Phase 01-data-hygiene]: Schema exports consolidated to a single canonical pb_schema.json; pb_schema_updated.json deleted (user-directed at the Plan 08 Task 3 checkpoint) — Acceptance greps against pb_schema_updated.json are satisfied by pb_schema.json; later phases verify against pb_schema.json only
 - [Phase 01-data-hygiene]: Plan 08 prod backup taken explicitly via pb.backups.create because merge-products.js exits before its own backup step on an empty decisions file — Preserves the D-06.2 backup-before-any-mutation guarantee on the no-op merge path
 - [Phase 02-shopping-state-live-substitution]: MealContainer.containers[].lineId is recipe-name-scoped (not per-planned-meal), matching the builder's pre-existing grouping; strictly improves on the positional-key bug without expanding scope into a buildMealContainersList rework
+- [Phase 02-shopping-state-live-substitution]: VariantOverride.unit typed as the Phase-1 Unit enum (imported from lib/units.ts), not free text, per D-12 — no import cycle encountered
 
 ### Pending Todos
 
@@ -108,6 +110,7 @@ Recent decisions affecting current work:
 yet.
 
 - REQUIREMENTS.md marks SHOP-01 fully Complete after 02-01, but SHOP-01's acceptance criterion (checkbox state persists across refresh/device switch) isn't realized until the shopping_state collection + useShoppingState hook land in 02-05/02-06 — 02-01 only built the lineId identity precondition. Re-verify SHOP-01 at full Phase 2 completion, not before.
+- REQUIREMENTS.md marks SHOP-03 fully Complete after 02-02, but SHOP-03's acceptance criterion (user can swap a product mid-shop via a dialog, with all outputs re-derived) isn't realized until the swap dialog UI and the `Outputs.tsx` override-map builder land in 02-07/02-08 — 02-02 only built the pure re-derivation threading (`VariantOverride.quantity/unit` + inherit-when-null in `applyVariantOverrides`). Re-verify SHOP-03 at full Phase 2 completion, not before.
 
 ## Deferred Items
 
@@ -121,6 +124,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-06T20:42:14.268Z
+Last session: 2026-07-06T20:46:48.495Z
 Stopped at: Completed 02-01-PLAN.md
 Resume file: None

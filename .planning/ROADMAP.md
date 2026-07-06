@@ -83,13 +83,13 @@ Plans:
   4. User can resolve a line as "make it at home," with an offer to add its source recipe to the week, and can quick-create a new product from a minimal phone-friendly dialog without leaving the flow (SHOP-04, SHOP-05)
   5. Outputs pages are touch-friendly on tablet and remain usable over the tailnet through a brief connectivity drop, showing a pending-sync indicator until queued writes land (SHOP-06, SHOP-07)
 
-**Plans**: 1/10 plans executed
+**Plans**: 2/10 plans executed
 
 Plans:
 **Wave 1** *(parallel — pure logic + schema)*
 
 - [x] 02-01-PLAN.md — Content-derived stable keys: lineId through StoredItem/PullListItem/MealContainer + collapse 3 helpers + fix 4 tab call sites [SHOP-01]
-- [ ] 02-02-PLAN.md — VariantOverride quantity/unit inherit-when-null threading in applyVariantOverrides [SHOP-03]
+- [x] 02-02-PLAN.md — VariantOverride quantity/unit inherit-when-null threading in applyVariantOverrides [SHOP-03]
 - [ ] 02-03-PLAN.md — shopping-overlay (have-N/resolution/export filter) + shopping-mapping (line→node targets) pure modules [SHOP-02, SHOP-03, SHOP-04]
 - [ ] 02-04-PLAN.md — sync-queue optimistic retry/backoff/coalesce primitive [SHOP-07]
 - [ ] 02-05-PLAN.md — shopping_state collection + meal_variant_overrides fields (manual PB, both instances) + api/types surface [SHOP-01, SHOP-03]
@@ -185,7 +185,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6. Phases 2 and 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Data Hygiene | 8/8 | Complete    | 2026-07-06 |
-| 2. Shopping State & Live Substitution | 1/10 | In Progress|  |
+| 2. Shopping State & Live Substitution | 2/10 | In Progress|  |
 | 3. Product Registry Seeding | 0/TBD | Not started | - |
 | 4. Weekly Planning Memory | 0/TBD | Not started | - |
 | 5. Prep-Day Engine | 0/TBD | Not started | - |

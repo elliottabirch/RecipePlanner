@@ -21,7 +21,7 @@ Requirements for milestone v1.1 Workflow Redesign. Each maps to roadmap phases. 
 
 - [x] **SHOP-01**: Shopping checkbox state persists per plan across refresh and device switch
 - [ ] **SHOP-02**: User can record "have N" per line and see remaining-to-buy
-- [ ] **SHOP-03**: User can swap a product mid-shop — picking affected meals and entering per-meal quantity/unit — with all outputs re-derived
+- [x] **SHOP-03**: User can swap a product mid-shop — picking affected meals and entering per-meal quantity/unit — with all outputs re-derived
 - [ ] **SHOP-04**: User can resolve a line as "make it at home", with offer to add the source recipe to the week
 - [ ] **SHOP-05**: User can quick-create a product from a phone-friendly minimal dialog (name + store/section + unit)
 - [ ] **SHOP-06**: Outputs pages are tablet touch-friendly
@@ -106,7 +106,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DATA-07 | Phase 1 | Complete |
 | SHOP-01 | Phase 2 | Complete |
 | SHOP-02 | Phase 2 | Pending |
-| SHOP-03 | Phase 2 | Pending |
+| SHOP-03 | Phase 2 | Complete |
 | SHOP-04 | Phase 2 | Pending |
 | SHOP-05 | Phase 2 | Pending |
 | SHOP-06 | Phase 2 | Pending |
