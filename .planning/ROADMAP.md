@@ -22,7 +22,7 @@ inspiration and evolution. Authoritative decision record: `plans/workflow-redesi
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Data Hygiene** - Unit-disciplined data layer: enum + canonical units, convert-or-split aggregation fix, dedup + unique index, linter v1
+- [x] **Phase 1: Data Hygiene** - Unit-disciplined data layer: enum + canonical units, convert-or-split aggregation fix, dedup + unique index, linter v1 (completed 2026-07-06)
 - [ ] **Phase 2: Shopping State & Live Substitution** - Persisted shopping state, have-N, mid-shop swap, make-at-home, quick-create, tablet touch pass
 - [ ] **Phase 3: Product Registry Seeding** - USDA Foundation Foods seed (~800 items), fuzzy search everywhere, "Search USDA" mode
 - [ ] **Phase 4: Weekly Planning Memory** - Plan start dates, people-multiplier, tag-based slot templates, guided-fill wizard
@@ -44,7 +44,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Running the recipe linter on demand surfaces the four data-hygiene issues (unit mismatches, container-as-unit, missing store/section, prep words in raw names) instead of failing silently (DATA-06)
   5. `decisions.md` and the schema export accurately reflect the app's real step-aggregation behavior, so future development isn't misled by stale docs (DATA-07)
 
-**Plans**: 7/8 plans executed
+**Plans**: 8/8 plans complete
 
 Plans:
 **Wave 1**
@@ -68,7 +68,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 01-08-PLAN.md — One-shot prod migration + case-insensitive (name, type) unique index [DATA-04, DATA-05]
+- [x] 01-08-PLAN.md — One-shot prod migration + case-insensitive (name, type) unique index [DATA-04, DATA-05]
 
 ### Phase 2: Shopping State & Live Substitution
 
@@ -154,7 +154,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6. Phases 2 and 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Data Hygiene | 7/8 | In Progress|  |
+| 1. Data Hygiene | 8/8 | Complete   | 2026-07-06 |
 | 2. Shopping State & Live Substitution | 0/TBD | Not started | - |
 | 3. Product Registry Seeding | 0/TBD | Not started | - |
 | 4. Weekly Planning Memory | 0/TBD | Not started | - |

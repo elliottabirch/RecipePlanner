@@ -4,17 +4,17 @@ milestone: v1.1
 milestone_name: Workflow Redesign
 current_phase: 1
 current_phase_name: Data Hygiene
-status: executing
-stopped_at: Completed 01-07-PLAN.md
-last_updated: "2026-07-06T17:10:42.775Z"
+status: verifying
+stopped_at: Completed 01-08-PLAN.md (Phase 1 complete)
+last_updated: "2026-07-06T17:56:58.474Z"
 last_activity: 2026-07-06
 last_activity_desc: Phase 1 execution started
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 8
-  completed_plans: 7
-  percent: 0
+  completed_plans: 8
+  percent: 17
 ---
 
 # Project State
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-07-05)
 
 Phase: 1 (Data Hygiene) — EXECUTING
 Plan: 8 of 8
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-06 — Phase 1 execution started
 
 Progress: [░░░░░░░░░░] 0%
@@ -62,6 +62,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01 P05 | 20min | 3 tasks | 3 files |
 | Phase 01-data-hygiene P06 | 14min | 2 tasks | 4 files |
 | Phase 01-data-hygiene P07 | 65min | 2 tasks | 5 files |
+| Phase 01-data-hygiene P08 | 22min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -93,6 +94,8 @@ Recent decisions affecting current work:
 - [Phase 01-data-hygiene]: Prod has zero real same-type dupes; merge machinery rehearsed via self-cleaning synthetic fixtures on TEST — Plan 08's merge step is likely a no-op on real data — find-duplicates against a fresh prod copy produced an empty same-type skeleton; only the two intentional cross-type pairs exist
 - [Phase 01-data-hygiene]: NEW Plan 08 entry condition: all unit gaps (29 unresolved node units + ambiguous/null canonical_units) must be resolved via a human-confirmed unit-resolutions worksheet (scripts/dedup-output/unit-resolutions.json) applied during the supervised prod run — User sign-off condition at the 01-07 rehearsal checkpoint — nothing left to the linter
 - [Phase 01-data-hygiene]: PB superuser credentials live in gitignored recipe-planner/.env.local, sourced at run time; needed again for Plan 08's prod backup — merge-products.js pb.backups.create() requires superuser auth; values never printed or committed
+- [Phase 01-data-hygiene]: Schema exports consolidated to a single canonical pb_schema.json; pb_schema_updated.json deleted (user-directed at the Plan 08 Task 3 checkpoint) — Acceptance greps against pb_schema_updated.json are satisfied by pb_schema.json; later phases verify against pb_schema.json only
+- [Phase 01-data-hygiene]: Plan 08 prod backup taken explicitly via pb.backups.create because merge-products.js exits before its own backup step on an empty decisions file — Preserves the D-06.2 backup-before-any-mutation guarantee on the no-op merge path
 
 ### Pending Todos
 
@@ -114,6 +117,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-06T17:10:42.770Z
-Stopped at: Completed 01-07-PLAN.md
+Last session: 2026-07-06T17:56:58.468Z
+Stopped at: Completed 01-08-PLAN.md (Phase 1 complete)
 Resume file: None
