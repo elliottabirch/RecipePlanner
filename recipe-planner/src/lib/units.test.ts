@@ -119,4 +119,27 @@ describe("units.ts — display-unit selection (D-10)", () => {
     const result = chooseDisplayUnit("mass", null, 8, "oz");
     expect(result.unit).toBe("oz");
   });
+
+  // Regression: CR-01 — non-enum units (e.g. "" written to cleared stored
+  // nodes, or an unresolved raw string cast `as Unit`) must be treated as
+  // unconvertible, never silently summed into NaN.
+  it("treats non-enum / empty units as unconvertible (no NaN)", () => {
+    const empty = "" as unknown as Unit;
+    const junk = "chile" as unknown as Unit;
+    expect(canConvert(empty, empty)).toBe(false);
+    expect(canConvert(junk, junk)).toBe(false);
+    expect(canConvert(empty, "cup")).toBe(false);
+    expect(convert(2, empty, empty)).toBeNull();
+    expect(convert(2, junk, junk)).toBeNull();
+  });
+
+  // Regression: WR-01 — a canonical_unit in a different dimension than the
+  // line's current unit must NOT relabel the quantity ("500 g" -> "500 cup").
+  it("chooseDisplayUnit does not relabel across a failed conversion", () => {
+    const result = chooseDisplayUnit("mass", "cup" as Unit, 500, "g");
+    // "cup" is volume; the line is mass. Conversion fails, so the honest
+    // metric-mass promotion is kept (500 g stays under 1 kg) — never "500 cup".
+    expect(result.unit).toBe("g");
+    expect(result.quantity).toBeCloseTo(500);
+  });
 });

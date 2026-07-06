@@ -108,7 +108,16 @@ export function getDimension(unit: Unit): Dimension {
 }
 
 export function canConvert(a: Unit, b: Unit): boolean {
-  return getDimension(a) === getDimension(b);
+  const da = getDimension(a);
+  const db = getDimension(b);
+  // Non-enum units (e.g. "" written to cleared stored nodes, or an
+  // unresolved raw string cast `as Unit` by the aggregation layer) have no
+  // dimension. Two of them must NOT be treated as convertible — otherwise
+  // `undefined === undefined` reads as `true` and `convert` returns NaN,
+  // silently corrupting the merged quantity. Unknown units are never
+  // convertible; the caller splits instead of summing.
+  if (da === undefined || db === undefined) return false;
+  return da === db;
 }
 
 /**
@@ -205,7 +214,12 @@ export function chooseDisplayUnit(
   if (dimension === "count") return { unit: currentUnit, quantity: qty };
   if (canonicalUnit) {
     const converted = convert(qty, currentUnit, canonicalUnit);
-    return { unit: canonicalUnit, quantity: converted ?? qty };
+    // Only relabel to the canonical unit when the conversion actually
+    // succeeded. If it returns null (canonicalUnit is in a different
+    // dimension than the line — e.g. a mis-backfilled product), keep the
+    // honest current unit via the promotion fallback rather than stamping
+    // the canonical label onto an unconverted quantity ("500 g" -> "500 cup").
+    if (converted !== null) return { unit: canonicalUnit, quantity: converted };
   }
   return promoteUnit(qty, currentUnit);
 }
