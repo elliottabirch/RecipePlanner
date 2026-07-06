@@ -3,6 +3,7 @@ import type {
   RecipeGraphData,
   ExpandedProductNode,
 } from "../types";
+import type { Unit } from "../../units";
 
 // Re-import if needed from the aggregation types
 // import type { RecipeGraphData, ExpandedProductNode } from "./types";
@@ -13,6 +14,14 @@ import type {
 export interface VariantOverride {
   originalNodeId: string; // recipe_product_node ID
   replacementProduct: Product; // full product object for the replacement
+  /** Substitute quantity for this meal's replacement node. Null/omitted
+   * inherits the original node's quantity unchanged (inherit-when-null,
+   * D-07/D-09). */
+  quantity?: number | null;
+  /** Substitute unit (Phase-1 enum token, per D-12 — not free text).
+   * Null/omitted inherits the original node's unit unchanged
+   * (inherit-when-null, D-07/D-09). */
+  unit?: Unit | null;
 }
 
 /**
