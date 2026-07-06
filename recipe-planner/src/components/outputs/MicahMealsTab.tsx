@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import type { MealContainer } from "../../lib/aggregation";
 import { EmptyState } from "../EmptyState";
+import { getContainerCheckboxKey } from "../../constants/outputs";
 
 interface MicahMealsTabProps {
   micahMealContainers: MealContainer[];
@@ -60,11 +61,11 @@ export function MicahMealsTab({
                     In {location}:
                   </Typography>
                   <List dense disablePadding>
-                    {containers.map((container, containerIdx) => {
-                      const key = `micah-container-${idx}-${location}-${containerIdx}`;
+                    {containers.map((container) => {
+                      const key = getContainerCheckboxKey(container.lineId);
                       return (
                         <ListItem
-                          key={containerIdx}
+                          key={key}
                           disablePadding
                           sx={{ ml: 2 }}
                         >

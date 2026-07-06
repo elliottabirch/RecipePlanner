@@ -13,6 +13,7 @@ import {
 import type { PullListMeal } from "../../lib/aggregation";
 import { DAYS, MEAL_SLOTS, SLOT_COLORS } from "../../constants/mealPlanning";
 import { EmptyState } from "../EmptyState";
+import { getPullListCheckboxKey } from "../../constants/outputs";
 
 interface PullListsTabProps {
   pullLists: PullListMeal[];
@@ -74,10 +75,10 @@ export function PullListsTab({
                         From {storage}:
                       </Typography>
                       <List dense disablePadding>
-                        {items.map((item, itemIdx) => {
-                          const key = `pull-${idx}-${storage}-${itemIdx}`;
+                        {items.map((item) => {
+                          const key = getPullListCheckboxKey(item.lineId);
                           return (
-                            <ListItem key={itemIdx} disablePadding>
+                            <ListItem key={key} disablePadding>
                               <ListItemIcon sx={{ minWidth: 32 }}>
                                 <Checkbox
                                   edge="start"

@@ -2,6 +2,7 @@ import { Box, Typography, List } from "@mui/material";
 import type { StoredItem } from "../../lib/aggregation";
 import { CheckableListItem } from "../CheckableListItem";
 import { EmptyState } from "../EmptyState";
+import { getStoredCheckboxKey } from "../../constants/outputs";
 
 interface FridgeFreezerTabProps {
   storedItems: StoredItem[];
@@ -37,8 +38,8 @@ export function FridgeFreezerTab({
               {location === "dry" ? "Dry Storage" : location}
             </Typography>
             <List dense>
-              {items.map((item, idx) => {
-                const key = `stored-${location}-${idx}`;
+              {items.map((item) => {
+                const key = getStoredCheckboxKey(item.lineId);
                 const primary = (
                   <>
                     {item.productName}
