@@ -12,6 +12,11 @@ import {
   Tabs,
   Tab,
   Snackbar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
 } from "@mui/material";
 import {
   ShoppingCart as ShoppingIcon,
@@ -24,7 +29,7 @@ import {
 } from "@mui/icons-material";
 import { Position, type Node, type Edge } from "@xyflow/react";
 import dagre from "dagre";
-import { getAll, create, collections } from "../lib/api";
+import { getAll, create, remove, collections } from "../lib/api";
 import "../styles/printStyles.css";
 import {
   groupShoppingList,
@@ -37,6 +42,7 @@ import {
   getReadyToEatInventory,
   checkInventoryStock,
   applyVariantOverrides,
+  type AggregatedProduct,
   type RecipeGraphData,
   type PlannedMealWithRecipe,
   type VariantOverride,
@@ -51,7 +57,9 @@ import type {
   Tag,
   InventoryItemExpanded,
   MealVariantOverrideExpanded,
+  ProductExpanded,
 } from "../lib/types";
+import type { Unit } from "../lib/units";
 import { getAvailableProviders } from "../lib/listProviders";
 import { useShoppingState } from "../hooks/useShoppingState";
 import {
@@ -69,6 +77,8 @@ import {
   WeeklyViewTab,
   ProductFlowTab,
   SyncIndicator,
+  ShopSwapDialog,
+  type SwapSaveEntry,
 } from "../components/outputs";
 import {
   OutputTab,
@@ -79,6 +89,7 @@ import {
   findWellKnownTag,
   DEFAULT_EXPORT_OPTIONS,
   getPantryCheckboxKey,
+  getShoppingCheckboxKey,
   PRODUCT_NODE_COLORS,
   STEP_NODE_COLORS,
   NODE_STYLE,
@@ -107,6 +118,18 @@ export default function Outputs() {
   const [inventoryItems, setInventoryItems] = useState<InventoryItemExpanded[]>(
     []
   );
+  // Full product catalog (with source_recipe expanded for make-it gating,
+  // D-10) — feeds ShopSwapDialog's replacement Autocomplete and the make-it
+  // eligibility check. Loaded once; quick-created products are threaded
+  // into the swap dialog's own local state instead (D-08), not refetched
+  // here.
+  const [products, setProducts] = useState<ProductExpanded[]>([]);
+  // Raw override records for the currently loaded plan (kept alongside the
+  // derived overridesByMeal map below) so the swap-save handler can scope
+  // its delete+recreate to only the node(s) a swap actually touches.
+  const [variantOverrides, setVariantOverrides] = useState<
+    MealVariantOverrideExpanded[]
+  >([]);
 
   // Refresh counter to trigger data reload after mutations
   const [refreshCounter, setRefreshCounter] = useState(0);
@@ -120,12 +143,12 @@ export default function Outputs() {
   // in-memory checkedItems Set + toggleChecked. All six tabs still receive a
   // Set<string>/toggle-fn pair via the adapter below, so their prop surface
   // is unchanged.
-  // setHaveQuantity/setResolution are consumed by 02-08 (swap/make-it
-  // handlers) and 02-09 (ShoppingListTab have-N wiring) — not yet called
-  // from this plan's scope, so they aren't destructured here to keep
-  // noUnusedLocals clean; both remain available from useShoppingState
-  // for those plans to pull in directly.
-  const { state: shoppingState, setChecked, pendingCount, failed } =
+  // setResolution is consumed by this plan's make-it confirm handler below.
+  // setHaveQuantity is consumed by 02-09 (ShoppingListTab have-N wiring) —
+  // not yet called from this plan's scope, so it isn't destructured here to
+  // keep noUnusedLocals clean; it remains available from useShoppingState
+  // for that plan to pull in directly.
+  const { state: shoppingState, setChecked, setResolution, pendingCount, failed } =
     useShoppingState(selectedPlanId);
 
   // Set<string> view derived from the hook's Map — feeds every tab's
@@ -196,6 +219,25 @@ export default function Outputs() {
     loadPlans();
   }, []);
 
+  // Load the full product catalog once, with source_recipe expanded (D-10
+  // make-it gating) — independent of the selected plan.
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const productsData = await getAll<ProductExpanded>(
+          collections.products,
+          { expand: "source_recipe" }
+        );
+        setProducts(productsData);
+      } catch (err) {
+        // Non-fatal: swap/make-it affordances simply degrade (empty picker,
+        // make-it never eligible) if this fails; the rest of the page works.
+        console.error("Failed to load products for swap/make-it:", err);
+      }
+    };
+    loadProducts();
+  }, []);
+
   // Load plan data when selection changes
   useEffect(() => {
     if (!selectedPlanId) return;
@@ -246,6 +288,9 @@ export default function Outputs() {
             }
           );
         }
+        // Kept alongside the derived map below so the swap-save handler
+        // (this plan) can scope its delete+recreate to the touched node(s).
+        setVariantOverrides(overrides);
 
         // Build override map by meal ID
         const overridesByMeal = new Map<string, VariantOverride[]>();
@@ -645,6 +690,109 @@ export default function Outputs() {
     [shoppingState, setChecked]
   );
 
+  // Lookup map for the swap dialog + make-it gating (D-10).
+  const productsById = useMemo(
+    () => new Map(products.map((p) => [p.id, p])),
+    [products]
+  );
+
+  // --- Mid-shop swap (SHOP-03/05, D-07/D-08/D-09) ---------------------------
+
+  const [swapProductId, setSwapProductId] = useState<string | null>(null);
+  const swapProduct = swapProductId ? productsById.get(swapProductId) ?? null : null;
+
+  const handleOpenSwap = useCallback((item: AggregatedProduct) => {
+    setSwapProductId(item.productId);
+  }, []);
+
+  const handleCloseSwap = useCallback(() => {
+    setSwapProductId(null);
+  }, []);
+
+  const handleSwapSave = useCallback(
+    async (entries: SwapSaveEntry[]) => {
+      await Promise.all(
+        entries.map(async (entry) => {
+          // Scoped delete+recreate (WeeklyPlans.handleSaveVariants shape,
+          // D-09) — only the override(s) for the node(s) THIS swap touches
+          // are replaced, not every override for the whole meal, so an
+          // unrelated product's planning-time swap in the same meal
+          // survives (Rule 1: WeeklyPlans' meal-wide delete would silently
+          // destroy those unrelated overrides if copied verbatim here).
+          const existingForNodes = variantOverrides.filter(
+            (o) =>
+              o.planned_meal === entry.plannedMealId &&
+              entry.nodeIds.includes(o.original_node)
+          );
+          await Promise.all(
+            existingForNodes.map((o) =>
+              remove(collections.mealVariantOverrides, o.id)
+            )
+          );
+          await Promise.all(
+            entry.nodeIds.map((nodeId) =>
+              create(collections.mealVariantOverrides, {
+                planned_meal: entry.plannedMealId,
+                original_node: nodeId,
+                replacement_product: entry.replacementProductId,
+                quantity: entry.quantity,
+                unit: entry.unit as Unit | null,
+              })
+            )
+          );
+        })
+      );
+      // Bump refreshCounter — the existing load-and-derive pipeline re-runs
+      // and every output (shopping/prep/pull/containers) re-derives with no
+      // separate propagation step.
+      setRefreshCounter((c) => c + 1);
+    },
+    [variantOverrides]
+  );
+
+  // --- Make-it-at-home (SHOP-04, D-10/D-11) ---------------------------------
+
+  const canMakeIt = useCallback(
+    (productId: string) => !!productsById.get(productId)?.source_recipe,
+    [productsById]
+  );
+
+  const [makeItTarget, setMakeItTarget] = useState<{
+    lineId: string;
+    productId: string;
+    productName: string;
+    sourceRecipeId: string;
+    sourceRecipeName: string;
+  } | null>(null);
+
+  const handleOpenMakeIt = useCallback(
+    (item: AggregatedProduct) => {
+      const product = productsById.get(item.productId);
+      // D-10 guard — should be unreachable since the eligible control is
+      // hidden entirely when there's no source_recipe (02-09).
+      if (!product?.source_recipe) return;
+      setMakeItTarget({
+        lineId: item.lineId,
+        productId: item.productId,
+        productName: product.name,
+        sourceRecipeId: product.source_recipe,
+        sourceRecipeName: product.expand?.source_recipe?.name ?? "the recipe",
+      });
+    },
+    [productsById]
+  );
+
+  const handleCloseMakeIt = useCallback(() => setMakeItTarget(null), []);
+
+  // Confirm-first (D-11) — never wired directly to handleAddRecipeToPlan
+  // like OutOfStockSection (02-RESEARCH Pitfall 4).
+  const handleConfirmMakeIt = useCallback(async () => {
+    if (!makeItTarget) return;
+    await handleAddRecipeToPlan(makeItTarget.sourceRecipeId);
+    setResolution(getShoppingCheckboxKey(makeItTarget.lineId), "make");
+    setMakeItTarget(null);
+  }, [makeItTarget, setResolution]);
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" p={4}>
@@ -778,6 +926,9 @@ export default function Outputs() {
                   onAddRecipeToPlan={handleAddRecipeToPlan}
                   onAddToShoppingList={handleAddToShoppingList}
                   manualShoppingItems={manualShoppingItems}
+                  onSwap={handleOpenSwap}
+                  onMakeIt={handleOpenMakeIt}
+                  canMakeIt={canMakeIt}
                 />
               </Paper>
             )}
@@ -905,6 +1056,45 @@ export default function Outputs() {
             {exportSnackbar.message}
           </Alert>
         </Snackbar>
+
+        {/* Mid-shop swap dialog (SHOP-03/05, D-07/D-08/D-09) */}
+        <ShopSwapDialog
+          open={swapProductId !== null}
+          onClose={handleCloseSwap}
+          product={swapProduct}
+          plannedMeals={plannedMeals}
+          recipeData={recipeData}
+          products={products}
+          onSave={handleSwapSave}
+        />
+
+        {/* Make-it confirm-first dialog (SHOP-04, D-11) */}
+        <Dialog
+          open={makeItTarget !== null}
+          onClose={handleCloseMakeIt}
+          maxWidth="xs"
+          fullWidth
+        >
+          <DialogTitle sx={{ fontSize: 20, fontWeight: 600 }}>
+            Make it instead of buying?
+          </DialogTitle>
+          <DialogContent>
+            <Typography variant="body1">
+              Add {makeItTarget?.sourceRecipeName} to this week and make it
+              instead of buying {makeItTarget?.productName}?
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseMakeIt}>Cancel</Button>
+            <Button
+              onClick={handleConfirmMakeIt}
+              variant="contained"
+              sx={{ minHeight: 48 }}
+            >
+              Add to This Week
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </>
   );

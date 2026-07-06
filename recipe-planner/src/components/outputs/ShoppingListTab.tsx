@@ -86,6 +86,13 @@ interface ShoppingListTabProps {
   onAddRecipeToPlan?: (recipeId: string) => void;
   onAddToShoppingList?: (item: ManualShoppingItem) => void;
   manualShoppingItems?: ManualShoppingItem[];
+  // Store-time swap/make-it entry points (SHOP-03/04, D-10). Handlers and
+  // dialogs live in Outputs (02-08); the buttons that call these props are
+  // rendered in 02-09 — declared here now so Outputs' call site compiles.
+  onSwap?: (item: AggregatedProduct) => void;
+  onMakeIt?: (item: AggregatedProduct) => void;
+  /** true when the product has a `source_recipe` (D-10 gate). */
+  canMakeIt?: (productId: string) => boolean;
 }
 
 export function ShoppingListTab({
