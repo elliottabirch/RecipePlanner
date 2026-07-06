@@ -156,3 +156,18 @@ None - no external service configuration required.
 ---
 *Phase: 01-data-hygiene*
 *Completed: 2026-07-06*
+
+## Self-Check: PASSED
+
+- FOUND: recipe-planner/src/lib/linter/index.ts
+- FOUND: recipe-planner/src/lib/linter/rules/cross-dimension.ts
+- FOUND: recipe-planner/src/lib/linter/rules/prep-words.ts
+- FOUND: recipe-planner/src/lib/linter/rules/missing-store-section.ts
+- FOUND: recipe-planner/src/lib/linter/rules/missing-canonical-unit.ts
+- FOUND: recipe-planner/src/lib/linter/linter.test.ts
+- FOUND: recipe-planner/src/pages/registries/Products.tsx
+- FOUND: recipe-planner/scripts/lint.js
+- FOUND: commit 74a3274 (test: RED)
+- FOUND: commit 54c770a (feat: GREEN)
+- FOUND: commit 09eb5ec (feat: Task 2)
+- FOUND: commit 296a041 (docs: SUMMARY)
