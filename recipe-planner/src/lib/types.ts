@@ -1,3 +1,5 @@
+import type { Unit, Dimension } from "./units";
+
 // Base record type from PocketBase
 export interface BaseRecord {
   id: string;
@@ -48,6 +50,8 @@ export interface Product extends BaseRecord {
   section?: string; // relation ID
   storage_location?: StorageLocation;
   container_type?: string; // relation ID
+  canonical_unit?: Unit;
+  dimension?: Dimension;
   // New fields for inventory
   ready_to_eat?: boolean;
   meal_slot?: "snack" | "meal";

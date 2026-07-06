@@ -89,10 +89,10 @@ describe("units.ts — display-unit selection (D-10)", () => {
   });
 
   it("promotes an under-representation up to the largest unit keeping qty >= 1", () => {
-    // 48 tsp = 1 cup exactly-ish; should promote all the way to cup.
-    const result = promoteUnit(48, "tsp");
+    // 60 tsp = 1.25 cup, comfortably over the >= 1 threshold at cup.
+    const result = promoteUnit(60, "tsp");
     expect(result.unit).toBe("cup");
-    expect(result.quantity).toBeCloseTo(1);
+    expect(result.quantity).toBeCloseTo(1.25);
   });
 
   it("never crosses metric <-> customary within one promotion path", () => {
