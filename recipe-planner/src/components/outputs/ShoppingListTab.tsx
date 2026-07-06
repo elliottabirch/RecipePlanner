@@ -13,6 +13,8 @@ import {
   ContentCopy as ContentCopyIcon,
   Remove as RemoveIcon,
   Add as AddIcon,
+  SwapHoriz as SwapIcon,
+  Restaurant as MakeItIcon,
 } from "@mui/icons-material";
 import type { AggregatedProduct, InventoryStockWarning, RecipeGraphData, PlannedMealWithRecipe } from "../../lib/aggregation";
 import type { OverlaidShoppingItem } from "../../lib/shopping-overlay";
@@ -114,9 +116,8 @@ interface ShoppingListTabProps {
   onAddToShoppingList?: (item: ManualShoppingItem) => void;
   manualShoppingItems?: ManualShoppingItem[];
   // Store-time swap/make-it entry points (SHOP-03/04, D-10). Handlers and
-  // dialogs live in Outputs (02-08); the buttons that call these props are
-  // rendered in 02-09 (task 2) — declared here now so Outputs' call site
-  // compiles.
+  // dialogs live in Outputs (02-08); the per-line buttons that call these
+  // props are rendered below (SHOP-06).
   onSwap?: (item: AggregatedProduct) => void;
   onMakeIt?: (item: AggregatedProduct) => void;
   /** true when the product has a `source_recipe` (D-10 gate). */
@@ -146,6 +147,9 @@ export function ShoppingListTab({
   onAddRecipeToPlan,
   onAddToShoppingList,
   manualShoppingItems,
+  onSwap,
+  onMakeIt,
+  canMakeIt,
   onSetHaveQuantity,
   onSetResolution,
 }: ShoppingListTabProps) {
@@ -168,6 +172,33 @@ export function ShoppingListTab({
   if (!hasItems) {
     return <EmptyState message={UI_TEXT.noShoppingItems} />;
   }
+
+  // Swap/make-it icon buttons, shared by both the have-N line and the
+  // pantry-style line (48x48 tap targets, 8px gap, per UI-SPEC Spacing).
+  const renderLineActions = (item: OverlaidShoppingItem) => (
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+      {onSwap && (
+        <IconButton
+          size="medium"
+          aria-label={`Swap ${item.productName}`}
+          onClick={() => onSwap(item)}
+          sx={{ minWidth: 48, minHeight: 48 }}
+        >
+          <SwapIcon />
+        </IconButton>
+      )}
+      {onMakeIt && canMakeIt?.(item.productId) && (
+        <IconButton
+          size="medium"
+          aria-label="Make it at home"
+          onClick={() => onMakeIt(item)}
+          sx={{ minWidth: 48, minHeight: 48 }}
+        >
+          <MakeItIcon />
+        </IconButton>
+      )}
+    </Box>
+  );
 
   const renderNonPantryLine = (item: OverlaidShoppingItem) => {
     const key = getShoppingCheckboxKey(item.lineId);
@@ -276,7 +307,36 @@ export function ShoppingListTab({
             />
           </Box>
         )}
+
+        {renderLineActions(item)}
       </ListItem>
+    );
+  };
+
+  const renderPantryStyleLine = (item: OverlaidShoppingItem) => {
+    const key = getShoppingCheckboxKey(item.lineId);
+    const primary = item.totalQuantity && item.unit
+      ? `${item.productName} — ${formatQty(item.totalQuantity)} ${item.unit}`
+      : item.productName;
+    const secondary = item.sources.map((s) => s.recipeName).join(", ");
+
+    return (
+      <Box
+        key={item.lineId}
+        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+      >
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <CheckableListItem
+            itemKey={key}
+            checked={checkedItems.has(key)}
+            onToggle={onToggleChecked}
+            primary={primary}
+            secondary={secondary}
+            disablePadding
+          />
+        </Box>
+        {renderLineActions(item)}
+      </Box>
     );
   };
 
@@ -343,31 +403,11 @@ export function ShoppingListTab({
                     {sectionName}
                   </Typography>
                   <List dense>
-                    {visibleItems.map((item) => {
-                      if (!item.isPantry) {
-                        return renderNonPantryLine(item);
-                      }
-
-                      const key = getShoppingCheckboxKey(item.lineId);
-                      const primary = item.totalQuantity && item.unit
-                        ? `${item.productName} — ${formatQty(item.totalQuantity)} ${item.unit}`
-                        : item.productName;
-                      const secondary = item.sources
-                        .map((s) => s.recipeName)
-                        .join(", ");
-
-                      return (
-                        <CheckableListItem
-                          key={item.lineId}
-                          itemKey={key}
-                          checked={checkedItems.has(key)}
-                          onToggle={onToggleChecked}
-                          primary={primary}
-                          secondary={secondary}
-                          disablePadding
-                        />
-                      );
-                    })}
+                    {visibleItems.map((item) =>
+                      item.isPantry
+                        ? renderPantryStyleLine(item)
+                        : renderNonPantryLine(item)
+                    )}
                   </List>
                 </Box>
               );
