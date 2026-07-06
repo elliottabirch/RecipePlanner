@@ -85,7 +85,8 @@ export function BatchPrepTab({
                 <Checkbox
                   checked={checkedItems.has(key)}
                   onChange={() => onToggleChecked(key)}
-                  sx={{ mt: -0.5 }}
+                  size="medium"
+                  sx={{ mt: -0.5, p: 1.5, minWidth: 48, minHeight: 48 }}
                 />
                 <Box flex={1}>
                   <Typography

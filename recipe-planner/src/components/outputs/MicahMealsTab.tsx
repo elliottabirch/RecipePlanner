@@ -67,14 +67,23 @@ export function MicahMealsTab({
                         <ListItem
                           key={key}
                           disablePadding
-                          sx={{ ml: 2 }}
+                          sx={{ ml: 2, mb: 1 }}
                         >
-                          <ListItemIcon sx={{ minWidth: 32 }}>
+                          <ListItemIcon
+                            sx={{
+                              minWidth: 48,
+                              minHeight: 48,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
                             <Checkbox
                               edge="start"
                               checked={checkedItems.has(key)}
                               onChange={() => onToggleChecked(key)}
-                              size="small"
+                              size="medium"
+                              sx={{ p: 1.5 }}
                             />
                           </ListItemIcon>
                           <ListItemText

@@ -78,13 +78,22 @@ export function PullListsTab({
                         {items.map((item) => {
                           const key = getPullListCheckboxKey(item.lineId);
                           return (
-                            <ListItem key={key} disablePadding>
-                              <ListItemIcon sx={{ minWidth: 32 }}>
+                            <ListItem key={key} disablePadding sx={{ mb: 1 }}>
+                              <ListItemIcon
+                                sx={{
+                                  minWidth: 48,
+                                  minHeight: 48,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
+                              >
                                 <Checkbox
                                   edge="start"
                                   checked={checkedItems.has(key)}
                                   onChange={() => onToggleChecked(key)}
-                                  size="small"
+                                  size="medium"
+                                  sx={{ p: 1.5 }}
                                 />
                               </ListItemIcon>
                               <ListItemText

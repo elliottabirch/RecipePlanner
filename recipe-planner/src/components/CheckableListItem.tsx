@@ -18,13 +18,22 @@ export function CheckableListItem({
   disablePadding = false,
 }: CheckableListItemProps) {
   return (
-    <ListItem disablePadding={disablePadding}>
-      <ListItemIcon sx={{ minWidth: 36 }}>
+    <ListItem disablePadding={disablePadding} sx={{ mb: 1 }}>
+      <ListItemIcon
+        sx={{
+          minWidth: 48,
+          minHeight: 48,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <Checkbox
           edge="start"
           checked={checked}
           onChange={() => onToggle(itemKey)}
-          size="small"
+          size="medium"
+          sx={{ p: 1.5 }}
         />
       </ListItemIcon>
       <ListItemText
