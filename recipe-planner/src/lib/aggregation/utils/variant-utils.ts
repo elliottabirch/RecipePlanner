@@ -195,34 +195,17 @@ export function applyVariantOverrides(
   if (valid.length === 0) {
     return recipeData;
   }
-  
-  console.log("Recipe data:", {
-    productNodes: recipeData.productNodes.map(n => ({ 
-      id: n.id, 
-      name: n.expand?.product?.name,
-      type: n.expand?.product?.type 
-    })),
-    steps: recipeData.steps.map(s => ({ id: s.id, name: s.name })),
-    productToStepEdges: recipeData.productToStepEdges.map(e => ({ source: e.source, target: e.target })),
-    stepToProductEdges: recipeData.stepToProductEdges.map(e => ({ source: e.source, target: e.target })),
-  });
-  console.log("Replacing nodes:", valid.map(v => v.originalNodeId));
-  
-
-  
-
   // Build map of replacements
   const replacementMap = new Map<string, VariantOverride>();
   for (const override of valid) {
     replacementMap.set(override.originalNodeId, override);
   }
-  
+
   const replacedNodeIds = new Set(replacementMap.keys());
-  
+
   // Find orphaned nodes
   const orphanedIds = findOrphanedNodes(recipeData, replacedNodeIds);
-    console.log("Orphaned result:", [...orphanedIds]);
-  
+
   // Build new product nodes array
   const newProductNodes: ExpandedProductNode[] = [];
   
