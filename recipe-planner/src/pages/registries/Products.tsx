@@ -27,6 +27,7 @@ import {
   Delete as DeleteIcon,
   Search as SearchIcon,
   Clear as ClearIcon,
+  Checklist as ChecklistIcon,
 } from "@mui/icons-material";
 import { getAll, create, update, remove, collections } from "../../lib/api";
 import type {
@@ -36,8 +37,10 @@ import type {
   Section,
   ContainerType,
   Recipe,
+  RecipeProductNode,
 } from "../../lib/types";
 import ProductForm, { useProductForm } from "../../components/ProductForm";
+import { runLint, type LintFinding } from "../../lib/linter";
 
 interface ProductExpanded extends Product {
   expand?: {
@@ -86,6 +89,11 @@ export default function Products() {
   const [itemToDelete, setItemToDelete] = useState<ProductExpanded | null>(
     null
   );
+
+  // Lint findings
+  const [findings, setFindings] = useState<LintFinding[]>([]);
+  const [linting, setLinting] = useState(false);
+  const [lintDialogOpen, setLintDialogOpen] = useState(false);
 
   // Filter items based on search query
   const filteredItems = useMemo(() => {
@@ -136,6 +144,37 @@ export default function Products() {
     loadItems();
     loadLookupData();
   }, []);
+
+  const handleRunLint = async () => {
+    try {
+      setLinting(true);
+      setError(null);
+      // The cross-dimension rule needs each product's recipe_product_nodes
+      // unit values, which loadItems' product-only expand doesn't carry —
+      // fetch them separately and group by product id.
+      const nodes = await getAll<RecipeProductNode>(
+        collections.recipeProductNodes
+      );
+      const nodesByProduct = new Map<string, { unit?: string }[]>();
+      for (const node of nodes) {
+        if (!node.product) continue;
+        const list = nodesByProduct.get(node.product) ?? [];
+        list.push({ unit: node.unit });
+        nodesByProduct.set(node.product, list);
+      }
+      const enriched = items.map((item) => ({
+        ...item,
+        nodes: nodesByProduct.get(item.id) ?? [],
+      }));
+      setFindings(runLint(enriched));
+      setLintDialogOpen(true);
+    } catch (err) {
+      setError("Failed to run linter");
+      console.error(err);
+    } finally {
+      setLinting(false);
+    }
+  };
 
   const handleOpenDialog = (item?: ProductExpanded) => {
     if (item) {
@@ -230,13 +269,23 @@ export default function Products() {
             Manage products (raw ingredients, transient items, stored items)
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
-        >
-          Add Product
-        </Button>
+        <Box display="flex" gap={1}>
+          <Button
+            variant="outlined"
+            startIcon={<ChecklistIcon />}
+            onClick={handleRunLint}
+            disabled={linting}
+          >
+            {linting ? "Linting..." : "Lint"}
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => handleOpenDialog()}
+          >
+            Add Product
+          </Button>
+        </Box>
       </Box>
 
       {/* Search Field */}
@@ -471,6 +520,47 @@ export default function Products() {
           >
             Delete
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Lint Findings Dialog */}
+      <Dialog
+        open={lintDialogOpen}
+        onClose={() => setLintDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          Lint Findings ({findings.length})
+        </DialogTitle>
+        <DialogContent>
+          {findings.length === 0 ? (
+            <Typography color="text.secondary">
+              No issues found — all products are clean.
+            </Typography>
+          ) : (
+            findings.map((finding, index) => {
+              const product = items.find((i) => i.id === finding.productId);
+              return (
+                <Alert
+                  key={`${finding.rule}-${finding.productId ?? index}`}
+                  severity={finding.severity}
+                  sx={{ mb: 1, cursor: product ? "pointer" : "default" }}
+                  onClick={() => {
+                    if (product) {
+                      setLintDialogOpen(false);
+                      handleOpenDialog(product);
+                    }
+                  }}
+                >
+                  <strong>{finding.rule}</strong>: {finding.message}
+                </Alert>
+              );
+            })
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLintDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>
