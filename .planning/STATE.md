@@ -6,15 +6,15 @@ current_phase: 2
 current_phase_name: Shopping State & Live Substitution
 status: executing
 stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-07-06T20:53:15.305Z"
+last_updated: "2026-07-06T21:02:22.700Z"
 last_activity: 2026-07-06
-last_activity_desc: Phase 2 execution — completed 02-02-PLAN.md
+last_activity_desc: Completed 02-02-PLAN.md
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 18
-  completed_plans: 10
-  percent: 56
+  completed_plans: 11
+  percent: 17
 ---
 
 # Project State
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-05)
 ## Current Position
 
 Phase: 2 (Shopping State & Live Substitution) — EXECUTING
-Plan: 3 of 10
+Plan: 4 of 10
 Status: Ready to execute
 Last activity: 2026-07-06 — Completed 02-02-PLAN.md
 
@@ -65,6 +65,7 @@ Progress: [██████░░░░] 56%
 | Phase 01-data-hygiene P08 | 22min | 3 tasks | 9 files |
 | Phase 02-shopping-state-live-substitution P01 | 20min | 2 tasks | 8 files |
 | Phase 02 P02 | 10min | 1 tasks | 2 files |
+| Phase 02 P03 | 12min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -100,6 +101,8 @@ Recent decisions affecting current work:
 - [Phase 01-data-hygiene]: Plan 08 prod backup taken explicitly via pb.backups.create because merge-products.js exits before its own backup step on an empty decisions file — Preserves the D-06.2 backup-before-any-mutation guarantee on the no-op merge path
 - [Phase 02-shopping-state-live-substitution]: MealContainer.containers[].lineId is recipe-name-scoped (not per-planned-meal), matching the builder's pre-existing grouping; strictly improves on the positional-key bug without expanding scope into a buildMealContainersList rework
 - [Phase 02-shopping-state-live-substitution]: VariantOverride.unit typed as the Phase-1 Unit enum (imported from lib/units.ts), not free text, per D-12 — no import cycle encountered
+- [Phase 02-shopping-state-live-substitution]: ShoppingStateEntry defined locally in shopping-overlay.ts (not imported from 02-05's types.ts) — avoids hard-depending on sibling Wave-1 plan ordering; structurally compatible with whatever 02-05 defines
+- [Phase 02-shopping-state-live-substitution]: getMealNodeTargetsForProduct fans a per-meal quantity/unit input out to every matching recipe_product_node within that meal, per 02-RESEARCH Open Question 1's recommended default
 
 ### Pending Todos
 
@@ -124,6 +127,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-06T20:46:48.495Z
+Last session: 2026-07-06T20:59:46.682Z
 Stopped at: Completed 02-01-PLAN.md
 Resume file: None
