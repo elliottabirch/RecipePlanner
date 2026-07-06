@@ -55,6 +55,11 @@ import type {
 import { getAvailableProviders } from "../lib/listProviders";
 import { useShoppingState } from "../hooks/useShoppingState";
 import {
+  overlayShoppingItem,
+  filterForExport,
+  type OverlaidShoppingItem,
+} from "../lib/shopping-overlay";
+import {
   FridgeFreezerTab,
   MealContainersTab,
   MicahMealsTab,
@@ -63,6 +68,7 @@ import {
   BatchPrepTab,
   WeeklyViewTab,
   ProductFlowTab,
+  SyncIndicator,
 } from "../components/outputs";
 import {
   OutputTab,
@@ -119,7 +125,8 @@ export default function Outputs() {
   // from this plan's scope, so they aren't destructured here to keep
   // noUnusedLocals clean; both remain available from useShoppingState
   // for those plans to pull in directly.
-  const { state: shoppingState, setChecked } = useShoppingState(selectedPlanId);
+  const { state: shoppingState, setChecked, pendingCount, failed } =
+    useShoppingState(selectedPlanId);
 
   // Set<string> view derived from the hook's Map — feeds every tab's
   // checkedItems prop unchanged.
@@ -251,6 +258,11 @@ export default function Outputs() {
             overridesByMeal.get(mealId)!.push({
               originalNodeId: override.original_node,
               replacementProduct: override.expand.replacement_product,
+              // D-09 item 10c: forward the substitute quantity/unit off the
+              // raw MealVariantOverride record so applyVariantOverrides'
+              // inherit-when-null (02-02) can re-derive the swapped line.
+              quantity: override.quantity ?? null,
+              unit: override.unit ?? null,
             });
           }
         }
@@ -345,22 +357,39 @@ export default function Outputs() {
     () => buildShoppingListFromFlow(productFlowGraph),
     [productFlowGraph]
   );
-  const groupedShoppingList = useMemo(
-    () => groupShoppingList(shoppingList),
-    [shoppingList]
+  // Overlay each shopping-list line with its persisted have-N/resolution
+  // state (D-02/D-04/D-05) — one more link in the useMemo derive chain, no
+  // separate propagation path (02-PATTERNS "useMemo-derived pipeline").
+  const overlaidShoppingList = useMemo<OverlaidShoppingItem[]>(
+    () => shoppingList.map((item) => overlayShoppingItem(item, shoppingState)),
+    [shoppingList, shoppingState]
   );
 
-  // Create a filtered version of the shopping list for export
-  // Uses the same filtering logic as the UI (lines 637-647)
+  const groupedShoppingList = useMemo(() => {
+    // groupShoppingList's signature is typed for AggregatedProduct[]; the
+    // overlaid items are a strict superset (OverlaidShoppingItem extends
+    // AggregatedProduct), so this cast reflects the actual runtime shape
+    // without lying about it — the visible list carries have-N/resolution
+    // fields through to ShoppingListTab (consumed starting in 02-09).
+    return groupShoppingList(overlaidShoppingList) as {
+      byStore: Map<string, Map<string, OverlaidShoppingItem[]>>;
+      pantryItems: OverlaidShoppingItem[];
+    };
+  }, [overlaidShoppingList]);
+
+  // Create a filtered version of the shopping list for export (D-06): the
+  // export excludes every resolved line (make/skip/have-complete) via
+  // filterForExport, not just pantry-checked ones as before — the on-screen
+  // groupedShoppingList above still shows resolved lines dimmed/struck
+  // (D-05); only the export path drops them.
   const filteredShoppingListForExport = useMemo(() => {
-    const filteredByStore = new Map<string, Map<string, typeof shoppingList>>();
+    const filteredByStore = new Map<string, Map<string, OverlaidShoppingItem[]>>();
 
     groupedShoppingList.byStore.forEach((sections, storeName) => {
-      const filteredSections = new Map<string, typeof shoppingList>();
+      const filteredSections = new Map<string, OverlaidShoppingItem[]>();
 
       sections.forEach((items, sectionName) => {
-        // Apply same filtering logic as the UI
-        const visibleItems = items.filter((item) => {
+        const visibleItems = filterForExport(items).filter((item) => {
           if (item.isPantry) {
             const pantryKey = getPantryCheckboxKey(item.productId);
             return !checkedItems.has(pantryKey);
@@ -652,20 +681,23 @@ export default function Outputs() {
             </Typography>
           </Box>
 
-          <FormControl sx={{ minWidth: 250 }}>
-            <InputLabel>{UI_TEXT.weeklyPlanLabel}</InputLabel>
-            <Select
-              value={selectedPlanId}
-              label={UI_TEXT.weeklyPlanLabel}
-              onChange={(e) => setSelectedPlanId(e.target.value)}
-            >
-              {plans.map((plan) => (
-                <MenuItem key={plan.id} value={plan.id}>
-                  {plan.name || UI_TEXT.unnamedPlan}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Box display="flex" alignItems="center" gap={1}>
+            <SyncIndicator pendingCount={pendingCount} failed={failed} />
+            <FormControl sx={{ minWidth: 250 }}>
+              <InputLabel>{UI_TEXT.weeklyPlanLabel}</InputLabel>
+              <Select
+                value={selectedPlanId}
+                label={UI_TEXT.weeklyPlanLabel}
+                onChange={(e) => setSelectedPlanId(e.target.value)}
+              >
+                {plans.map((plan) => (
+                  <MenuItem key={plan.id} value={plan.id}>
+                    {plan.name || UI_TEXT.unnamedPlan}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
         </Box>
 
         {error && (
