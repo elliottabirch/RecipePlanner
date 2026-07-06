@@ -67,6 +67,7 @@ import {
   type Section,
   type ContainerType,
 } from "../lib/types";
+import { UNIT_DIMENSIONS, type Unit } from "../lib/units";
 import ProductNode, {
   type ProductNodeData,
   type ProductNodeType,
@@ -84,6 +85,10 @@ const nodeTypes = {
 
 type FlowNode = ProductNodeType | StepNodeType;
 type FlowEdge = Edge;
+
+// Enum-bound options for the node unit Select (DATA-03) — sourced from
+// units.ts so free-text unit entry is no longer possible.
+const UNIT_OPTIONS = Object.keys(UNIT_DIMENSIONS) as Unit[];
 
 export default function RecipeEditor() {
   const { id } = useParams();
@@ -379,10 +384,6 @@ export default function RecipeEditor() {
   const handleSaveEditedProduct = () => {
     if (!selectedProduct || !editingNodeId) return;
 
-    // For stored products, find the container type name from the expanded product
-    const productWithExpand = products.find((p) => p.id === selectedProduct.id);
-    const containerTypeName = productWithExpand?.expand?.container_type?.name;
-
     setNodes((nds) =>
       nds.map((node) => {
         if (node.id === editingNodeId) {
@@ -394,10 +395,10 @@ export default function RecipeEditor() {
               productId: selectedProduct.id,
               productType: selectedProduct.type,
               quantity: productQuantity || undefined,
-              unit:
-                selectedProduct.type === "stored"
-                  ? containerTypeName
-                  : productUnit || undefined,
+              // Node unit is measurement-only; container type is sourced
+              // from products.container_type downstream (D-01) and is
+              // never written into unit, regardless of product type.
+              unit: productUnit || undefined,
               mealDestination: productMealDestination || undefined,
             },
           } as FlowNode;
@@ -469,10 +470,6 @@ export default function RecipeEditor() {
 
     const nodeId = `product-temp-${Date.now()}`;
 
-    // For stored products, find the container type name from the expanded product
-    const productWithExpand = products.find((p) => p.id === selectedProduct.id);
-    const containerTypeName = productWithExpand?.expand?.container_type?.name;
-
     const newNode: ProductNodeType = {
       id: nodeId,
       type: "product",
@@ -482,10 +479,10 @@ export default function RecipeEditor() {
         productId: selectedProduct.id,
         productType: selectedProduct.type,
         quantity: productQuantity || undefined,
-        unit:
-          selectedProduct.type === "stored"
-            ? containerTypeName
-            : productUnit || undefined,
+        // Node unit is measurement-only; container type is sourced from
+        // products.container_type downstream (D-01) and is never written
+        // into unit, regardless of product type.
+        unit: productUnit || undefined,
         mealDestination: productMealDestination || undefined,
       },
     };
@@ -963,14 +960,23 @@ export default function RecipeEditor() {
                       }
                     />
                     {selectedProduct.type !== "stored" && (
-                      <TextField
-                        label="Unit"
-                        value={productUnit}
-                        onChange={(e) => setProductUnit(e.target.value)}
-                        size="small"
-                        sx={{ width: 120 }}
-                        placeholder="cups, lbs, etc."
-                      />
+                      <FormControl size="small" sx={{ width: 120 }}>
+                        <InputLabel>Unit</InputLabel>
+                        <Select
+                          value={productUnit}
+                          label="Unit"
+                          onChange={(e) => setProductUnit(e.target.value)}
+                        >
+                          <MenuItem value="">
+                            <em>None</em>
+                          </MenuItem>
+                          {UNIT_OPTIONS.map((u) => (
+                            <MenuItem key={u} value={u}>
+                              {u}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
                     )}
                   </Box>
 
@@ -1187,14 +1193,23 @@ export default function RecipeEditor() {
               }
             />
             {selectedProduct?.type !== "stored" && (
-              <TextField
-                label="Unit"
-                value={productUnit}
-                onChange={(e) => setProductUnit(e.target.value)}
-                size="small"
-                sx={{ width: 120 }}
-                placeholder="cups, lbs, etc."
-              />
+              <FormControl size="small" sx={{ width: 120 }}>
+                <InputLabel>Unit</InputLabel>
+                <Select
+                  value={productUnit}
+                  label="Unit"
+                  onChange={(e) => setProductUnit(e.target.value)}
+                >
+                  <MenuItem value="">
+                    <em>None</em>
+                  </MenuItem>
+                  {UNIT_OPTIONS.map((u) => (
+                    <MenuItem key={u} value={u}>
+                      {u}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             )}
           </Box>
 
