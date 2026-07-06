@@ -234,8 +234,10 @@ export function applyVariantOverrides(
         ...node,
         // Keep the same ID so downstream edges still work
         product: override.replacementProduct.id,
-        // Clear quantity/unit since this is a pre-existing item (e.g., from freezer)
-        // The user may want to customize this - for now, preserve original
+        // Substitute quantity/unit, inheriting the original node's value
+        // when the override omits it (inherit-when-null, D-07/D-09).
+        quantity: override.quantity ?? node.quantity,
+        unit: override.unit ?? node.unit,
         expand: {
           product: {
             ...override.replacementProduct,
