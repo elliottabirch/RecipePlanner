@@ -16,6 +16,7 @@ inspiration and evolution. Authoritative decision record: `plans/workflow-redesi
 ## Phases
 
 **Phase Numbering:**
+
 - Integer phases (1, 2, 3): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
@@ -31,87 +32,119 @@ Decimal phases appear between their surrounding integers in numeric order.
 ## Phase Details
 
 ### Phase 1: Data Hygiene
+
 **Goal**: The recipe data layer is unit-disciplined and duplicate-free, so every downstream aggregation (shopping list, prep, containers) is trustworthy by construction.
 **Depends on**: Nothing (first phase). Gates and hardens all later phases (hard dep for Phases 3 and 5; soft dep for Phases 2 and 4).
 **Requirements**: DATA-01, DATA-02, DATA-03, DATA-04, DATA-05, DATA-06, DATA-07
 **Success Criteria** (what must be TRUE):
+
   1. Shopping list aggregation never silently sums mismatched units — same-dimension quantities combine correctly into one line, cross-dimension quantities appear as separate, clearly distinct lines (DATA-01, DATA-02)
   2. Editing a recipe's ingredient unit only ever sets a measurement unit (cup, gram, etc.) — container type (jar, bag) is a separate field, never conflated with unit (DATA-03)
   3. Every product name in the registry is unique case-insensitively — attempting to create a duplicate name is rejected, and existing duplicates have been one-shot merged (DATA-04, DATA-05)
   4. Running the recipe linter on demand surfaces the four data-hygiene issues (unit mismatches, container-as-unit, missing store/section, prep words in raw names) instead of failing silently (DATA-06)
   5. `decisions.md` and the schema export accurately reflect the app's real step-aggregation behavior, so future development isn't misled by stale docs (DATA-07)
+
 **Plans**: 8 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 01-01-PLAN.md — Test harness (Vitest) + units.ts enum/conversion/alias/display module + Product type fields [DATA-02]
 - [ ] 01-02-PLAN.md — Dedup + merge scripts: find-duplicates JSON/MD output + merge-products with backup/preflight/orphan-check [DATA-04]
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 01-03-PLAN.md — Convert-or-split aggregation fix + stable lineId through the shopping list [DATA-01]
 - [ ] 01-04-PLAN.md — Recipe linter v1 (4 rules), Products.tsx panel + headless lint.js [DATA-06]
 - [ ] 01-05-PLAN.md — normalize-node-units + backfill-units scripts + decisions.md reconciliation [DATA-05, DATA-07]
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 01-06-PLAN.md — Remove unit-as-container overload + enum-bound editor unit Select [DATA-03]
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 01-07-PLAN.md — Add canonical_unit/dimension PB fields (both DBs) + full migration rehearsal on test [DATA-04, DATA-05]
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
 - [ ] 01-08-PLAN.md — One-shot prod migration + case-insensitive (name, type) unique index [DATA-04, DATA-05]
 
 ### Phase 2: Shopping State & Live Substitution
+
 **Goal**: The tablet becomes a durable, trustworthy shopping companion — state persists across refresh and device switch, and the user can adapt the list mid-shop without breaking downstream outputs.
 **Depends on**: Phase 1 (soft — aggregation correctness). Infra prereq: NAS PocketBase joins the tailnet + `db-config.ts` hostname switch (todo `nas-pocketbase-tailnet`), required for store/phone use but not local development.
 **Requirements**: SHOP-01, SHOP-02, SHOP-03, SHOP-04, SHOP-05, SHOP-06, SHOP-07
 **Success Criteria** (what must be TRUE):
+
   1. Checking off items on any outputs tab persists to PocketBase and survives refresh and device switch, scoped per weekly plan (SHOP-01)
   2. User can record "have N" per line and see remaining-to-buy, auto-completing when the line is satisfied (SHOP-02)
   3. Mid-shop, user can swap a product for a substitute — choosing affected meals and a per-meal quantity/unit — and all downstream outputs (shopping, prep, pull, container lists) re-derive immediately (SHOP-03)
   4. User can resolve a line as "make it at home," with an offer to add its source recipe to the week, and can quick-create a new product from a minimal phone-friendly dialog without leaving the flow (SHOP-04, SHOP-05)
   5. Outputs pages are touch-friendly on tablet and remain usable over the tailnet through a brief connectivity drop, showing a pending-sync indicator until queued writes land (SHOP-06, SHOP-07)
+
 **Plans**: TBD
 **UI hint**: yes
 
 ### Phase 3: Product Registry Seeding
+
 **Goal**: The product registry has real-world breadth and is easy to search, so authoring and quick-create rarely require typing an ingredient from scratch.
 **Depends on**: Phase 1 (hard — unique name index + canonical-unit fields). Soft dep on Phase 2 (Search-USDA mode and swap-search fuzzy wiring use Phase 2 surfaces; everything else in this phase is Phase-2-independent).
 **Requirements**: REG-01, REG-02, REG-03, REG-04
 **Success Criteria** (what must be TRUE):
+
   1. The product registry contains ~800 USDA Foundation Foods with plain human-readable names, default store/section, and zero duplicate names against the existing set (REG-01)
   2. Searching for a product on the registry page, in the recipe editor, or in quick-create tolerates typos and reordered words — "garbonzo" finds "garbanzo," "paste tomato" finds "tomato paste" (REG-02)
   3. Quick-create offers a "Search USDA" mode to pull in an item not already in the seeded set, on demand (REG-03)
   4. Seeded products carry nutrition fields in the background (FDC ID, macros) with no user-facing nutrition UI yet (REG-04)
+
 **Plans**: TBD
 **UI hint**: yes
 
 ### Phase 4: Weekly Planning Memory
+
 **Goal**: The weekly plan remembers dates and scales servings, and a guided wizard helps the user fill a week fast without re-deciding rotation from scratch.
 **Depends on**: Phase 1 (soft — scaled quantities are only trustworthy once aggregation is fixed).
 **Requirements**: WEEK-01, WEEK-02, WEEK-03, WEEK-04
 **Success Criteria** (what must be TRUE):
+
   1. Every weekly plan has a start date (existing plans backfilled), shown in the plan list and header (WEEK-01)
   2. Setting a plan's people-multiplier scales shopping, batch-prep, and container quantities accordingly, with a multiplier of 1 reproducing today's output exactly (WEEK-02)
   3. User can define a reusable week template of tag-based slots, and tagging a recipe makes it eligible for the matching slot's pool with no other change (WEEK-03)
   4. The guided-fill wizard leads with a staples slot pre-filled from last week's picks, then walks remaining slots ordering each pool's options least-recently-planned-first (WEEK-04)
+
 **Plans**: TBD
 **UI hint**: yes
 
 ### Phase 5: Prep-Day Engine
+
 **Goal**: Prep day becomes a deterministic, optimized, interactive cook-mode experience instead of a manually-sequenced guess.
 **Depends on**: Phase 1 (hard). Conditionally feeds from Phase 4's start date for the day-before lead-time horizon only, if that feature stays in scope.
 **Requirements**: PREP-01, PREP-02, PREP-03, PREP-04, PREP-05, PREP-06
 **Success Criteria** (what must be TRUE):
+
   1. Every recipe step carries durations, instructions, and a controlled prep-action vocabulary, editable in the recipe editor (PREP-01)
   2. The 185 existing steps are backfilled with this metadata via an AI-assisted pass, reviewed in batches before being saved (PREP-02)
   3. Generating a prep-day schedule for a weekly plan is deterministic — the same seed and weights always produce the same ordered timeline — and respects both recipe step order and kitchen resource limits (oven racks/temperature, burners, singleton appliances) (PREP-03)
   4. Cook mode's tablet view shows now/next cards with scaled quantities and instructions, recomputes the remaining timeline as steps are checked off, and shows live countdowns for passive steps (PREP-04)
   5. User can tune scheduler weights in-app and regenerate the plan; the linter, run on demand, flags step-metadata and pull-step violations (PREP-05, PREP-06)
+
 **Plans**: TBD
 **UI hint**: yes
 
 ### Phase 6: Import Pipeline & Recipe Lifecycle
+
 **Goal**: Adding and evolving recipes happens entirely in-app, with drafts kept out of planning until approved — retiring the test-database migration ritual.
 **Depends on**: Phase 4 (wizard hosts the evolution prompt; dated plans feed `/suggest-recipes`). Phase 5 (recipe_steps metadata is a hard input to the import JSON contract). Infra prereq: tailnet (phone capture), same as Phase 2.
 **Requirements**: IMP-01, IMP-02, IMP-03, IMP-04, IMP-05, IMP-06, IMP-07
 **Success Criteria** (what must be TRUE):
+
   1. Recipes have a draft/published status; draft recipes are invisible to weekly planning but visible, badged, in the recipe list (IMP-01)
   2. User can paste structured recipe JSON into an in-app import page and get a draft recipe landed directly in prod, with no test database or migration script involved (IMP-02, IMP-03)
   3. `/suggest-recipes` proposes 3-5 import-ready recipe candidates that reuse existing registry products, favor low active time, and are batch-prep compatible (IMP-04)
   4. User can attach a one-tap note to a recipe from the calendar, cook mode, or recipe card, and later see an agent-produced draft revision surfaced for review in the week wizard (IMP-05, IMP-06)
   5. Publishing a draft recipe is blocked until it passes the recipe linter; importing itself is never blocked (IMP-07)
+
 **Plans**: TBD
 
 ## Progress

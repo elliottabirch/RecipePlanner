@@ -495,17 +495,19 @@ describe("units.convert", () => {
 
 **If this table is empty:** N/A — see rows above; all are genuinely open judgment calls surfaced by direct data verification, not textbook uncertainty.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should the `products.name` unique index be scoped to `(name, type)` instead of bare `name`?**
    - What we know: two live product pairs share a name across `transient`/`stored` types, by apparent design (see Pitfall #1).
    - What's unclear: whether this is an intentional recipe-authoring pattern the user wants to keep, or accidental naming laziness that should be cleaned up by renaming.
    - Recommendation: surface this to the user explicitly before writing the `merge-products.js`/index-creation tasks — it changes both the SQL DDL and whether these two specific pairs go into the merge-candidate list at all.
+   - **RESOLVED: see CONTEXT.md D-12** — user chose a case-insensitive unique index on `(name, type)`; the transient/stored same-name pairs are intentional and preserved.
 
 2. **Should `can`/`bu` (bunch) node-unit values alias to `each`, or surface as unresolved for manual review?**
    - What we know: D-09 explicitly aliases `clove` → `each` and defers a dedicated `can`/`bunch` enum member; `can` appears 5 times, `bu` 12 times in live data.
    - What's unclear: whether losing the "5 cans" vs "5 each" distinction on the shopping list is acceptable for these specific products (canned goods commonly have canonical sizes, e.g. 15oz can, so aliasing to `each` may already lose real shopping information the same way DATA-01's cross-dimension example does).
    - Recommendation: alias `bu`→`each` (bunch is genuinely count-like, consistent with clove/head precedent) but flag `can` for one explicit confirmation — it may deserve `canonical_unit: "each"` with the linter-null-fallback path instead of a blanket normalization, since real canned-good quantities often matter more granularly.
+   - **RESOLVED: see CONTEXT.md D-13** — user chose to alias both `can` and `bu` to `each`, accepting the loss of can-size distinction.
 
 ## Environment Availability
 
