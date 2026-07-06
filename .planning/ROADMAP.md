@@ -44,7 +44,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Running the recipe linter on demand surfaces the four data-hygiene issues (unit mismatches, container-as-unit, missing store/section, prep words in raw names) instead of failing silently (DATA-06)
   5. `decisions.md` and the schema export accurately reflect the app's real step-aggregation behavior, so future development isn't misled by stale docs (DATA-07)
 
-**Plans**: 3/8 plans executed
+**Plans**: 4/8 plans executed
 
 Plans:
 **Wave 1**
@@ -55,7 +55,7 @@ Plans:
 **Wave 2** *(blocked on Wave 1 completion)*
 
 - [x] 01-03-PLAN.md — Convert-or-split aggregation fix + stable lineId through the shopping list [DATA-01]
-- [ ] 01-04-PLAN.md — Recipe linter v1 (4 rules), Products.tsx panel + headless lint.js [DATA-06]
+- [x] 01-04-PLAN.md — Recipe linter v1 (4 rules), Products.tsx panel + headless lint.js [DATA-06]
 - [ ] 01-05-PLAN.md — normalize-node-units + backfill-units scripts + decisions.md reconciliation [DATA-05, DATA-07]
 
 **Wave 3** *(blocked on Wave 2 completion)*
@@ -154,7 +154,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6. Phases 2 and 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Data Hygiene | 3/8 | In Progress|  |
+| 1. Data Hygiene | 4/8 | In Progress|  |
 | 2. Shopping State & Live Substitution | 0/TBD | Not started | - |
 | 3. Product Registry Seeding | 0/TBD | Not started | - |
 | 4. Weekly Planning Memory | 0/TBD | Not started | - |
