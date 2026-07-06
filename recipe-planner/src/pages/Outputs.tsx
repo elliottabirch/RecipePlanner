@@ -143,13 +143,17 @@ export default function Outputs() {
   // in-memory checkedItems Set + toggleChecked. All six tabs still receive a
   // Set<string>/toggle-fn pair via the adapter below, so their prop surface
   // is unchanged.
-  // setResolution is consumed by this plan's make-it confirm handler below.
-  // setHaveQuantity is consumed by 02-09 (ShoppingListTab have-N wiring) —
-  // not yet called from this plan's scope, so it isn't destructured here to
-  // keep noUnusedLocals clean; it remains available from useShoppingState
-  // for that plan to pull in directly.
-  const { state: shoppingState, setChecked, setResolution, pendingCount, failed } =
-    useShoppingState(selectedPlanId);
+  // setResolution is consumed by the make-it confirm handler below and by
+  // 02-09's resolution-chip un-resolve action. setHaveQuantity is consumed
+  // by 02-09's ShoppingListTab have-N stepper wiring.
+  const {
+    state: shoppingState,
+    setChecked,
+    setHaveQuantity,
+    setResolution,
+    pendingCount,
+    failed,
+  } = useShoppingState(selectedPlanId);
 
   // Set<string> view derived from the hook's Map — feeds every tab's
   // checkedItems prop unchanged.
@@ -929,6 +933,8 @@ export default function Outputs() {
                   onSwap={handleOpenSwap}
                   onMakeIt={handleOpenMakeIt}
                   canMakeIt={canMakeIt}
+                  onSetHaveQuantity={setHaveQuantity}
+                  onSetResolution={setResolution}
                 />
               </Paper>
             )}

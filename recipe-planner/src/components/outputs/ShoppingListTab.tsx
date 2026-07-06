@@ -1,7 +1,21 @@
 import { useMemo } from "react";
-import { Box, Typography, Button, List } from "@mui/material";
-import { ContentCopy as ContentCopyIcon } from "@mui/icons-material";
+import {
+  Box,
+  Typography,
+  Button,
+  List,
+  ListItem,
+  ListItemText,
+  IconButton,
+  Chip,
+} from "@mui/material";
+import {
+  ContentCopy as ContentCopyIcon,
+  Remove as RemoveIcon,
+  Add as AddIcon,
+} from "@mui/icons-material";
 import type { AggregatedProduct, InventoryStockWarning, RecipeGraphData, PlannedMealWithRecipe } from "../../lib/aggregation";
+import type { OverlaidShoppingItem } from "../../lib/shopping-overlay";
 import { CheckableListItem } from "../CheckableListItem";
 import { EmptyState } from "../EmptyState";
 import { OutOfStockSection } from "./OutOfStockSection";
@@ -12,8 +26,8 @@ import {
 } from "../../constants/outputs";
 
 interface GroupedShoppingList {
-  byStore: Map<string, Map<string, AggregatedProduct[]>>;
-  pantryItems: AggregatedProduct[];
+  byStore: Map<string, Map<string, OverlaidShoppingItem[]>>;
+  pantryItems: OverlaidShoppingItem[];
 }
 
 export interface ManualShoppingItem {
@@ -31,10 +45,17 @@ const UNCATEGORIZED_SECTION = "Uncategorized";
 const formatQty = (n: number): string =>
   Number.isFinite(n) ? String(Number(n.toFixed(2))) : String(n);
 
+// Resolution chip labels (UI-SPEC Copywriting Contract).
+const RESOLUTION_CHIP_LABEL: Record<OverlaidShoppingItem["resolution"], string> = {
+  make: "Making",
+  skip: "Skipped",
+  buy: "Have enough", // only reached when isResolved && resolution === 'buy' (have >= needed)
+};
+
 function mergeManualItemsIntoGroups(
-  byStore: Map<string, Map<string, AggregatedProduct[]>>,
+  byStore: Map<string, Map<string, OverlaidShoppingItem[]>>,
   manualItems: ManualShoppingItem[]
-): Map<string, Map<string, AggregatedProduct[]>> {
+): Map<string, Map<string, OverlaidShoppingItem[]>> {
   if (manualItems.length === 0) return byStore;
 
   const merged = new Map(
@@ -69,6 +90,12 @@ function mergeManualItemsIntoGroups(
       unit: "",
       lineId: `manual-${item.productId}`,
       sources: [{ recipeName: "Store-bought", quantity: 1, unit: "" }],
+      // Manual items never have persisted shopping_state — overlay to the
+      // same unresolved defaults `overlayShoppingItem` uses for a missing entry.
+      haveQuantity: null,
+      remaining: null,
+      resolution: "buy",
+      isResolved: false,
     });
   }
 
@@ -88,11 +115,24 @@ interface ShoppingListTabProps {
   manualShoppingItems?: ManualShoppingItem[];
   // Store-time swap/make-it entry points (SHOP-03/04, D-10). Handlers and
   // dialogs live in Outputs (02-08); the buttons that call these props are
-  // rendered in 02-09 — declared here now so Outputs' call site compiles.
+  // rendered in 02-09 (task 2) — declared here now so Outputs' call site
+  // compiles.
   onSwap?: (item: AggregatedProduct) => void;
   onMakeIt?: (item: AggregatedProduct) => void;
   /** true when the product has a `source_recipe` (D-10 gate). */
   canMakeIt?: (productId: string) => boolean;
+  /**
+   * Persist a have-N entry for a line (SHOP-02, D-02). Keyed by the line's
+   * shopping-state key (`getShoppingCheckboxKey(lineId)`), matching
+   * `useShoppingState`'s `line_key`. `null` clears the entry (un-resolve of
+   * a have-complete line).
+   */
+  onSetHaveQuantity?: (lineKey: string, quantity: number | null) => void;
+  /** Set/clear a line's resolution (D-04/D-05). */
+  onSetResolution?: (
+    lineKey: string,
+    resolution: OverlaidShoppingItem["resolution"]
+  ) => void;
 }
 
 export function ShoppingListTab({
@@ -106,6 +146,8 @@ export function ShoppingListTab({
   onAddRecipeToPlan,
   onAddToShoppingList,
   manualShoppingItems,
+  onSetHaveQuantity,
+  onSetResolution,
 }: ShoppingListTabProps) {
   const hasOutOfStock = stockWarnings?.some((w) => !w.inStock) ?? false;
 
@@ -126,6 +168,117 @@ export function ShoppingListTab({
   if (!hasItems) {
     return <EmptyState message={UI_TEXT.noShoppingItems} />;
   }
+
+  const renderNonPantryLine = (item: OverlaidShoppingItem) => {
+    const key = getShoppingCheckboxKey(item.lineId);
+    const primary = item.totalQuantity && item.unit
+      ? `${item.productName} — ${formatQty(item.totalQuantity)} ${item.unit}`
+      : item.productName;
+    const secondary = item.sources.map((s) => s.recipeName).join(", ");
+
+    const total = item.totalQuantity;
+    const haveValue = item.haveQuantity ?? 0;
+    const remainingValue = item.remaining ?? Math.max(0, total - haveValue);
+    const resolved = item.isResolved;
+    const atMin = haveValue <= 0;
+    const atMax = haveValue >= total;
+
+    const handleDecrease = () => {
+      if (atMin) return;
+      onSetHaveQuantity?.(key, Math.max(0, haveValue - 1));
+    };
+    const handleIncrease = () => {
+      if (atMax) return;
+      onSetHaveQuantity?.(key, Math.min(total, haveValue + 1));
+    };
+    const handleUnresolve = () => {
+      if (item.resolution !== "buy") {
+        onSetResolution?.(key, "buy");
+      } else {
+        // resolved via have >= needed — clear the have-N entry
+        onSetHaveQuantity?.(key, null);
+      }
+    };
+
+    return (
+      <ListItem
+        key={item.lineId}
+        disablePadding
+        sx={{
+          opacity: resolved ? 0.55 : 1,
+          display: "flex",
+          alignItems: "center",
+          gap: 1,
+          py: 0.5,
+        }}
+      >
+        <ListItemText
+          primaryTypographyProps={{ variant: "body1" }}
+          primary={
+            <span
+              style={{ textDecoration: resolved ? "line-through" : "none" }}
+            >
+              {primary}
+            </span>
+          }
+          secondary={secondary}
+        />
+
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <IconButton
+            size="medium"
+            aria-label="Decrease have quantity"
+            onClick={handleDecrease}
+            disabled={atMin}
+            sx={{ minWidth: 48, minHeight: 48 }}
+          >
+            <RemoveIcon />
+          </IconButton>
+          <Typography sx={{ minWidth: 40, textAlign: "center" }}>
+            {formatQty(haveValue)}
+          </Typography>
+          <IconButton
+            size="medium"
+            aria-label="Increase have quantity"
+            onClick={handleIncrease}
+            disabled={atMax}
+            sx={{ minWidth: 48, minHeight: 48 }}
+          >
+            <AddIcon />
+          </IconButton>
+        </Box>
+
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ minWidth: 64 }}
+        >
+          {remainingValue > 0 ? `${formatQty(remainingValue)} to buy` : "All set"}
+        </Typography>
+
+        {resolved && (
+          <Box
+            sx={{
+              minWidth: 48,
+              minHeight: 48,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Chip
+              size="small"
+              variant="outlined"
+              label={RESOLUTION_CHIP_LABEL[item.resolution]}
+              onClick={handleUnresolve}
+              aria-label={`Undo resolution for ${item.productName}`}
+              sx={{ cursor: "pointer" }}
+            />
+          </Box>
+        )}
+      </ListItem>
+    );
+  };
 
   return (
     <>
@@ -191,6 +344,10 @@ export function ShoppingListTab({
                   </Typography>
                   <List dense>
                     {visibleItems.map((item) => {
+                      if (!item.isPantry) {
+                        return renderNonPantryLine(item);
+                      }
+
                       const key = getShoppingCheckboxKey(item.lineId);
                       const primary = item.totalQuantity && item.unit
                         ? `${item.productName} — ${formatQty(item.totalQuantity)} ${item.unit}`
