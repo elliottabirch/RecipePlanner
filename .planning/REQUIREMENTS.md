@@ -97,13 +97,51 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (populated by roadmap) | | |
+| DATA-01 | Phase 1 | Pending |
+| DATA-02 | Phase 1 | Pending |
+| DATA-03 | Phase 1 | Pending |
+| DATA-04 | Phase 1 | Pending |
+| DATA-05 | Phase 1 | Pending |
+| DATA-06 | Phase 1 | Pending |
+| DATA-07 | Phase 1 | Pending |
+| SHOP-01 | Phase 2 | Pending |
+| SHOP-02 | Phase 2 | Pending |
+| SHOP-03 | Phase 2 | Pending |
+| SHOP-04 | Phase 2 | Pending |
+| SHOP-05 | Phase 2 | Pending |
+| SHOP-06 | Phase 2 | Pending |
+| SHOP-07 | Phase 2 | Pending |
+| REG-01 | Phase 3 | Pending |
+| REG-02 | Phase 3 | Pending |
+| REG-03 | Phase 3 | Pending |
+| REG-04 | Phase 3 | Pending |
+| WEEK-01 | Phase 4 | Pending |
+| WEEK-02 | Phase 4 | Pending |
+| WEEK-03 | Phase 4 | Pending |
+| WEEK-04 | Phase 4 | Pending |
+| PREP-01 | Phase 5 | Pending |
+| PREP-02 | Phase 5 | Pending |
+| PREP-03 | Phase 5 | Pending |
+| PREP-04 | Phase 5 | Pending |
+| PREP-05 | Phase 5 | Pending |
+| PREP-06 | Phase 5 | Pending |
+| IMP-01 | Phase 6 | Pending |
+| IMP-02 | Phase 6 | Pending |
+| IMP-03 | Phase 6 | Pending |
+| IMP-04 | Phase 6 | Pending |
+| IMP-05 | Phase 6 | Pending |
+| IMP-06 | Phase 6 | Pending |
+| IMP-07 | Phase 6 | Pending |
 
 **Coverage:**
-- v1.1 requirements: 31 total
-- Mapped to phases: 0
-- Unmapped: 31 ⚠️ (pending roadmap)
+- v1.1 requirements: 35 total
+- Mapped to phases: 35
+- Unmapped: 0 ✓
+
+*Note: an earlier draft of this file stated 31 total requirements; the actual enumerated
+count across the six categories (DATA 7 + SHOP 7 + REG 4 + WEEK 4 + PREP 6 + IMP 7) is 35.
+Corrected during roadmap creation.*
 
 ---
 *Requirements defined: 2026-07-05*
-*Last updated: 2026-07-05 after initial definition*
+*Last updated: 2026-07-05 after roadmap creation (Phase 1-6 mapping, coverage corrected 31→35)*
