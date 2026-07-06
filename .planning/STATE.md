@@ -5,15 +5,15 @@ milestone_name: Workflow Redesign
 current_phase: 2
 current_phase_name: Shopping State & Live Substitution
 status: executing
-stopped_at: Completed 02-04-PLAN.md
-last_updated: "2026-07-06T21:13:33.273Z"
+stopped_at: Completed 02-05-PLAN.md
+last_updated: "2026-07-06T21:41:01.878Z"
 last_activity: 2026-07-06
 last_activity_desc: Completed 02-02-PLAN.md
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 18
-  completed_plans: 12
+  completed_plans: 13
   percent: 17
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-05)
 ## Current Position
 
 Phase: 2 (Shopping State & Live Substitution) — EXECUTING
-Plan: 5 of 10
+Plan: 6 of 10
 Status: Ready to execute
 Last activity: 2026-07-06 — Completed 02-02-PLAN.md
 
@@ -67,6 +67,7 @@ Progress: [██████░░░░] 56%
 | Phase 02 P02 | 10min | 1 tasks | 2 files |
 | Phase 02 P03 | 12min | 2 tasks | 4 files |
 | Phase 02 P04 | 18min | 1 tasks | 2 files |
+| Phase 02-shopping-state-live-substitution P05 | 12min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -106,6 +107,8 @@ Recent decisions affecting current work:
 - [Phase 02-shopping-state-live-substitution]: getMealNodeTargetsForProduct fans a per-meal quantity/unit input out to every matching recipe_product_node within that meal, per 02-RESEARCH Open Question 1's recommended default
 - [Phase 02]: sync-queue.ts maxAttempts = retries allowed AFTER initial attempt fails (4 total invocations for a permanently-failing write), matching 02-RESEARCH's cited useShoppingState code example
 - [Phase 02]: sync-queue.ts clears failedKeys optimistically at enqueue time (not only after success confirms), keeping pending/failed as independent live counts for SyncIndicator
+- [Phase 02-shopping-state-live-substitution]: shopping_state collection created on both prod/test with pre-migration override count 0/0 — no backfill needed for meal_variant_overrides.quantity/unit
+- [Phase 02]: ShoppingState.resolution typed as buy|make|skip|null (not non-null) to match the actual nullable PocketBase select field
 
 ### Pending Todos
 
@@ -130,6 +133,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-06T21:13:33.268Z
-Stopped at: Completed 02-04-PLAN.md
+Last session: 2026-07-06T21:41:01.872Z
+Stopped at: Completed 02-05-PLAN.md
 Resume file: None
