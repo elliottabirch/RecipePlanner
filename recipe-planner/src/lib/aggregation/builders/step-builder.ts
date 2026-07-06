@@ -5,13 +5,14 @@ import type {
   AggregatedFlowStep,
   ExpandedProductNode,
 } from "../types.js";
+import { canConvert, type Unit } from "../../units";
 import {
   createStepSignature,
   shouldIncludeInBatchPrep,
   createStepSource,
   addStepSource,
 } from "../utils/step-utils";
-import { determineStorageLocation } from "../utils/product-utils";
+import { determineStorageLocation, mergeQuantities } from "../utils/product-utils";
 
 // ============================================================================
 // Step Aggregation Builder Functions
@@ -124,25 +125,50 @@ export function addOrMergeStep(
     }
     addStepSource(existing.recipeSources, recipeName, stepName, mealCount);
 
-    // Merge inputs
+    // Merge inputs — convert-or-split (DATA-01): only combine an incoming
+    // input into an existing entry for the same product when the units
+    // share a dimension; otherwise keep it as a separate entry so a
+    // cross-dimension mismatch never produces a false sum.
     inputs.forEach((input) => {
       const existingInput = existing.inputs.find(
-        (i) => i.productId === input.productId
+        (i) =>
+          i.productId === input.productId &&
+          canConvert(i.unit as Unit, input.unit as Unit)
       );
       if (existingInput) {
-        existingInput.quantity += input.quantity;
+        const merged = mergeQuantities(
+          existingInput.quantity,
+          existingInput.unit,
+          input.quantity,
+          input.unit
+        );
+        if (merged) {
+          existingInput.quantity = merged.quantity;
+          existingInput.unit = merged.unit;
+        }
       } else {
         existing.inputs.push({ ...input });
       }
     });
 
-    // Merge outputs
+    // Merge outputs — identical convert-or-split rule as inputs.
     outputs.forEach((output) => {
       const existingOutput = existing.outputs.find(
-        (o) => o.productId === output.productId
+        (o) =>
+          o.productId === output.productId &&
+          canConvert(o.unit as Unit, output.unit as Unit)
       );
       if (existingOutput) {
-        existingOutput.quantity += output.quantity;
+        const merged = mergeQuantities(
+          existingOutput.quantity,
+          existingOutput.unit,
+          output.quantity,
+          output.unit
+        );
+        if (merged) {
+          existingOutput.quantity = merged.quantity;
+          existingOutput.unit = merged.unit;
+        }
       } else {
         existing.outputs.push({ ...output });
       }
