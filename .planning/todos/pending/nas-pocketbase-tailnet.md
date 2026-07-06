@@ -2,6 +2,7 @@
 title: Put NAS PocketBase on the tailnet and switch app config to tailnet hostnames
 date: 2026-07-05
 priority: high
+resolves_phase: 2
 ---
 
 Prerequisite for Phase 2 (shopping state) delivering value away from home.
