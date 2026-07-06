@@ -82,6 +82,15 @@ sometimes omits that prefix.
   concern**, not `units.ts`. The conversion module stays exact and reviewable;
   human-friendly rounding happens only at display time.
 
+### Post-research decisions (resolved from live-data findings in 01-RESEARCH.md)
+- **D-12:** The unique index is **case-insensitive on `(name, type)`**, not bare `name`.
+  Live prod data has intentional transient/stored same-name pairs (`onion (red) sliced`,
+  `cucumber sliced`) that must keep working; true dupes (same type, case-variant names)
+  are still blocked. This refines DATA-04's wording deliberately.
+- **D-13:** `can` and `bu` node-unit values **alias to `each`** in `UNIT_ALIASES` (user
+  accepts losing can-size distinction). Outright junk values (`by`, `chile`, `medium`,
+  `28oz cans`) still go to manual resolution per D-08.
+
 ### Claude's Discretion
 - Dimension storage (§3.1 open question): the phase doc's proposal stands — store
   `dimension` on the product, auto-written from `canonical_unit` via the unit→dimension
