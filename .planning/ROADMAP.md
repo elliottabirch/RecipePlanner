@@ -23,7 +23,7 @@ inspiration and evolution. Authoritative decision record: `plans/workflow-redesi
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Data Hygiene** - Unit-disciplined data layer: enum + canonical units, convert-or-split aggregation fix, dedup + unique index, linter v1 (completed 2026-07-06)
-- [ ] **Phase 2: Shopping State & Live Substitution** - Persisted shopping state, have-N, mid-shop swap, make-at-home, quick-create, tablet touch pass
+- [ ] **Phase 2: Shopping State & Live Substitution** - Persisted shopping state, have-N, mid-shop swap, make-at-home, quick-create, tablet touch pass (code complete; blocked on end-of-phase human UAT)
 - [ ] **Phase 3: Product Registry Seeding** - USDA Foundation Foods seed (~800 items), fuzzy search everywhere, "Search USDA" mode
 - [ ] **Phase 4: Weekly Planning Memory** - Plan start dates, people-multiplier, tag-based slot templates, guided-fill wizard
 - [ ] **Phase 5: Prep-Day Engine** - Step metadata + AI-assisted backfill, seeded GA scheduler, interactive cook mode, weights panel, linter v2
@@ -83,7 +83,7 @@ Plans:
   4. User can resolve a line as "make it at home," with an offer to add its source recipe to the week, and can quick-create a new product from a minimal phone-friendly dialog without leaving the flow (SHOP-04, SHOP-05)
   5. Outputs pages are touch-friendly on tablet and remain usable over the tailnet through a brief connectivity drop, showing a pending-sync indicator until queued writes land (SHOP-06, SHOP-07)
 
-**Plans**: 9/10 plans executed
+**Plans**: 9/10 plans complete; 02-10 code complete (Tasks 1-2), blocked on Task 3 end-of-phase human UAT
 
 Plans:
 **Wave 1** *(parallel — pure logic + schema)*
@@ -112,7 +112,7 @@ Plans:
 
 **Wave 6** *(blocked on 02-07/08/09)*
 
-- [ ] 02-10-PLAN.md — Touch pass (CheckableListItem + non-shopping tabs), print scoping, end-of-phase human UAT [SHOP-06, SHOP-07]
+- [ ] 02-10-PLAN.md — Touch pass (CheckableListItem + non-shopping tabs), print scoping, end-of-phase human UAT [SHOP-06, SHOP-07] — Tasks 1-2 complete; Task 3 (human UAT) blocking checkpoint pending
 
 **UI hint**: yes
 
@@ -185,7 +185,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6. Phases 2 and 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Data Hygiene | 8/8 | Complete    | 2026-07-06 |
-| 2. Shopping State & Live Substitution | 9/10 | In Progress|  |
+| 2. Shopping State & Live Substitution | 9/10 | Blocked (UAT pending) | - |
 | 3. Product Registry Seeding | 0/TBD | Not started | - |
 | 4. Weekly Planning Memory | 0/TBD | Not started | - |
 | 5. Prep-Day Engine | 0/TBD | Not started | - |
