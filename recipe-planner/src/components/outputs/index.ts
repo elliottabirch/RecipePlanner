@@ -11,3 +11,6 @@ export { MicahMealsByTag } from "./MicahMealsByTag";
 export { ProductFlowTab } from "./ProductFlowTab";
 export { OutOfStockSection } from "./OutOfStockSection";
 export { SyncIndicator } from "./SyncIndicator";
+export { ShopSwapDialog } from "./ShopSwapDialog";
+export type { SwapSaveEntry } from "./ShopSwapDialog";
+export { QuickCreateProductDialog } from "./QuickCreateProductDialog";
