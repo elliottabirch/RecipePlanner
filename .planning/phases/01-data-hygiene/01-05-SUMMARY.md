@@ -143,3 +143,15 @@ None - no external service configuration required.
 ---
 *Phase: 01-data-hygiene*
 *Completed: 2026-07-06*
+
+## Self-Check: PASSED
+
+- FOUND: recipe-planner/scripts/normalize-node-units.js
+- FOUND: recipe-planner/scripts/backfill-units.js
+- FOUND: decisions.md
+- FOUND: .planning/phases/01-data-hygiene/01-05-SUMMARY.md
+- FOUND commit: add4882 (Task 1)
+- FOUND commit: 3ce3f98 (Task 2)
+- FOUND commit: ccb4f4f (Task 3)
+- FOUND commit: abc4dca (SUMMARY)
+- All plan-level `<verification>` commands re-run and passing: `node --check` on both scripts, `decisions.md` grep checks
