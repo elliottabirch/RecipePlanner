@@ -14,9 +14,10 @@ const PB_URL = process.env.PB_URL || DB_URLS.production;
 const pb = new PocketBase(PB_URL);
 
 // The four D-07 live-enumerated product-reference collections. Hardcoded
-// here — NOT derived from pb_schema_updated.json, which is stale (it omits
-// meal_variant_overrides). If a new product-referencing collection/field is
-// added to the schema in the future, this list must be updated by hand.
+// here — NOT derived from the pb_schema.json export, per D-07's rule of
+// enumerating against the live DB/code (the export can lag reality). If a
+// new product-referencing collection/field is added to the schema in the
+// future, this list must be updated by hand.
 const REFERENCE_FIELDS = [
   { collection: "recipe_product_nodes", field: "product" },
   { collection: "inventory_items", field: "product" },

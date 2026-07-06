@@ -754,5 +754,5 @@ npm run sync-to-test
 For additional help:
 - [`integrationGuide.md`](./integrationGuide.md) - API details
 - [`decisions.md`](./decisions.md) - Architecture decisions
-- Schema files: `pb_schema.json`, `pb_schema_updated.json`
+- Schema file: `pb_schema.json` (single canonical export)
 - Test database plans: `plans/test-database-environment.md`

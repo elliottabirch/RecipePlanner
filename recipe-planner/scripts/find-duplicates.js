@@ -14,8 +14,8 @@ const pb = new PocketBase(PB_URL);
 const OUTPUT_DIR = path.join(__dirname, "dedup-output");
 
 // The four D-07 live-enumerated product-reference collections. Hardcoded here
-// (not derived from pb_schema_updated.json, which is stale and omits
-// meal_variant_overrides) — same convention merge-products.js follows.
+// (not derived from the pb_schema.json export, per D-07's live-DB enumeration
+// rule) — same convention merge-products.js follows.
 const REFERENCE_COLLECTIONS = [
   { collection: "recipe_product_nodes", field: "product" },
   { collection: "inventory_items", field: "product" },

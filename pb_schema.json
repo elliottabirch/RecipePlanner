@@ -1162,12 +1162,7 @@
         "required": true,
         "system": false,
         "type": "select",
-        "values": [
-          "raw",
-          "transient",
-          "stored",
-          "inventory"
-        ]
+        "values": ["raw", "transient", "stored", "inventory"]
       },
       {
         "hidden": false,
@@ -1213,11 +1208,7 @@
         "required": false,
         "system": false,
         "type": "select",
-        "values": [
-          "fridge",
-          "freezer",
-          "dry"
-        ]
+        "values": ["fridge", "freezer", "dry"]
       },
       {
         "cascadeDelete": false,
@@ -1259,10 +1250,7 @@
         "required": false,
         "system": false,
         "type": "select",
-        "values": [
-          "snack",
-          "meal"
-        ]
+        "values": ["snack", "meal"]
       },
       {
         "cascadeDelete": false,
@@ -1325,14 +1313,12 @@
         "required": false,
         "system": false,
         "type": "select",
-        "values": [
-          "volume",
-          "mass",
-          "count"
-        ]
+        "values": ["volume", "mass", "count"]
       }
     ],
-    "indexes": [],
+    "indexes": [
+      "CREATE UNIQUE INDEX idx_products_name_type_ci ON products (name COLLATE NOCASE, type)"
+    ],
     "system": false
   },
   {

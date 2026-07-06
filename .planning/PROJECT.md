@@ -49,7 +49,7 @@ The derived weekly outputs — shopping list and prep plan — must be trustwort
 - Authoritative decision record for this milestone: `plans/workflow-redesign.md` (2026-07-05 discussion). Elaborated in `.planning/phase-docs/` (overview + 6 phase docs).
 - Confirmed bugs driving Phase 1: unit-blind quantity summing (`product-builder.ts`, `step-builder.ts`), overloaded `recipe_product_nodes.unit` (doubles as container-type name), no unique constraint on `products.name`, in-memory-only shopping checkboxes, and a spec/code divergence on step aggregation (signature-based behavior is kept; docs reconcile).
 - Infra prereq (todo `nas-pocketbase-tailnet`): NAS PocketBase instances join the tailnet and `db-config.ts` switches from LAN IPs to tailnet hostnames — required for store/phone use in Phases 2 and 6; does not block local development.
-- Shared one-shot task: `pb_schema_updated.json` re-export is stale (missing `meal_variant_overrides`, `recipe_queue`); Phase 1 owns it, later phases verify.
+- Shared one-shot task: DONE in Phase 1 (Plan 08) — schema exports consolidated to a single canonical `pb_schema.json` (22 collections incl. `meal_variant_overrides`, `recipe_queue`, and the `idx_products_name_type_ci` unique index); `pb_schema_updated.json` deleted. Later phases verify against `pb_schema.json`.
 
 ## Constraints
 
