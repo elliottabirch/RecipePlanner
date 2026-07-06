@@ -5,15 +5,15 @@ milestone_name: Workflow Redesign
 current_phase: 1
 current_phase_name: Data Hygiene
 status: executing
-stopped_at: Phase 1 context gathered
-last_updated: "2026-07-06T06:34:41.275Z"
-last_activity: 2026-07-05
-last_activity_desc: ROADMAP.md created; 6 phases mapped to all 35 v1.1 requirements
+stopped_at: Completed 01-01-PLAN.md
+last_updated: "2026-07-06T06:57:44.078Z"
+last_activity: 2026-07-06
+last_activity_desc: Phase 1 execution started
 progress:
   total_phases: 6
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 8
+  completed_plans: 1
   percent: 0
 ---
 
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-07-05)
 
 ## Current Position
 
-Phase: 1 of 6 (Data Hygiene)
-Plan: — (not yet planned)
+Phase: 1 (Data Hygiene) — EXECUTING
+Plan: 2 of 8
 Status: Ready to execute
-Last activity: 2026-07-05 — ROADMAP.md created; 6 phases mapped to all 35 v1.1 requirements
+Last activity: 2026-07-06 — Phase 1 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -55,6 +55,7 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: —
 
 *Updated after each plan completion*
+| Phase 01 P01 | 4min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,9 @@ Recent decisions affecting current work:
 - Tag-based rotation pools + guided-fill wizard, staples as first slot (Phase 4)
 - Seeded genetic-algorithm scheduler, primary objective = minimize active time (Phase 5)
 - Imports land in prod as drafts; test DB for schema/code only (Phase 6)
+- [Phase 01]: vitest approved via package-legitimacy checkpoint (68M/wk downloads, canonical repo, ~4.5yr old) — SUS flag was a false positive from latest-version publish recency, not package age
+- [Phase 01]: UNIT_ALIASES seeded verbatim from the 445-record live disposition table in 01-RESEARCH.md — Real corpus is messier than the phase doc's grep sample; re-deriving from scratch risks missing container-type strings and junk values
+- [Phase 01]: promoteUnit/chooseDisplayUnit implement D-10 deterministic display-unit selection — canonical_unit wins when set; else largest unit keeping qty>=1 capped at cup/lb, no metric<->customary crossing
 
 ### Pending Todos
 
@@ -91,6 +95,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-06T05:59:11.529Z
-Stopped at: Phase 1 context gathered
-Resume file: .planning/phases/01-data-hygiene/01-CONTEXT.md
+Last session: 2026-07-06T06:57:44.073Z
+Stopped at: Completed 01-01-PLAN.md
+Resume file: None
