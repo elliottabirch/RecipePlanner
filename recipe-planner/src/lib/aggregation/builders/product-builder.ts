@@ -5,12 +5,14 @@ import type {
   PlannedMealWithRecipe,
   AggregatedFlowProduct,
 } from "../types.js";
+import { canConvert, getDimension, type Unit } from "../../units";
 import {
   calculateProductQuantity,
   createProductKey,
   shouldCreateInstances,
   createMealSource,
   addMealSource,
+  mergeQuantities,
 } from "../utils/product-utils";
 
 // ============================================================================
@@ -35,13 +37,18 @@ export function buildAggregatedProduct(
   const quantity = node.quantity || 0;
   const totalQuantity = calculateProductQuantity(quantity, mealCount);
 
+  const nodeUnit = node.unit || "";
   const baseProduct: AggregatedFlowProduct = {
     productId: product.id,
     productName: product.name,
     productType: product.type,
     totalQuantity,
-    unit: node.unit || "",
-    mealSources: [createMealSource(recipeName, totalQuantity, mealCount)],
+    unit: nodeUnit,
+    lineId: product.id,
+    canonicalUnit: product.canonical_unit,
+    mealSources: [
+      createMealSource(recipeName, totalQuantity, mealCount, nodeUnit),
+    ],
     isPantry: product.pantry,
     trackQuantity: product.track_quantity,
     storeName: node.expand?.product?.expand?.store?.name,
@@ -73,6 +80,29 @@ export function buildAggregatedProduct(
 }
 
 /**
+ * Resolve which map key an incoming product should merge into.
+ *
+ * Convert-or-split (DATA-01): if `baseKey` doesn't exist yet, it's the
+ * first line for this product and claims the bare key. If it exists and
+ * shares a dimension with the incoming unit, merge into it. Otherwise the
+ * incoming product is a different dimension entirely — route it to a
+ * stable key suffixed by its dimension (`${baseKey}|${dimension}`), so any
+ * number of same-dimension arrivals for that "other" dimension converge on
+ * one split line rather than colliding with the base line's total.
+ */
+function resolveMergeTargetKey(
+  products: Map<string, AggregatedFlowProduct>,
+  baseKey: string,
+  newProduct: AggregatedFlowProduct
+): string {
+  const base = products.get(baseKey);
+  if (!base) return baseKey;
+  if (canConvert(base.unit as Unit, newProduct.unit as Unit)) return baseKey;
+  const dimension = getDimension(newProduct.unit as Unit);
+  return `${baseKey}|${dimension}`;
+}
+
+/**
  * Add or merge a product into the products map
  * Mutates the products map
  */
@@ -85,18 +115,33 @@ export function addOrMergeProduct(
   mealDestination?: string
 ): void {
   if (instances === 1) {
-    // Aggregate mode - merge with existing
-    const existing = products.get(key);
+    // Aggregate mode - convert-or-split merge with existing
+    const targetKey = resolveMergeTargetKey(products, key, newProduct);
+    const existing = products.get(targetKey);
     if (existing) {
-      existing.totalQuantity += newProduct.totalQuantity;
+      const merged = mergeQuantities(
+        existing.totalQuantity,
+        existing.unit,
+        newProduct.totalQuantity,
+        newProduct.unit,
+        existing.canonicalUnit
+      );
+      // merged is guaranteed non-null here: resolveMergeTargetKey only
+      // returns an existing key when the units share a dimension.
+      if (merged) {
+        existing.totalQuantity = merged.quantity;
+        existing.unit = merged.unit;
+      }
       addMealSource(
         existing.mealSources,
         newProduct.mealSources[0].recipeName,
         newProduct.mealSources[0].quantity,
-        newProduct.mealSources[0].count
+        newProduct.mealSources[0].count,
+        newProduct.mealSources[0].unit,
+        existing.canonicalUnit
       );
     } else {
-      products.set(key, newProduct);
+      products.set(targetKey, { ...newProduct, lineId: targetKey });
     }
   } else {
     // Instance mode - create separate entries
@@ -116,6 +161,7 @@ export function addOrMergeProduct(
         ...newProduct,
         productId: instanceKey,
         productName: instanceName,
+        lineId: instanceKey,
         totalQuantity: 1, // Each instance is 1 container
         mealSources: [{ ...newProduct.mealSources[0], quantity: 1, count: 1 }],
       });

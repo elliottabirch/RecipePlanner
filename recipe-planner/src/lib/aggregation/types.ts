@@ -16,6 +16,7 @@ import type {
   StepType,
   Timing,
 } from "../types";
+import type { Unit } from "../units";
 
 // ============================================================================
 // Aggregation Type Definitions
@@ -70,7 +71,22 @@ export interface AggregatedFlowProduct {
   productType: ProductType;
   totalQuantity: number;
   unit: string;
-  mealSources: { recipeName: string; quantity: number; count: number }[];
+  /**
+   * Stable line identity: `productId` for the common (non-split) case,
+   * `${productId}|${dimension}` when a cross-dimension merge splits this
+   * product into multiple lines. This is also the Phase 2 persisted
+   * shopping-checkbox key — see ShoppingListTab.tsx.
+   */
+  lineId: string;
+  /** Carried from `Product.canonical_unit` so merge sites can resolve the
+   * D-10 display unit without re-fetching the product. */
+  canonicalUnit?: Unit;
+  mealSources: {
+    recipeName: string;
+    quantity: number;
+    count: number;
+    unit: string;
+  }[];
   isPantry?: boolean;
   trackQuantity?: boolean;
   storeName?: string;
@@ -123,6 +139,9 @@ export interface AggregatedProduct {
   trackQuantity?: boolean;
   totalQuantity: number;
   unit: string;
+  /** Stable line identity — see `AggregatedFlowProduct.lineId`. Equals
+   * `productId` for the common (non-split) case. */
+  lineId: string;
   storeName?: string;
   sectionName?: string;
   sources: { recipeName: string; quantity: number; unit: string }[];
