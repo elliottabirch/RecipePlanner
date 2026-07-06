@@ -21,12 +21,12 @@ The derived weekly outputs — shopping list and prep plan — must be trustwort
 - ✓ Registry management: products, stores, sections, container types, tags — v1.0
 - ✓ Production/test database switching (localStorage-backed) — v1.0
 - ✓ Print stylesheets for outputs — v1.0 (kept for batch prep only going forward)
+- ✓ Unit-disciplined data layer: unit enum + `units.ts` conversion, canonical unit + dimension per product, convert-or-split aggregation with stable lineId, product dedup + case-insensitive `(name, type)` unique index, linter v1 — v1.1 Phase 1
 
 ### Active
 
 <!-- Milestone v1.1 Workflow Redesign. Detail in REQUIREMENTS.md. -->
 
-- [ ] Unit-disciplined data layer: unit enum, canonical unit + dimension per product, convert-or-split aggregation, product dedup + unique names, linter v1
 - [ ] Durable shopping state: persisted checkboxes, have-N, mid-shop swap flow, make-at-home, quick-create, tablet touch pass
 - [ ] Product registry seeded from USDA Foundation Foods (~800 items) with fuzzy search and "Search USDA" mode
 - [ ] Weekly planning memory: plan start dates, people-multiplier, tag-based slot templates, guided-fill wizard with staples-first + LRU ordering
@@ -62,14 +62,14 @@ The derived weekly outputs — shopping list and prep plan — must be trustwort
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Convert-or-split by dimension in aggregation; no density model | Within-dimension conversion is safe; cross-dimension guesses are not — lint instead | — Pending |
-| Preparation states are transient nodes, not products | One raw product per ingredient; prep vocab lives on steps; enforced by lint | — Pending |
+| Convert-or-split by dimension in aggregation; no density model | Within-dimension conversion is safe; cross-dimension guesses are not — lint instead | ✓ Phase 1 (revisit pending: user wants single purchase-unit lines — deferred to Phase 3, see todo) |
+| Preparation states are transient nodes, not products | One raw product per ingredient; prep vocab lives on steps; enforced by lint | ✓ Phase 1 (linter rule live) |
 | Seed registry from USDA FDC Foundation Foods (~800 concept-level items) | Concept-level names without branded purveyor noise; FDC IDs enable nutrition later | — Pending |
 | Tailnet connectivity, not local-first sync | NAS PB reachable from the store via phone hotspot; optimistic updates suffice for single user | — Pending |
 | Tag-based rotation pools + guided-fill wizard, staples as first slot | New recipes join pools by tagging; no separate staples machinery | — Pending |
 | Seeded genetic-algorithm scheduler, primary objective = minimize active time | Deterministic, tunable via weights panel; consolidation-friendly | — Pending |
 | Imports land in prod as drafts; test DB for schema/code only | Kills the test→prod content-migration ritual and the PC requirement | — Pending |
-| Step aggregation merges by input/output product-ID signature (code behavior kept) | Reconcile docs to code rather than change working behavior | — Pending |
+| Step aggregation merges by input/output product-ID signature (code behavior kept) | Reconcile docs to code rather than change working behavior | ✓ Phase 1 (decisions.md reconciled) |
 
 ## Current Milestone: v1.1 Workflow Redesign
 
@@ -101,4 +101,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-05 after starting milestone v1.1 (GSD bootstrap from workflow-redesign decision record)*
+*Last updated: 2026-07-06 after Phase 1 (Data Hygiene) completed — unit-disciplined, duplicate-free data layer shipped and verified*
