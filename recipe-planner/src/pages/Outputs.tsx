@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -53,6 +53,7 @@ import type {
   MealVariantOverrideExpanded,
 } from "../lib/types";
 import { getAvailableProviders } from "../lib/listProviders";
+import { useShoppingState } from "../hooks/useShoppingState";
 import {
   FridgeFreezerTab,
   MealContainersTab,
@@ -109,8 +110,26 @@ export default function Outputs() {
     { productId: string; productName: string; storeName?: string; sectionName?: string }[]
   >([]);
 
-  // Checkbox states
-  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
+  // Persisted checkbox/have-N/resolution state (D-03) — replaces the former
+  // in-memory checkedItems Set + toggleChecked. All six tabs still receive a
+  // Set<string>/toggle-fn pair via the adapter below, so their prop surface
+  // is unchanged.
+  // setHaveQuantity/setResolution are consumed by 02-08 (swap/make-it
+  // handlers) and 02-09 (ShoppingListTab have-N wiring) — not yet called
+  // from this plan's scope, so they aren't destructured here to keep
+  // noUnusedLocals clean; both remain available from useShoppingState
+  // for those plans to pull in directly.
+  const { state: shoppingState, setChecked } = useShoppingState(selectedPlanId);
+
+  // Set<string> view derived from the hook's Map — feeds every tab's
+  // checkedItems prop unchanged.
+  const checkedItems = useMemo(() => {
+    const set = new Set<string>();
+    shoppingState.forEach((entry, key) => {
+      if (entry.checked) set.add(key);
+    });
+    return set;
+  }, [shoppingState]);
 
   // Export state
   const [exportSnackbar, setExportSnackbar] = useState<{
@@ -589,17 +608,13 @@ export default function Outputs() {
     });
   };
 
-  const toggleChecked = (key: string) => {
-    setCheckedItems((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-      return next;
-    });
-  };
+  const toggleChecked = useCallback(
+    (key: string) => {
+      const current = shoppingState.get(key)?.checked ?? false;
+      setChecked(key, !current);
+    },
+    [shoppingState, setChecked]
+  );
 
   if (loading) {
     return (
