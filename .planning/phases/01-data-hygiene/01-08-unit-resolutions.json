@@ -1,0 +1,1363 @@
+{
+  "generated": "2026-07-06",
+  "source_reports": [
+    "normalize-node-units-unresolved.md",
+    "backfill-units-review.md"
+  ],
+  "instructions": "Review every row. Change resolved_unit/canonical_unit where wrong (must be enum tokens: tsp,tbsp,fl_oz,cup,pint,qt,gal,ml,l,g,kg,oz,lb,each \u2014 or \"\" to clear a node unit). Set confirmed:true on rows you approve. Only confirmed rows are applied.",
+  "node_units": [
+    {
+      "nodeId": "gu1ziar8qx19d4g",
+      "recipe": "chicken stock",
+      "product": "chicken stock",
+      "productType": "inventory",
+      "raw": "quart restaurant",
+      "resolved_unit": "qt",
+      "confirmed": true
+    },
+    {
+      "nodeId": "36gy921bt0clrwo",
+      "recipe": "hamburgers",
+      "product": "hamburger bun",
+      "productType": "raw",
+      "raw": "package",
+      "resolved_unit": "each",
+      "confirmed": true
+    },
+    {
+      "nodeId": "866r518m4cb2nj3",
+      "recipe": "indian with rice",
+      "product": "indian food with meat",
+      "productType": "inventory",
+      "raw": "vacuum sealed bag",
+      "resolved_unit": "each",
+      "confirmed": true
+    },
+    {
+      "nodeId": "j5uq7nf4y960127",
+      "recipe": "indian with rice",
+      "product": "indian food with vegetable",
+      "productType": "inventory",
+      "raw": "vacuum sealed bag",
+      "resolved_unit": "each",
+      "confirmed": true
+    },
+    {
+      "nodeId": "b95gqr014p2yhld",
+      "recipe": "spinach meatballs batch",
+      "product": "ground beef frozen",
+      "productType": "inventory",
+      "raw": "vacuum sealed bag",
+      "resolved_unit": "each",
+      "confirmed": true
+    },
+    {
+      "nodeId": "q4698xf1t43aer8",
+      "recipe": "shredded chicken",
+      "product": "chicken breast cooked stored",
+      "productType": "inventory",
+      "raw": "vacuum sealed bag",
+      "resolved_unit": "each",
+      "confirmed": true
+    },
+    {
+      "nodeId": "5069nrhz427nt66",
+      "recipe": "spinach egg bites (batch)",
+      "product": "spinach egg bites",
+      "productType": "inventory",
+      "raw": "quart restaurant",
+      "resolved_unit": "qt",
+      "confirmed": true
+    },
+    {
+      "nodeId": "e6t8mwjiq8x2154",
+      "recipe": "plain yogurt",
+      "product": "plain greek yogurt",
+      "productType": "raw",
+      "raw": "small container",
+      "resolved_unit": "each",
+      "confirmed": true
+    },
+    {
+      "nodeId": "7183a27bc1t7ahx",
+      "recipe": "bbq sandwiches",
+      "product": "smoked pork shoulder",
+      "productType": "inventory",
+      "raw": "vacuum sealed bags",
+      "resolved_unit": "each",
+      "confirmed": true
+    },
+    {
+      "nodeId": "60pw2k1f1372w7e",
+      "recipe": "chicken breast",
+      "product": "chicken breast raw",
+      "productType": "raw",
+      "raw": "package",
+      "resolved_unit": "each",
+      "confirmed": true
+    },
+    {
+      "nodeId": "3v4nr0msc4dpl97",
+      "recipe": "chicken breast",
+      "product": "chicken breast cooked stored",
+      "productType": "inventory",
+      "raw": "vacuum sealed bag",
+      "resolved_unit": "each",
+      "confirmed": true
+    },
+    {
+      "nodeId": "gb2eoxgy1fv69y9",
+      "recipe": "lox, eggs and onions",
+      "product": "lox",
+      "productType": "raw",
+      "raw": "package",
+      "resolved_unit": "each",
+      "confirmed": true
+    },
+    {
+      "nodeId": "w0jo6mu7gd06j0o",
+      "recipe": "butternut squash soup (batch)",
+      "product": "butternut squash soup (frozen)",
+      "productType": "inventory",
+      "raw": "quart containers",
+      "resolved_unit": "qt",
+      "confirmed": true
+    },
+    {
+      "nodeId": "fr65e1p5cm55f09",
+      "recipe": "black-eye pea salad",
+      "product": "tomato cherry",
+      "productType": "raw",
+      "raw": "container",
+      "resolved_unit": "each",
+      "confirmed": true
+    },
+    {
+      "nodeId": "12oszu65cf2v2wq",
+      "recipe": "spinach meatballs batch",
+      "product": "meatballs frozen",
+      "productType": "inventory",
+      "raw": "vacuum sealed bag",
+      "resolved_unit": "each",
+      "confirmed": true
+    },
+    {
+      "nodeId": "s45kpxf7gp09fzg",
+      "recipe": "meatballs",
+      "product": "meatballs frozen",
+      "productType": "inventory",
+      "raw": "vacuum sealed bag",
+      "resolved_unit": "each",
+      "confirmed": true
+    },
+    {
+      "nodeId": "b945zqa0x4o98f7",
+      "recipe": "egg bites (served)",
+      "product": "spinach egg bites",
+      "productType": "inventory",
+      "raw": "quart restaurant",
+      "resolved_unit": "qt",
+      "confirmed": true
+    },
+    {
+      "nodeId": "eb3b6kil5pu1mfm",
+      "recipe": "Broccoli Patties (batch)",
+      "product": "broccoli (frozen)",
+      "productType": "raw",
+      "raw": "bag",
+      "resolved_unit": "each",
+      "confirmed": true
+    },
+    {
+      "nodeId": "9bvhmosyus6ise3",
+      "recipe": "Broccoli Patties (batch)",
+      "product": "cheese shredded",
+      "productType": "raw",
+      "raw": "bag",
+      "resolved_unit": "each",
+      "confirmed": true
+    },
+    {
+      "nodeId": "1a2vjy6z56w1nz4",
+      "recipe": "White Bean and Tomato Stew",
+      "product": "lemon",
+      "productType": "raw",
+      "raw": "large",
+      "resolved_unit": "each",
+      "confirmed": true
+    },
+    {
+      "nodeId": "pbyv6793wri529q",
+      "recipe": "White Bean and Tomato Stew",
+      "product": "onion (yellow)",
+      "productType": "raw",
+      "raw": "medium",
+      "resolved_unit": "each",
+      "confirmed": true
+    },
+    {
+      "nodeId": "o0976n74a9te6e6",
+      "recipe": "Vegetarian Mushroom Shawarma Pitas",
+      "product": "onion (red)",
+      "productType": "raw",
+      "raw": "medium",
+      "resolved_unit": "each",
+      "confirmed": true
+    },
+    {
+      "nodeId": "ux9q20efatl1k3z",
+      "recipe": "asian cucumber thai salad",
+      "product": "cilantro",
+      "productType": "raw",
+      "raw": "bunch",
+      "resolved_unit": "each",
+      "confirmed": true
+    },
+    {
+      "nodeId": "ojwc0x6yc253h55",
+      "recipe": "Indian Vegetarian (batch)",
+      "product": "indian food with vegetable",
+      "productType": "inventory",
+      "raw": "packages",
+      "resolved_unit": "each",
+      "confirmed": true
+    },
+    {
+      "nodeId": "826q5m9089ok4w5",
+      "recipe": "Smoked Pork Shoulder (batch)",
+      "product": "smoked pork shoulder",
+      "productType": "inventory",
+      "raw": "bags",
+      "resolved_unit": "each",
+      "confirmed": true
+    },
+    {
+      "nodeId": "991m59g4jtxo2xl",
+      "recipe": "hamburgers",
+      "product": "fries",
+      "productType": "inventory",
+      "raw": "package",
+      "resolved_unit": "each",
+      "confirmed": true
+    },
+    {
+      "nodeId": "zz1v672vph0h321",
+      "recipe": "buddha bowl",
+      "product": "onion (red)",
+      "productType": "raw",
+      "raw": "medium",
+      "resolved_unit": "each",
+      "confirmed": true
+    },
+    {
+      "nodeId": "591zq6pb2xd5owb",
+      "recipe": "Creamy Tomato Soup",
+      "product": "tomato whole peeled (canned)",
+      "productType": "raw",
+      "raw": "28oz cans",
+      "resolved_unit": "each",
+      "confirmed": true
+    },
+    {
+      "nodeId": "4v44be07d13ci9c",
+      "recipe": "Creamy Tomato Soup",
+      "product": "ancho chile",
+      "productType": "raw",
+      "raw": "chile",
+      "resolved_unit": "each",
+      "confirmed": true
+    }
+  ],
+  "canonical_units_ambiguous": [
+    {
+      "productId": "10x87sv01ut8xa7",
+      "name": "onion (yellow)",
+      "type": "raw",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "r6au9u3209qsc1n",
+      "name": "onion (yellow) small-dice",
+      "type": "transient",
+      "canonical_unit": "cup",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "cz84cwpqe1oe432",
+      "name": "cucumber sliced",
+      "type": "transient",
+      "canonical_unit": "cup",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "u8nvz8v2lcc6i23",
+      "name": "carrot large dice",
+      "type": "transient",
+      "canonical_unit": "cup",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "6m06pr6cyq0e277",
+      "name": "olive oil",
+      "type": "raw",
+      "canonical_unit": "tbsp",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "5at7q67uc821wn2",
+      "name": "vinegar",
+      "type": "raw",
+      "canonical_unit": "tbsp",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "s6a5x3d7d55oblo",
+      "name": "sweet potato large dice",
+      "type": "transient",
+      "canonical_unit": "cup",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "j382z0u9upc8d57",
+      "name": "tahini",
+      "type": "raw",
+      "canonical_unit": "tbsp",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "245w9e7j17405oz",
+      "name": "butter",
+      "type": "raw",
+      "canonical_unit": "tbsp",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "0817ac3dc7j9856",
+      "name": "thyme (fresh)",
+      "type": "raw",
+      "canonical_unit": "tsp",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "ee2s1xx7g0txl7w",
+      "name": "green onion sliced",
+      "type": "transient",
+      "canonical_unit": "cup",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "7076f6hfm9gz9md",
+      "name": "cilantro (chopped)",
+      "type": "transient",
+      "canonical_unit": "cup",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "4a3mv36va1b8725",
+      "name": "parsley",
+      "type": "raw",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "1advx1t1qz5f9dr",
+      "name": "rice vinegar",
+      "type": "raw",
+      "canonical_unit": "tbsp",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "iagxjb91y91k222",
+      "name": "black beans",
+      "type": "raw",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    }
+  ],
+  "canonical_units_null": [
+    {
+      "productId": "2v232mkw07d446o",
+      "name": "onion (red) sliced",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "36ui028u0g79hn6",
+      "name": "salad veggie aggregate",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "568b8dbve455t68",
+      "name": "salad dressing",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "8wnol0fs46g91n1",
+      "name": "salmon",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "rgjr80485658gu4",
+      "name": "chicken breast",
+      "type": "raw",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "quw5im152v1qzb6",
+      "name": "chicken breast cooked",
+      "type": "raw",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "cy69ukr3yvs8sfd",
+      "name": "chicken broccoli and rice",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "1464s4ij67x57vz",
+      "name": "roasted veggie bowls (shrimp)",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "qln6l2l08b2223l",
+      "name": "ground beef",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "irn1d973y5uyi2t",
+      "name": "impossible ground beef",
+      "type": "raw",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "6glcu807y3ux805",
+      "name": "potato fingerling",
+      "type": "raw",
+      "canonical_unit": "lb",
+      "dimension": "mass",
+      "confirmed": true
+    },
+    {
+      "productId": "z1576ud9mc4m7vx",
+      "name": "potato fingerling halved",
+      "type": "transient",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "k7ij08xqan9478w",
+      "name": "potato fingerling halved parboiled",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "zc2k65gafhx6uzb",
+      "name": "indian food with meat",
+      "type": "inventory",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "ug34k7687ya42r5",
+      "name": "indian food with vegetable",
+      "type": "inventory",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "w5539h2ip34omn6",
+      "name": "water",
+      "type": "raw",
+      "canonical_unit": "fl_oz",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "o6ufv98liv7746t",
+      "name": "meatballs frozen",
+      "type": "inventory",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "7p3329j0ja84713",
+      "name": "carrot roasted",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "rmrm772p6t4cgi9",
+      "name": "cooked pasta",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "2p5784js8wsmaoc",
+      "name": "shredded chicken",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "i7u32q5l8x504fu",
+      "name": "broccoli florets stored",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "mtmk2n05i0e2054",
+      "name": "rice stored",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "e1k3jgn48t1zz4p",
+      "name": "spinach egg bites",
+      "type": "inventory",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "l5z6heo0l94m272",
+      "name": "salmon bite",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "9f2b3evb830dnrl",
+      "name": "plain yogurt stored",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "h33975a27id4en7",
+      "name": "cottage cheese stored",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "3pvq3n749ot3pj5",
+      "name": "berries stored",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "39j4032w9594c2o",
+      "name": "bananas stored",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "8lg25y8p37x11w1",
+      "name": "oranges stored",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "644ncgr36xwhu56",
+      "name": "oat milk stored",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "598t2c6zkt44105",
+      "name": "milk stored",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "k87rr6miq1g4w81",
+      "name": "coffee stored",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "7goi7bxb9nll133",
+      "name": "egg stored",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "6406i17ly9r4001",
+      "name": "smoked pork shoulder",
+      "type": "inventory",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "4vw1t79pc9v2s5f",
+      "name": "chicken breast raw",
+      "type": "raw",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "6bngfm5m3zolrge",
+      "name": "veggie rice",
+      "type": "raw",
+      "canonical_unit": "cup",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "7u7x1s4888fhdf0",
+      "name": "chicken alfredo",
+      "type": "inventory",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "66w6q1tn5m1pns7",
+      "name": "pesto salad",
+      "type": "inventory",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "h016n6p2z834j9s",
+      "name": "chili beef",
+      "type": "inventory",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "90rtp192344rtc0",
+      "name": "chili brisket",
+      "type": "inventory",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "x501nmitq7n3342",
+      "name": "edamame",
+      "type": "inventory",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "f7q70eo7v0v22lf",
+      "name": "baby carrots & hummus",
+      "type": "inventory",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "24af437hwtf26lz",
+      "name": "pomegranite",
+      "type": "inventory",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "9z7748382fu1oax",
+      "name": "coconut yogurt",
+      "type": "inventory",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "86w7zr1b4xox65z",
+      "name": "lox",
+      "type": "raw",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "5f922grx96s7v86",
+      "name": "lox stored",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "2g89w4ily43ee3l",
+      "name": "onion (yellow) small dice stored",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "45k4qk9m52r8617",
+      "name": "scallion pancakes",
+      "type": "inventory",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "t2c7c68r17h10r1",
+      "name": "bagels",
+      "type": "inventory",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "06lj86c0k4zym85",
+      "name": "dumplings meat",
+      "type": "inventory",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "8s99e5eq5nago09",
+      "name": "rice balls",
+      "type": "inventory",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "33065a3dv0993a5",
+      "name": "perogies",
+      "type": "inventory",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "9s75m6t46m6j790",
+      "name": "chips",
+      "type": "inventory",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "h6o28h5bv7s21p8",
+      "name": "granola",
+      "type": "inventory",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "huq1l9042vof4i8",
+      "name": "peanut butter pretzels",
+      "type": "inventory",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "6dgbar6mszcbj5n",
+      "name": "bombas",
+      "type": "raw",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "01l3qo0yvk60sr9",
+      "name": "lettuce washed/prepared",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "k3aau7753y701hb",
+      "name": "avocado stored",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "rs37k27658dn9m3",
+      "name": "butternut squash soup stored",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "99o6ju11oc4852i",
+      "name": "black-eye pea salad stored",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "63c73y5i5jwdtu4",
+      "name": "lasagna cooked",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "8i6h617b9xn00js",
+      "name": "chicken roasted garlic stored",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "da8zw466hm3k50c",
+      "name": "meat spaghetti stored",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "ck15i319dfzouif",
+      "name": "roasted vegetables stored",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "p158bs6gq3kczbk",
+      "name": "meatballs stored",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "4t02jh5y52ffr1m",
+      "name": "roasted veg aggregate",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "lhi1463940g45g5",
+      "name": "shrimp stored",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "qkm74j97o0368p8",
+      "name": "pork shredded stored",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "2e52okv9bt6g5oa",
+      "name": "brocolli patty stored",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "6g0414m372un469",
+      "name": "egg bites (ready to eat)",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "ctkcw55qqvq852r",
+      "name": "pickles",
+      "type": "raw",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "w8778ex3zz0c318",
+      "name": "pickles brunoise",
+      "type": "transient",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "05mtd69ei5wi1a2",
+      "name": "tuna salad",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "1v28900sb5xl37m",
+      "name": "chickpea soup",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "pzk4j33z9djv5dm",
+      "name": "cucumber salad",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "w8m81l8g3va93ud",
+      "name": "cilantro and onion stored",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "8xlqga39qs9m918",
+      "name": "apple sauce stored",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "7hx7m6e8cueydmg",
+      "name": "broccoli (frozen)",
+      "type": "raw",
+      "canonical_unit": "oz",
+      "dimension": "mass",
+      "confirmed": true
+    },
+    {
+      "productId": "wquo8rvh0h1kbdp",
+      "name": "cheese shredded",
+      "type": "raw",
+      "canonical_unit": "oz",
+      "dimension": "mass",
+      "confirmed": true
+    },
+    {
+      "productId": "0y2b8761rtb1k91",
+      "name": "potato (russet) large dice",
+      "type": "transient",
+      "canonical_unit": "cup",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "j66u1c237c90qy0",
+      "name": "potato (russet) boiled",
+      "type": "transient",
+      "canonical_unit": "cup",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "p9f1u1by7xotpvp",
+      "name": "broccoli steamed",
+      "type": "transient",
+      "canonical_unit": "cup",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "174ln9uq0nm1l51",
+      "name": "broccoli patty mixture",
+      "type": "transient",
+      "canonical_unit": "cup",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "ubk1a334rn9use1",
+      "name": "broccoli patties formed",
+      "type": "transient",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "ncuen013mhu6t15",
+      "name": "broccoli patties par-baked",
+      "type": "transient",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "x9905if38ct135z",
+      "name": "lemon zest",
+      "type": "transient",
+      "canonical_unit": "cup",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "uqcjbgk63wc52ex",
+      "name": "white beans rinsed",
+      "type": "transient",
+      "canonical_unit": "cup",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "w1148y84p414yxt",
+      "name": "tomato cherry roasted",
+      "type": "transient",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "d5c6lv42h79p81l",
+      "name": "aromatics saut\u00e9ed",
+      "type": "transient",
+      "canonical_unit": "cup",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "oomf67q3o9p0i68",
+      "name": "bean mixture",
+      "type": "transient",
+      "canonical_unit": "cup",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "8o8c3tb76k4ok13",
+      "name": "lemon-parsley mixture",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "ymvgd9g36a78dk5",
+      "name": "white bean tomato stew base",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "44yw2d26764j4hb",
+      "name": "white bean stew with lemon-parsley",
+      "type": "transient",
+      "canonical_unit": "cup",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "w5z6gprie2ea3mw",
+      "name": "taquitos",
+      "type": "inventory",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "vk3hkoo38j15510",
+      "name": "roasted sweet potato",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "65ic3f7h6228wrp",
+      "name": "mushroom sliced",
+      "type": "transient",
+      "canonical_unit": "cup",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "2ko9yq4x6fz5r89",
+      "name": "cabbage red sliced",
+      "type": "transient",
+      "canonical_unit": "cup",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "7rt4dztb7rba6o1",
+      "name": "cabbage dressed",
+      "type": "transient",
+      "canonical_unit": "cup",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "uh1lws0yklo3n63",
+      "name": "pita warmed",
+      "type": "transient",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "3579mu845cv513k",
+      "name": "turmeric yogurt",
+      "type": "transient",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "5h98ep52ny8807j",
+      "name": "mushroom shawarma pita",
+      "type": "transient",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "0tfj68ec3l2fg7j",
+      "name": "baby bok choy sauteed",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "us4nst087r0c6sz",
+      "name": "summer corn salad",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "4j384s8h73etdr1",
+      "name": "marry me chick peas",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "d8od4wrfd8k6m4e",
+      "name": "peanuts roasted",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "j8n2i201v83o6nq",
+      "name": "asian cucumber thai salad",
+      "type": "stored",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "2h5egz3tvqpca4h",
+      "name": "egg cup veggie (costco)",
+      "type": "raw",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "02e0idp52843cnp",
+      "name": "egg cup meat (costco)",
+      "type": "raw",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "h466srz9y40woc8",
+      "name": "dal cooked",
+      "type": "transient",
+      "canonical_unit": "cup",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "35eyleq8i5o456d",
+      "name": "pork shoulder roast",
+      "type": "raw",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "e24j3b9la3421q2",
+      "name": "mustard",
+      "type": "raw",
+      "canonical_unit": "tbsp",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "o5u3183tb71061s",
+      "name": "parchment paper",
+      "type": "raw",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "u5fktc82y3vicpj",
+      "name": "pork shoulder processed",
+      "type": "transient",
+      "canonical_unit": "cup",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "qnf341076376q7y",
+      "name": "fries",
+      "type": "inventory",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "vscfwwck5d067is",
+      "name": "bag of salmon",
+      "type": "raw",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "yoeu9d88y3deb4s",
+      "name": "tomato whole peeled (canned)",
+      "type": "raw",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "s8pv6upr61l0z57",
+      "name": "ancho chile",
+      "type": "raw",
+      "canonical_unit": "each",
+      "dimension": "count",
+      "confirmed": true
+    },
+    {
+      "productId": "hg5628tz7usgnhi",
+      "name": "onion roux base",
+      "type": "transient",
+      "canonical_unit": "cup",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "2jwr4pd2g301fue",
+      "name": "tomato soup simmered",
+      "type": "transient",
+      "canonical_unit": "cup",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "tcl21hphi1d4o22",
+      "name": "creamy tomato soup",
+      "type": "transient",
+      "canonical_unit": "cup",
+      "dimension": "volume",
+      "confirmed": true
+    },
+    {
+      "productId": "0iszdk8xe17j053",
+      "name": "chicken stock pulled",
+      "type": "transient",
+      "canonical_unit": "cup",
+      "dimension": "volume",
+      "confirmed": true
+    }
+  ]
+}
