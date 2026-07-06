@@ -5,15 +5,15 @@ milestone_name: Workflow Redesign
 current_phase: 2
 current_phase_name: Shopping State & Live Substitution
 status: executing
-stopped_at: Completed 02-07-PLAN.md
-last_updated: "2026-07-06T21:57:24.392Z"
+stopped_at: Completed 02-08-PLAN.md
+last_updated: "2026-07-06T22:14:33.138Z"
 last_activity: 2026-07-06
 last_activity_desc: Completed 02-02-PLAN.md
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 18
-  completed_plans: 15
+  completed_plans: 16
   percent: 17
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-05)
 ## Current Position
 
 Phase: 2 (Shopping State & Live Substitution) — EXECUTING
-Plan: 8 of 10
+Plan: 9 of 10
 Status: Ready to execute
 Last activity: 2026-07-06 — Completed 02-02-PLAN.md
 
@@ -70,6 +70,7 @@ Progress: [██████░░░░] 56%
 | Phase 02-shopping-state-live-substitution P05 | 12min | 2 tasks | 3 files |
 | Phase 02 P06 | 5min | 2 tasks | 3 files |
 | Phase 02-shopping-state-live-substitution P07 | 6min | 2 tasks | 1 files |
+| Phase 02 P08 | 35min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -115,6 +116,9 @@ Recent decisions affecting current work:
 - [Phase 02]: SyncIndicator exported from components/outputs/index.ts alongside sibling tab components, matching the existing barrel-export convention — 02-07 needs to import it for Outputs.tsx wiring; keeps the directory's export pattern consistent
 - [Phase 02]: Outputs.tsx does not destructure setHaveQuantity/setResolution from useShoppingState in 02-07 (noUnusedLocals enabled repo-wide); both remain on the hook for 02-08/02-09 to pull in directly
 - [Phase 02]: filteredShoppingListForExport keeps the pre-existing pantry-checked exclusion branch alongside the new filterForExport resolved-line exclusion — pantry items use a separate getPantryCheckboxKey namespace, so overlaying them via getShoppingCheckboxKey never interferes with pantry-checkbox behavior
+- [Phase 02]: swap-save scopes delete+recreate of meal_variant_overrides to the touched node IDs (not the whole meal), unlike WeeklyPlans.handleSaveVariants — prevents a store-time single-product swap from clobbering an unrelated planning-time override in the same meal
+- [Phase 02]: onSwap/onMakeIt pass the full AggregatedProduct item (not just productId) so make-it can resolve both product/source_recipe lookup and the shopping_state lineId key without a second lookup
+- [Phase 02]: ShoppingListTabProps extended with optional onSwap/onMakeIt/canMakeIt in 02-08 (declaration only, no rendering) so 02-09's call site compiles ahead of its own rendering work
 
 ### Pending Todos
 
@@ -140,6 +144,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-06T21:56:33.117Z
-Stopped at: Completed 02-07-PLAN.md
+Last session: 2026-07-06T22:14:17.621Z
+Stopped at: Completed 02-08-PLAN.md
 Resume file: None
