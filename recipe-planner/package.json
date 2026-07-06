@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "sync-to-test": "node sync-to-test.js",
+    "sync-to-test": "node scripts/sync-to-test.js",
     "test": "vitest run"
   },
   "dependencies": {

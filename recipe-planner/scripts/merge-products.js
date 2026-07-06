@@ -11,6 +11,12 @@ const DB_URLS = {
 // (against a fresh sync-to-test.js copy of prod) before the real prod run.
 const PB_URL = process.env.PB_URL || DB_URLS.production;
 
+// Safety default: dry-run unless --apply is explicitly passed (matches the
+// convention established by backfill-units.js / normalize-node-units.js —
+// never mutate prod data silently, especially for the most destructive
+// script in this set: repoints references AND deletes product records).
+const DRY_RUN = !process.argv.includes("--apply");
+
 const pb = new PocketBase(PB_URL);
 
 // The four D-07 live-enumerated product-reference collections. Hardcoded
@@ -136,9 +142,12 @@ async function backupBeforeMerge() {
 /**
  * Repoint every product reference from dupeId to survivorId across exactly
  * the four D-07 collections/fields.
+ *
+ * In DRY_RUN mode this only reads the live reference counts and logs what
+ * would be repointed — no update() calls are made.
  */
 async function repointReferences(confirmed) {
-  console.log("\n--- Repointing references ---");
+  console.log(DRY_RUN ? "\n--- Repointing references (dry run) ---" : "\n--- Repointing references ---");
   let totalRepointed = 0;
   let totalFailed = 0;
 
@@ -149,6 +158,12 @@ async function repointReferences(confirmed) {
         filter: `${field} = "${dupeId}"`,
       });
       if (records.length === 0) continue;
+
+      if (DRY_RUN) {
+        console.log(`  [dry-run] ${collection}.${field}: ${dupeId} -> ${survivorId}: would repoint ${records.length} record(s)`);
+        totalRepointed += records.length;
+        continue;
+      }
 
       let repointed = 0;
       let failed = 0;
@@ -170,7 +185,7 @@ async function repointReferences(confirmed) {
   if (totalFailed > 0) {
     throw new Error(`${totalFailed} reference(s) failed to repoint — aborting before orphan check/delete`);
   }
-  console.log(`  Total references repointed: ${totalRepointed}`);
+  console.log(DRY_RUN ? `  Total references that would be repointed: ${totalRepointed}` : `  Total references repointed: ${totalRepointed}`);
 }
 
 /**
@@ -204,7 +219,16 @@ async function verifyZeroOrphans(confirmed) {
 }
 
 async function deleteDupes(confirmed) {
-  console.log("\n--- Deleting dupes ---");
+  console.log(DRY_RUN ? "\n--- Deleting dupes (dry run) ---" : "\n--- Deleting dupes ---");
+
+  if (DRY_RUN) {
+    for (const decision of confirmed) {
+      console.log(`  [dry-run] would delete ${decision.dupeId} (${decision.name ?? "?"}) -> merged into ${decision.survivorId}`);
+    }
+    console.log(`\n  Would delete ${confirmed.length} dupe(s)`);
+    return;
+  }
+
   let deleted = 0;
   let failed = 0;
   for (const decision of confirmed) {
@@ -228,6 +252,9 @@ async function main() {
   console.log("MERGE PRODUCTS — one-shot destructive dedup merge");
   console.log(`Target: ${PB_URL}`);
   console.log(`Decisions file: ${DECISIONS_PATH}`);
+  console.log(
+    `Mode: ${DRY_RUN ? "DRY RUN (no writes — pass --apply to mutate)" : "APPLY (writing changes)"}`
+  );
   console.log("=".repeat(80));
 
   const confirmed = await loadConfirmedDecisions(DECISIONS_PATH);
@@ -238,13 +265,21 @@ async function main() {
 
   await authenticateSuperuser();
   await preflightValidate(confirmed);
-  await backupBeforeMerge();
+  if (!DRY_RUN) {
+    await backupBeforeMerge();
+  }
   await repointReferences(confirmed);
-  await verifyZeroOrphans(confirmed);
+  if (!DRY_RUN) {
+    await verifyZeroOrphans(confirmed);
+  }
   await deleteDupes(confirmed);
 
   console.log("\n" + "=".repeat(80));
-  console.log("✅ MERGE COMPLETE");
+  if (DRY_RUN) {
+    console.log("DRY RUN — no changes written; re-run with --apply to execute");
+  } else {
+    console.log("✅ MERGE COMPLETE");
+  }
   console.log("=".repeat(80));
 }
 

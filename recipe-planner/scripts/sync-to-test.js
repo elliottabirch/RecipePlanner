@@ -38,7 +38,9 @@ const COLLECTIONS_TOP_DOWN = [
   "step_to_product_edges",
   "weekly_plans",
   "planned_meals",
+  "meal_variant_overrides",
   "inventory_items",
+  "recipe_queue",
 ];
 
 function fmtError(e) {

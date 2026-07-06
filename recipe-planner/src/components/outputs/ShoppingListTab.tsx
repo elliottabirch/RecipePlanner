@@ -26,6 +26,11 @@ export interface ManualShoppingItem {
 const UNCATEGORIZED_STORE = "Other";
 const UNCATEGORIZED_SECTION = "Uncategorized";
 
+// Render-layer display rounding only — units.ts intentionally stays exact
+// and defers this to whatever renders the quantity to the user.
+const formatQty = (n: number): string =>
+  Number.isFinite(n) ? String(Number(n.toFixed(2))) : String(n);
+
 function mergeManualItemsIntoGroups(
   byStore: Map<string, Map<string, AggregatedProduct[]>>,
   manualItems: ManualShoppingItem[]
@@ -181,7 +186,7 @@ export function ShoppingListTab({
                     {visibleItems.map((item) => {
                       const key = getShoppingCheckboxKey(item.lineId);
                       const primary = item.totalQuantity && item.unit
-                        ? `${item.productName} — ${item.totalQuantity} ${item.unit}`
+                        ? `${item.productName} — ${formatQty(item.totalQuantity)} ${item.unit}`
                         : item.productName;
                       const secondary = item.sources
                         .map((s) => s.recipeName)
@@ -218,7 +223,7 @@ export function ShoppingListTab({
               const key = getPantryCheckboxKey(item.productId);
               const showQuantity = item.trackQuantity;
               const primary = showQuantity
-                ? `${item.productName} — ${item.totalQuantity} ${item.unit}`
+                ? `${item.productName} — ${formatQty(item.totalQuantity)} ${item.unit}`
                 : item.productName;
               const secondary = showQuantity
                 ? item.sources.map((s) => s.recipeName).join(", ")
