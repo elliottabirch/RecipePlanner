@@ -129,17 +129,19 @@ export function buildPullLists(
       inputEdges.forEach((e) => {
         const node = data.productNodes.find((n) => n.id === e.source);
         const product = node?.expand?.product;
-        if (!product) return;
+        if (!product || !node) return;
 
         // Determine storage location using utility
         const fromStorage = determineStorageLocation(product);
 
         items.push({
           productName: product.name,
-          quantity: node?.quantity,
-          unit: node?.unit,
+          quantity: node.quantity,
+          unit: node.unit,
           containerTypeName: product.expand?.container_type?.name,
           fromStorage,
+          // Stable, collision-proof identity — see D-01 / PullListItem.lineId.
+          lineId: `${meal.id}-${step.id}-${node.id}`,
         });
       });
     });
@@ -331,7 +333,7 @@ export function buildStoredItemsListFromFlow(
 ): StoredItem[] {
   const storedItems: StoredItem[] = [];
 
-  flowGraph.products.forEach((product) => {
+  flowGraph.products.forEach((product, key) => {
     if (product.productType === ProductType.Stored) {
       // Extract meal destination using utility
       const { cleanName, destination } = extractMealDestination(
@@ -346,6 +348,9 @@ export function buildStoredItemsListFromFlow(
         unit: product.unit,
         recipeName: product.mealSources.map((s) => s.recipeName).join(", "),
         containerTypeName: product.containerTypeName,
+        // Stable identity — the flowGraph.products Map key (createProductKey
+        // result), never an array index. See D-01 / StoredItem.lineId.
+        lineId: key,
       });
     }
   });
@@ -370,6 +375,7 @@ export function buildMealContainersList(
         containerTypeName?: string;
         storageLocation: StorageLocation;
         quantity: number;
+        lineId: string;
       }
     >
   >();
@@ -402,6 +408,11 @@ export function buildMealContainersList(
             containerTypeName: product.containerTypeName,
             storageLocation: product.storageLocation || StorageLocation.Fridge,
             quantity: product.totalQuantity,
+            // Stable identity — surfaces this same composite (recipe-scoped,
+            // no array index). See D-01 / MealContainer.containers[].lineId.
+            lineId: `${recipeName}::${cleanName}::${
+              product.storageLocation || StorageLocation.Fridge
+            }::${product.containerTypeName ?? "none"}`,
           });
         }
       });

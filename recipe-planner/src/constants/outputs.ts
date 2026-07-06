@@ -327,29 +327,25 @@ export function getBatchPrepCheckboxKey(stepId: string): string {
 }
 
 /**
- * Generate a checkbox key for a stored item
+ * Generate a checkbox key for a stored item, keyed off its stable `lineId`
+ * (never an array index — see D-01).
  */
-export function getStoredCheckboxKey(
-  location: StorageLocation,
-  index: number
-): string {
-  return `${CHECKBOX_KEY_PREFIXES.stored}${location}-${index}`;
+export function getStoredCheckboxKey(lineId: string): string {
+  return `${CHECKBOX_KEY_PREFIXES.stored}${lineId}`;
 }
 
 /**
- * Generate a checkbox key for a pull list item
+ * Generate a checkbox key for a pull list item, keyed off its stable `lineId`
+ * (never an array index — see D-01).
  */
-export function getPullListCheckboxKey(
-  day: string,
-  meal: string,
-  index: number
-): string {
-  return `${CHECKBOX_KEY_PREFIXES.pullList}${day}-${meal}-${index}`;
+export function getPullListCheckboxKey(lineId: string): string {
+  return `${CHECKBOX_KEY_PREFIXES.pullList}${lineId}`;
 }
 
 /**
- * Generate a checkbox key for a meal container
+ * Generate a checkbox key for a meal container, keyed off its stable `lineId`
+ * (never an array index — see D-01).
  */
-export function getContainerCheckboxKey(index: number): string {
-  return `${CHECKBOX_KEY_PREFIXES.container}${index}`;
+export function getContainerCheckboxKey(lineId: string): string {
+  return `${CHECKBOX_KEY_PREFIXES.container}${lineId}`;
 }

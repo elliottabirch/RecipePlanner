@@ -186,6 +186,13 @@ export interface StoredItem {
   quantity?: number;
   unit?: string;
   recipeName: string;
+  /**
+   * Stable line identity — equals the `flowGraph.products` Map key
+   * (`createProductKey(...)` result) for this stored product, never an
+   * array index. See D-01: a plan reorder must never re-attach a checked
+   * state to a different physical item.
+   */
+  lineId: string;
 }
 
 /**
@@ -197,6 +204,12 @@ export interface PullListItem {
   unit?: string;
   containerTypeName?: string;
   fromStorage: StorageLocation | "pantry";
+  /**
+   * Stable line identity — `${meal.id}-${step.id}-${node.id}`, collision-proof
+   * even when the same node feeds two different JIT steps of one meal. See
+   * D-01 (no array index in the persisted checkbox key).
+   */
+  lineId: string;
 }
 
 /**
@@ -220,5 +233,13 @@ export interface MealContainer {
     storageLocation: StorageLocation;
     quantity?: number;
     unit?: string;
+    /**
+     * Stable line identity — surfaces the builder's existing internal
+     * `productKey` composite (`${recipeName}::${cleanName}::${storageLocation}::${containerTypeName ?? "none"}`),
+     * never an array index. See D-01. Note: coarser than per-planned-meal
+     * (two same-recipe meals share one row — pre-existing aggregation
+     * characteristic, not introduced by this lineId fix).
+     */
+    lineId: string;
   }[];
 }
