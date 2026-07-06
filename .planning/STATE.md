@@ -5,15 +5,15 @@ milestone_name: Workflow Redesign
 current_phase: 1
 current_phase_name: Data Hygiene
 status: executing
-stopped_at: Completed 01-05-PLAN.md
-last_updated: "2026-07-06T07:43:58.921Z"
+stopped_at: Completed 01-07-PLAN.md
+last_updated: "2026-07-06T17:10:42.775Z"
 last_activity: 2026-07-06
 last_activity_desc: Phase 1 execution started
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 8
-  completed_plans: 6
+  completed_plans: 7
   percent: 0
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-05)
 ## Current Position
 
 Phase: 1 (Data Hygiene) — EXECUTING
-Plan: 7 of 8
+Plan: 8 of 8
 Status: Ready to execute
 Last activity: 2026-07-06 — Phase 1 execution started
 
@@ -61,6 +61,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01 P04 | 32min | 2 tasks | 9 files |
 | Phase 01 P05 | 20min | 3 tasks | 3 files |
 | Phase 01-data-hygiene P06 | 14min | 2 tasks | 4 files |
+| Phase 01-data-hygiene P07 | 65min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -89,6 +90,9 @@ Recent decisions affecting current work:
 - [Phase 01]: Container-clearing scope in normalize-node-units.js stays exactly stored-type nodes per D-01 — Live data shows container-type strings mostly on raw/inventory-type nodes; widening scope would be an undiscussed architectural expansion, so those cases route to the unresolved report for Plan 08 human review instead
 - [Phase 01]: backfill-units.js canonical_unit heuristic: most-frequently-used normalized unit within a product's single inferred dimension — Deterministic (count desc, then alphabetical tie-break), matches how the product is actually used in recipes, independent of node fetch order
 - [Phase 01-data-hygiene]: FridgeFreezerTab/MealContainersTab/PullListsTab required no changes — audit confirmed they already read containerTypeName, not unit, for container display — Prevented redundant edits; consumers already implemented the correct field
+- [Phase 01-data-hygiene]: Prod has zero real same-type dupes; merge machinery rehearsed via self-cleaning synthetic fixtures on TEST — Plan 08's merge step is likely a no-op on real data — find-duplicates against a fresh prod copy produced an empty same-type skeleton; only the two intentional cross-type pairs exist
+- [Phase 01-data-hygiene]: NEW Plan 08 entry condition: all unit gaps (29 unresolved node units + ambiguous/null canonical_units) must be resolved via a human-confirmed unit-resolutions worksheet (scripts/dedup-output/unit-resolutions.json) applied during the supervised prod run — User sign-off condition at the 01-07 rehearsal checkpoint — nothing left to the linter
+- [Phase 01-data-hygiene]: PB superuser credentials live in gitignored recipe-planner/.env.local, sourced at run time; needed again for Plan 08's prod backup — merge-products.js pb.backups.create() requires superuser auth; values never printed or committed
 
 ### Pending Todos
 
@@ -110,6 +114,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-06T07:43:40.182Z
-Stopped at: Completed 01-05-PLAN.md
+Last session: 2026-07-06T17:10:42.770Z
+Stopped at: Completed 01-07-PLAN.md
 Resume file: None
