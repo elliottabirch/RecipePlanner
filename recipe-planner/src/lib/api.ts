@@ -65,4 +65,5 @@ export const collections = {
   inventoryItems: "inventory_items",
   mealVariantOverrides: "meal_variant_overrides",
   recipeQueue: "recipe_queue",
+  shoppingState: "shopping_state",
 } as const;

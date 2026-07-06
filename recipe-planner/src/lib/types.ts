@@ -196,6 +196,8 @@ export interface MealVariantOverride extends BaseRecord {
   planned_meal: string; // relation ID
   original_node: string; // relation ID (recipe_product_node being replaced)
   replacement_product: string; // relation ID (product to use instead)
+  quantity?: number | null;
+  unit?: Unit | null;
 }
 
 export interface MealVariantOverrideExpanded extends MealVariantOverride {
@@ -206,5 +208,14 @@ export interface MealVariantOverrideExpanded extends MealVariantOverride {
     };
     replacement_product?: Product;
   };
+}
+
+// Shopping State — per-weekly-plan persisted list state (checked/have-N/resolution)
+export interface ShoppingState extends BaseRecord {
+  weekly_plan: string; // relation ID
+  line_key: string;
+  checked: boolean;
+  have_quantity: number | null;
+  resolution: "buy" | "make" | "skip" | null;
 }
 
