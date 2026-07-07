@@ -130,6 +130,8 @@ export interface StepToProductEdge extends BaseRecord {
 // Weekly Plans
 export interface WeeklyPlan extends BaseRecord {
   name?: string;
+  start_date?: string; // ISO date string; nullable until 04-05 backfill+tighten
+  people_multiplier?: number; // absent/undefined => treat as 1 (see aggregation call sites)
 }
 
 export type MealSlot = "breakfast" | "lunch" | "dinner" | "snack" | "micah";
@@ -141,6 +143,24 @@ export interface PlannedMeal extends BaseRecord {
   meal_slot: MealSlot;
   day?: Day;
   quantity?: number;
+  template_slot?: string; // relation ID to template_slots, nullable
+}
+
+// Week Templates (WEEK-03) — tag-based rotation-pool slots; no in-app editor
+// this phase (D-01), created/edited via PocketBase admin UI on both instances.
+export interface WeekTemplate extends BaseRecord {
+  name: string;
+}
+
+export interface TemplateSlot extends BaseRecord {
+  template: string; // relation ID to week_templates
+  label: string;
+  count: number;
+  meal_slot: MealSlot; // REQUIRED — must match planned_meals.meal_slot's required flag
+  day?: Day;
+  pool_tags: string[]; // relation IDs to tags, match-any
+  sort_order?: number;
+  prefill_from_last_week?: boolean;
 }
 
 // Inventory

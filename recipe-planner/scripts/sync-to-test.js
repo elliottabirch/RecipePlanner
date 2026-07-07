@@ -36,6 +36,8 @@ const COLLECTIONS_TOP_DOWN = [
   "recipe_steps",
   "product_to_step_edges",
   "step_to_product_edges",
+  "week_templates",
+  "template_slots",
   "weekly_plans",
   "planned_meals",
   "meal_variant_overrides",

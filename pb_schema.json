@@ -1086,6 +1086,29 @@
         "required": false,
         "system": false,
         "type": "text"
+      },
+      {
+        "hidden": false,
+        "id": "date6291058601",
+        "max": "",
+        "min": "",
+        "name": "start_date",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "date"
+      },
+      {
+        "hidden": false,
+        "id": "number6291058602",
+        "max": null,
+        "min": 0.1,
+        "name": "people_multiplier",
+        "onlyInt": false,
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "number"
       }
     ],
     "indexes": [],
@@ -1937,11 +1960,207 @@
         "required": false,
         "system": false,
         "type": "number"
+      },
+      {
+        "cascadeDelete": false,
+        "collectionId": "pbc_6183947520",
+        "hidden": false,
+        "id": "relation4579384612",
+        "maxSelect": 1,
+        "minSelect": 0,
+        "name": "template_slot",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "relation"
       }
     ],
     "indexes": [],
     "created": "2026-01-02 00:55:52.706Z",
     "updated": "2026-07-06 21:36:41.184Z",
+    "system": false
+  },
+  {
+    "id": "pbc_5947261830",
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "",
+    "updateRule": "",
+    "deleteRule": "",
+    "name": "week_templates",
+    "type": "base",
+    "fields": [
+      {
+        "autogeneratePattern": "[a-z0-9]{15}",
+        "hidden": false,
+        "id": "text3208210256",
+        "max": 15,
+        "min": 15,
+        "name": "id",
+        "pattern": "^[a-z0-9]+$",
+        "presentable": false,
+        "primaryKey": true,
+        "required": true,
+        "system": true,
+        "type": "text"
+      },
+      {
+        "autogeneratePattern": "",
+        "hidden": false,
+        "id": "text5947261831",
+        "max": 0,
+        "min": 0,
+        "name": "name",
+        "pattern": "",
+        "presentable": false,
+        "primaryKey": false,
+        "required": true,
+        "system": false,
+        "type": "text"
+      }
+    ],
+    "indexes": [],
+    "created": "2026-07-07 00:00:00.000Z",
+    "updated": "2026-07-07 00:00:00.000Z",
+    "system": false
+  },
+  {
+    "id": "pbc_6183947520",
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "",
+    "updateRule": "",
+    "deleteRule": "",
+    "name": "template_slots",
+    "type": "base",
+    "fields": [
+      {
+        "autogeneratePattern": "[a-z0-9]{15}",
+        "hidden": false,
+        "id": "text3208210256",
+        "max": 15,
+        "min": 15,
+        "name": "id",
+        "pattern": "^[a-z0-9]+$",
+        "presentable": false,
+        "primaryKey": true,
+        "required": true,
+        "system": true,
+        "type": "text"
+      },
+      {
+        "cascadeDelete": false,
+        "collectionId": "pbc_5947261830",
+        "hidden": false,
+        "id": "relation6183947521",
+        "maxSelect": 1,
+        "minSelect": 0,
+        "name": "template",
+        "presentable": false,
+        "required": true,
+        "system": false,
+        "type": "relation"
+      },
+      {
+        "autogeneratePattern": "",
+        "hidden": false,
+        "id": "text6183947522",
+        "max": 0,
+        "min": 0,
+        "name": "label",
+        "pattern": "",
+        "presentable": false,
+        "primaryKey": false,
+        "required": true,
+        "system": false,
+        "type": "text"
+      },
+      {
+        "hidden": false,
+        "id": "number6183947523",
+        "max": null,
+        "min": 0,
+        "name": "count",
+        "onlyInt": true,
+        "presentable": false,
+        "required": true,
+        "system": false,
+        "type": "number"
+      },
+      {
+        "hidden": false,
+        "id": "select6183947524",
+        "maxSelect": 1,
+        "name": "meal_slot",
+        "presentable": false,
+        "required": true,
+        "system": false,
+        "type": "select",
+        "values": [
+          "breakfast",
+          "lunch",
+          "dinner",
+          "snack",
+          "micah"
+        ]
+      },
+      {
+        "hidden": false,
+        "id": "select6183947525",
+        "maxSelect": 1,
+        "name": "day",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "select",
+        "values": [
+          "mon",
+          "tue",
+          "wed",
+          "thu",
+          "fri",
+          "sat",
+          "sun"
+        ]
+      },
+      {
+        "cascadeDelete": false,
+        "collectionId": "pbc_4015827361",
+        "hidden": false,
+        "id": "relation6183947526",
+        "maxSelect": 999,
+        "minSelect": 0,
+        "name": "pool_tags",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "relation"
+      },
+      {
+        "hidden": false,
+        "id": "number6183947527",
+        "max": null,
+        "min": null,
+        "name": "sort_order",
+        "onlyInt": true,
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "number"
+      },
+      {
+        "hidden": false,
+        "id": "bool6183947528",
+        "name": "prefill_from_last_week",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "bool"
+      }
+    ],
+    "indexes": [],
+    "created": "2026-07-07 00:00:00.000Z",
+    "updated": "2026-07-07 00:00:00.000Z",
     "system": false
   },
   {

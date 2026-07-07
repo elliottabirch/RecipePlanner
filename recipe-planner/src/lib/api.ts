@@ -66,4 +66,6 @@ export const collections = {
   mealVariantOverrides: "meal_variant_overrides",
   recipeQueue: "recipe_queue",
   shoppingState: "shopping_state",
+  weekTemplates: "week_templates",
+  templateSlots: "template_slots",
 } as const;
