@@ -2,9 +2,20 @@
 title: Single purchase-unit shopping lines (one line per ingredient, in the unit you buy)
 date: 2026-07-06
 priority: high
-resolves_phase: 3
-status: captured-not-scoped
+resolves_phase: post-3-dedicated-phase
+status: deferred-to-own-phase
 ---
+
+> **Decision (2026-07-06, Phase 3 discussion):** Deferred to a dedicated follow-on
+> phase *after* Phase 3 — NOT folded into Phase 3. Research confirmed USDA Foundation
+> Foods (Phase 3's data) lacks household gram-weight portions ("100-unit measures only");
+> those live in SR Legacy / FNDDS, so the bridge needs its own portion ingest + curated
+> density fallback + a grams-pivot aggregation rewrite, and it reverses the locked
+> "no density model" decision. Phase 3 preserves the hooks (retained `fdc_id`, nullable
+> `canonical_unit`/`dimension`). To pick up: spike portion coverage on real top-N
+> ingredients, add `products.purchase_unit` + a `product_portions` bridge, reverse the
+> decision in PROJECT.md/REQUIREMENTS.md, and add the phase via `/gsd-phase`. Convert-or-split
+> stays the permanent fallback tier. See `.planning/phases/03-product-registry-seeding/03-CONTEXT.md`.
 
 ## Idea
 
