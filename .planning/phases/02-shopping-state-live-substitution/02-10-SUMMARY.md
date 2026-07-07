@@ -66,7 +66,13 @@ coverage:
 # Metrics
 duration: 6min
 completed: 2026-07-06
-status: blocked
+status: complete
+# UAT approved 2026-07-06. All criteria passed. One gap found + fixed during UAT:
+# mid-shop raw-ingredient swaps were severed from their downstream prep steps
+# (SHOP-03 re-derivation) — fixed in commit 9cf9206 (edge re-pointing + regression
+# test). Deferred to Phase 5: prep-step titles + prep-state output names reflecting
+# the swap ("large dice sweet potato" -> "large dice potato") — see
+# .planning/todos/pending/swap-aware-prep-naming.md.
 ---
 
 # Phase 2 Plan 10: Tablet Touch Pass, Print Scoping & End-of-Phase UAT Summary
