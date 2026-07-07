@@ -22,12 +22,12 @@ The derived weekly outputs — shopping list and prep plan — must be trustwort
 - ✓ Production/test database switching (localStorage-backed) — v1.0
 - ✓ Print stylesheets for outputs — v1.0 (kept for batch prep only going forward)
 - ✓ Unit-disciplined data layer: unit enum + `units.ts` conversion, canonical unit + dimension per product, convert-or-split aggregation with stable lineId, product dedup + case-insensitive `(name, type)` unique index, linter v1 — v1.1 Phase 1
+- ✓ Durable shopping state: per-plan persisted checkboxes across all six Outputs tabs (content-derived stable keys), have-N with remaining-to-buy, mid-shop swap (pre-filled qty/unit + inline quick-create) with full downstream re-derivation, confirm-first make-at-home (gated on source_recipe), buy/make/skip resolution, optimistic sync + pending indicator, tablet touch pass — v1.1 Phase 2
 
 ### Active
 
 <!-- Milestone v1.1 Workflow Redesign. Detail in REQUIREMENTS.md. -->
 
-- [ ] Durable shopping state: persisted checkboxes, have-N, mid-shop swap flow, make-at-home, quick-create, tablet touch pass
 - [ ] Product registry seeded from USDA Foundation Foods (~800 items) with fuzzy search and "Search USDA" mode
 - [ ] Weekly planning memory: plan start dates, people-multiplier, tag-based slot templates, guided-fill wizard with staples-first + LRU ordering
 - [ ] Prep-day engine: step metadata + AI-assisted backfill, seeded GA scheduler with resource model, interactive cook mode, weights panel, linter v2
@@ -70,6 +70,11 @@ The derived weekly outputs — shopping list and prep plan — must be trustwort
 | Seeded genetic-algorithm scheduler, primary objective = minimize active time | Deterministic, tunable via weights panel; consolidation-friendly | — Pending |
 | Imports land in prod as drafts; test DB for schema/code only | Kills the test→prod content-migration ritual and the PC requirement | — Pending |
 | Step aggregation merges by input/output product-ID signature (code behavior kept) | Reconcile docs to code rather than change working behavior | ✓ Phase 1 (decisions.md reconciled) |
+| Persist all six Outputs tabs via content-derived stable keys (not array-position keys) | Positional keys silently mis-attach checks when make-it reorders lists — a correctness hazard, not a benign reset | ✓ Phase 2 (four inline tab call sites reworked) |
+| Resolved lines (make/skip/have-complete) shown dimmed on-screen but excluded from export | Screen = full picture with state; export = actionable buy list only | ✓ Phase 2 |
+| Mid-shop swap keeps the swapped node wired to downstream prep steps (edge re-pointing) | A raw-ingredient swap must re-derive prep/pull inputs, not sever them; the old override logic only fit made-component→store-bought swaps | ✓ Phase 2 (fixed in UAT, commit 9cf9206) |
+| Swap/quick-create units bind to the Phase-1 unit enum, not free text | Phase 1 shipped `units.ts` + `products.canonical_unit`, so the phase doc's interim free-text plan was superseded | ✓ Phase 2 |
+| Prep-step titles + prep-state output names reflecting a swap deferred to Phase 5 | Authored free-text naming is a recipe-graph modeling concern that belongs with the prep-day step-metadata rework (PREP-01) | — Deferred (todo: swap-aware-prep-naming) |
 
 ## Current Milestone: v1.1 Workflow Redesign
 
@@ -101,4 +106,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-06 after Phase 1 (Data Hygiene) completed — unit-disciplined, duplicate-free data layer shipped and verified*
+*Last updated: 2026-07-06 after Phase 2 (Shopping State & Live Substitution) completed — durable per-plan shopping state, have-N, live mid-shop swap with downstream re-derivation, make-it, quick-create, and tablet touch pass shipped and verified (UAT approved)*

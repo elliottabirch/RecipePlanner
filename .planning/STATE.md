@@ -2,36 +2,36 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Workflow Redesign
-current_phase: 2
-current_phase_name: Shopping State & Live Substitution
+current_phase: 3
+current_phase_name: Product Registry Seeding
 status: executing
 stopped_at: 02-10 Tasks 1-2 complete; Task 3 (human UAT) blocking checkpoint pending
-last_updated: "2026-07-06T22:37:30.317Z"
-last_activity: 2026-07-06
-last_activity_desc: Completed 02-02-PLAN.md
+last_updated: "2026-07-07T01:56:54.431Z"
+last_activity: 2026-07-07
+last_activity_desc: Phase 2 complete, transitioned to Phase 3
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 18
-  completed_plans: 17
-  percent: 17
+  completed_plans: 18
+  percent: 33
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-05)
+See: .planning/PROJECT.md (updated 2026-07-06)
 
 **Core value:** The derived weekly outputs — shopping list and prep plan — must be trustworthy and low-friction for the real weekly shop-and-prep cycle.
-**Current focus:** Phase 2 — Shopping State & Live Substitution
+**Current focus:** Phase 3 — Product Registry Seeding
 
 ## Current Position
 
-Phase: 2 (Shopping State & Live Substitution) — EXECUTING
-Plan: 10 of 10
+Phase: 3 — Product Registry Seeding
+Plan: Not started
 Status: Ready to execute
-Last activity: 2026-07-06 — Completed 02-02-PLAN.md
+Last activity: 2026-07-07 — Phase 2 complete, transitioned to Phase 3
 
 Progress: [██████░░░░] 56%
 
@@ -39,7 +39,7 @@ Progress: [██████░░░░] 56%
 
 **Velocity:**
 
-- Total plans completed: 8
+- Total plans completed: 18
 - Average duration: —
 - Total execution time: 0 hours
 
@@ -48,6 +48,7 @@ Progress: [██████░░░░] 56%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 | 8 | - | - |
+| 2 | 10 | - | - |
 
 **Recent Trend:**
 
@@ -131,12 +132,10 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
-yet.
+- ⚠️ [Phase 2→infra] `nas-pocketbase-tailnet` todo still open — SHOP-07 store/phone use over the tailnet is unverified (LAN works; app-side optimistic/retry/pending-indicator complete). Needed before real store use.
+- ℹ️ [Phase 5] `swap-aware-prep-naming` todo — prep-step titles + prep-state output node names don't reflect ingredient swaps yet (authored free text). Swap's input/quantity re-derivation IS correct (fixed 9cf9206). Belongs with Phase 5 step-metadata rework.
 
-- REQUIREMENTS.md marks SHOP-01 fully Complete after 02-01, but SHOP-01's acceptance criterion (checkbox state persists across refresh/device switch) isn't realized until the shopping_state collection + useShoppingState hook land in 02-05/02-06 — 02-01 only built the lineId identity precondition. Re-verify SHOP-01 at full Phase 2 completion, not before.
-- REQUIREMENTS.md marks SHOP-03 fully Complete after 02-02, but SHOP-03's acceptance criterion (user can swap a product mid-shop via a dialog, with all outputs re-derived) isn't realized until the swap dialog UI and the `Outputs.tsx` override-map builder land in 02-07/02-08 — 02-02 only built the pure re-derivation threading (`VariantOverride.quantity/unit` + inherit-when-null in `applyVariantOverrides`). Re-verify SHOP-03 at full Phase 2 completion, not before.
-- REQUIREMENTS.md lists SHOP-06 (tablet touch-friendly) in 02-07's plan frontmatter, but 02-07's actual deliverable (Outputs.tsx wiring: hook, override map, overlay/export filter, SyncIndicator mount) did not add any touch-target sizing changes — SHOP-06's real acceptance work (48x48 tap targets on have-N stepper/swap/make-it/resolution chip controls) lands in 02-08/02-09's dialog and ShoppingListTab implementation. SHOP-06 stays unchecked in REQUIREMENTS.md pending those plans; do not mark it complete before then.
-- 02-10 Task 3 (end-of-phase human UAT for SHOP-01..07/D-01) is a blocking checkpoint awaiting manual tablet/network verification — Tasks 1-2 (touch pass, print scoping) are complete and committed
+*(All Phase 2 re-verification blockers resolved — UAT approved 2026-07-06, verification passed 7/7.)*
 
 ## Deferred Items
 
@@ -150,6 +149,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-06T22:37:21.874Z
-Stopped at: 02-10 Tasks 1-2 complete; Task 3 (human UAT) blocking checkpoint pending
-Resume file: 
+Last session: 2026-07-06
+Stopped at: Phase 2 complete (verified 7/7, UAT approved), ready to plan Phase 3 — Product Registry Seeding
+Resume file: None
