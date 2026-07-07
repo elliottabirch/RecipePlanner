@@ -24,7 +24,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Data Hygiene** - Unit-disciplined data layer: enum + canonical units, convert-or-split aggregation fix, dedup + unique index, linter v1 (completed 2026-07-06)
 - [x] **Phase 2: Shopping State & Live Substitution** - Persisted shopping state, have-N, mid-shop swap, make-at-home, quick-create, tablet touch pass (UAT approved, verified 7/7, completed 2026-07-06)
-- [ ] **Phase 3: Product Registry Seeding** - USDA Foundation Foods seed (~800 items), fuzzy search everywhere, "Search USDA" mode
+- [ ] **Phase 3: Product Registry Seeding** - external plain-name ingredient seed (USDA-linked via fdc_id), fuzzy search everywhere, "Search USDA" mode
 - [ ] **Phase 4: Weekly Planning Memory** - Plan start dates, people-multiplier, tag-based slot templates, guided-fill wizard
 - [ ] **Phase 5: Prep-Day Engine** - Step metadata + AI-assisted backfill, seeded GA scheduler, interactive cook mode, weights panel, linter v2
 - [ ] **Phase 6: Import Pipeline & Recipe Lifecycle** - Draft/published recipes, in-app JSON import, recipe-import skill rewrite, /suggest-recipes, evolution loop
@@ -123,7 +123,7 @@ Plans:
 **Requirements**: REG-01, REG-02, REG-03, REG-04
 **Success Criteria** (what must be TRUE):
 
-  1. The product registry contains ~800 USDA Foundation Foods with plain human-readable names, default store/section, and zero duplicate names against the existing set (REG-01)
+  1. The product registry gains meaningful breadth of plain-named raw ingredients from an external catalog (USDA-linked via retained `fdc_id`), each with default store/section and zero duplicate names against the existing set (REG-01) — breadth, not a hard count; the "~800 Foundation Foods" estimate was superseded in discussion (Phase 3 CONTEXT D-01: Foundation Foods alone yields <150 net-new)
   2. Searching for a product on the registry page, in the recipe editor, or in quick-create tolerates typos and reordered words — "garbonzo" finds "garbanzo," "paste tomato" finds "tomato paste" (REG-02)
   3. Quick-create offers a "Search USDA" mode to pull in an item not already in the seeded set, on demand (REG-03)
   4. Seeded products carry nutrition fields in the background (FDC ID, macros) with no user-facing nutrition UI yet (REG-04)

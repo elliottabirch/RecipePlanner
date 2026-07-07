@@ -29,7 +29,7 @@ Requirements for milestone v1.1 Workflow Redesign. Each maps to roadmap phases. 
 
 ### Registry Seeding
 
-- [ ] **REG-01**: Product registry seeded with ~800 USDA Foundation Foods (plain names, category→section defaults, FDC IDs retained)
+- [ ] **REG-01**: Product registry seeded for meaningful breadth from an external plain-name ingredient catalog joined to USDA (plain names, category→section defaults, FDC IDs retained via name→FDC match) — breadth over a hard count; "~800 USDA Foundation Foods" superseded by Phase 3 CONTEXT D-01 (Foundation Foods alone yields <150 net-new)
 - [ ] **REG-02**: Every product-search surface uses fuzzy/token client-side search
 - [ ] **REG-03**: Quick-create offers a "Search USDA" mode for on-demand items
 - [ ] **REG-04**: Products carry nutrition-ready nullable fields (no UI)
