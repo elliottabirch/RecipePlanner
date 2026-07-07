@@ -5,15 +5,15 @@ milestone_name: Workflow Redesign
 current_phase: 04
 current_phase_name: weekly-planning-memory
 status: executing
-stopped_at: "Paused at 04-02 Task 1 human-action checkpoint (manual PocketBase schema creation on both prod :8090 and test :8091)"
-last_updated: "2026-07-07T19:10:16.478Z"
+stopped_at: Completed 04-02-PLAN.md
+last_updated: "2026-07-07T19:28:37.337Z"
 last_activity: 2026-07-07
 last_activity_desc: Phase 04 execution started
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 33
-  completed_plans: 25
+  completed_plans: 26
   percent: 50
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 04 (weekly-planning-memory) — EXECUTING
-Plan: 2 of 9
+Plan: 3 of 9
 Status: Ready to execute
 Last activity: 2026-07-07 — Phase 04 execution started
 
@@ -81,6 +81,7 @@ Progress: [██████░░░░] 56%
 | Phase 03-product-registry-seeding P04 | 21min | 3 tasks | 3 files |
 | Phase 03 P06 | 20min | 2 tasks | 1 files |
 | Phase 04-weekly-planning-memory P01 | 9min | 3 tasks | 4 files |
+| Phase 04 P02 | 20min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -143,6 +144,7 @@ Recent decisions affecting current work:
 - [Phase 03-06]: Search-USDA prefill verified live in prod persisting fdc_id + usda_data_type='sr_legacy'; bundled index's verbose SR-Legacy names deferred to usda-search-plain-rename todo
 - [Phase 04-01]: poolForSlot/TemplateSlot fixtures use inline object literals cast with as any rather than importing a not-yet-existing TemplateSlot type — matches 04-RESEARCH's Code Example convention
 - [Phase 04-01]: resolvePlanDate designed as (plan, index, baseMonday) pure function; descending-by-created/id-asc sort exercised inline in the test, not a second exported symbol
+- [Phase 04]: Live read-back verification used a self-cleaning temporary node script (recipe-planner/scripts/_tmp-verify-schema.mjs) that parses .env.local internally rather than exposing PB_SUPERUSER_* values to the agent shell — Preserves the established gitignored-creds boundary while still proving the schema live on both prod/test instances; script deleted immediately after use, zero residue confirmed via git status
 
 ### Pending Todos
 
@@ -154,8 +156,6 @@ Recent decisions affecting current work:
 - ℹ️ [Phase 5] `swap-aware-prep-naming` todo — prep-step titles + prep-state output node names don't reflect ingredient swaps yet (authored free text). Swap's input/quantity re-derivation IS correct (fixed 9cf9206). Belongs with Phase 5 step-metadata rework.
 
 *(All Phase 2 re-verification blockers resolved — UAT approved 2026-07-06, verification passed 7/7.)*
-
-- Phase 04-02 paused at Task 1 human-action checkpoint: PocketBase schema (weekly_plans.start_date/people_multiplier, week_templates, template_slots, planned_meals.template_slot) must be created manually on both prod (:8090) and test (:8091) admin UIs before Task 2's live read-back verification can run.
 
 ## Deferred Items
 
@@ -169,6 +169,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-07T19:10:16.473Z
-Stopped at: Paused at 04-02 Task 1 human-action checkpoint (manual PocketBase schema creation on both prod :8090 and test :8091)
-Resume file: 04-02-PLAN.md
+Last session: 2026-07-07T19:28:26.310Z
+Stopped at: Completed 04-02-PLAN.md
+Resume file: None
