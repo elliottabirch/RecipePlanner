@@ -22,6 +22,7 @@ import {
   type ContainerType,
   type Recipe,
 } from "../lib/types";
+import { searchProducts } from "../lib/search/product-search";
 
 interface ProductFormProps {
   // Registries
@@ -231,23 +232,11 @@ export default function ProductForm({
       return [];
     }
 
-    const searchTerm = form.name.toLowerCase().trim();
+    const candidates = existingProducts.filter(
+      (product) => !(editingProductId && product.id === editingProductId)
+    );
 
-    return existingProducts
-      .filter((product) => {
-        // Exclude the product being edited
-        if (editingProductId && product.id === editingProductId) {
-          return false;
-        }
-
-        const productName = product.name.toLowerCase();
-
-        // Check for exact match or contains
-        return (
-          productName.includes(searchTerm) || searchTerm.includes(productName)
-        );
-      })
-      .slice(0, 5); // Limit to 5 results
+    return searchProducts(form.name, candidates).slice(0, 5); // Limit to 5 results
   }, [form.name, existingProducts, editingProductId]);
 
   const hasExactMatch = useMemo(() => {

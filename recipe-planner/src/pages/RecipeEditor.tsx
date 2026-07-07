@@ -77,6 +77,7 @@ import StepNode, {
   type StepNodeType,
 } from "../components/nodes/StepNode";
 import ProductForm, { useProductForm } from "../components/ProductForm";
+import { searchProducts } from "../lib/search/product-search";
 
 const nodeTypes = {
   product: ProductNode,
@@ -123,6 +124,10 @@ export default function RecipeEditor() {
   const [productQuantity, setProductQuantity] = useState<number | "">("");
   const [productUnit, setProductUnit] = useState("");
   const [productMealDestination, setProductMealDestination] = useState("");
+  // Tracks the Autocomplete's current free-text input (shared by both the
+  // Add and Edit Product Node dialogs, only one open at a time) so
+  // noOptionsText can render the dynamic "No products match ..." copy.
+  const [productSearchInput, setProductSearchInput] = useState("");
 
   // Inline product creation
   const [creatingProduct, setCreatingProduct] = useState(false);
@@ -902,6 +907,17 @@ export default function RecipeEditor() {
                 value={selectedProduct}
                 onChange={(_, newValue) => setSelectedProduct(newValue)}
                 getOptionLabel={(option) => option.name}
+                filterOptions={(options, { inputValue }) =>
+                  searchProducts(inputValue, options)
+                }
+                noOptionsText={
+                  productSearchInput
+                    ? `No products match "${productSearchInput}"`
+                    : "No options"
+                }
+                onInputChange={(_, newInputValue) =>
+                  setProductSearchInput(newInputValue)
+                }
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -1146,6 +1162,17 @@ export default function RecipeEditor() {
             value={selectedProduct}
             onChange={(_, newValue) => setSelectedProduct(newValue)}
             getOptionLabel={(option) => option.name}
+            filterOptions={(options, { inputValue }) =>
+              searchProducts(inputValue, options)
+            }
+            noOptionsText={
+              productSearchInput
+                ? `No products match "${productSearchInput}"`
+                : "No options"
+            }
+            onInputChange={(_, newInputValue) =>
+              setProductSearchInput(newInputValue)
+            }
             renderInput={(params) => (
               <TextField {...params} label="Product" margin="dense" fullWidth />
             )}

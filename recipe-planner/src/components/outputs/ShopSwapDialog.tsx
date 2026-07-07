@@ -31,6 +31,7 @@ import {
 } from "../../lib/shopping-mapping";
 import { UNIT_DIMENSIONS, type Unit } from "../../lib/units";
 import { QuickCreateProductDialog } from "./QuickCreateProductDialog";
+import { searchProducts } from "../../lib/search/product-search";
 
 const UNIT_OPTIONS = Object.keys(UNIT_DIMENSIONS) as Unit[];
 
@@ -91,6 +92,9 @@ export function ShopSwapDialog({
   const [replacementProduct, setReplacementProduct] = useState<Product | null>(
     null
   );
+  // Tracks the replacement-product Autocomplete's free-text input so
+  // noOptionsText can render the dynamic "No products match ..." copy.
+  const [replacementSearchInput, setReplacementSearchInput] = useState("");
   const [extraProducts, setExtraProducts] = useState<Product[]>([]);
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -301,6 +305,17 @@ export function ShopSwapDialog({
                 onChange={(_, newValue) => setReplacementProduct(newValue)}
                 getOptionLabel={(option) => option.name}
                 groupBy={(option) => option.type}
+                filterOptions={(options, { inputValue }) =>
+                  searchProducts(inputValue, options)
+                }
+                noOptionsText={
+                  replacementSearchInput
+                    ? `No products match "${replacementSearchInput}"`
+                    : "No options"
+                }
+                onInputChange={(_, newInputValue) =>
+                  setReplacementSearchInput(newInputValue)
+                }
                 renderInput={(params) => (
                   <TextField
                     {...params}

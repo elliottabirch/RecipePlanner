@@ -41,6 +41,7 @@ import type {
 } from "../../lib/types";
 import ProductForm, { useProductForm } from "../../components/ProductForm";
 import { runLint, type LintFinding } from "../../lib/linter";
+import { searchProducts } from "../../lib/search/product-search";
 
 interface ProductExpanded extends Product {
   expand?: {
@@ -97,12 +98,7 @@ export default function Products() {
 
   // Filter items based on search query
   const filteredItems = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return items;
-    }
-
-    const query = searchQuery.toLowerCase();
-    return items.filter((item) => item.name.toLowerCase().includes(query));
+    return searchProducts(searchQuery, items);
   }, [items, searchQuery]);
 
   const loadItems = async () => {
