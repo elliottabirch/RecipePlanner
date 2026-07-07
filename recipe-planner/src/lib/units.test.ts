@@ -6,6 +6,7 @@ import {
   normalizeUnit,
   promoteUnit,
   chooseDisplayUnit,
+  scaleQuantity,
   type Unit,
 } from "./units";
 
@@ -141,5 +142,38 @@ describe("units.ts — display-unit selection (D-10)", () => {
     // metric-mass promotion is kept (500 g stays under 1 kg) — never "500 cup".
     expect(result.unit).toBe("g");
     expect(result.quantity).toBeCloseTo(500);
+  });
+});
+
+// ============================================================================
+// Wave 0 RED scaffold (04-01-PLAN.md Task 2). `scaleQuantity` is not yet
+// exported from ./units — this block is expected to fail until 04-03
+// (D-04 shared rounding helper) lands. See 04-RESEARCH.md Pattern 3.
+// ============================================================================
+describe("units.ts — scaleQuantity (D-04 discrete/continuous rounding)", () => {
+  it("continuous mass unit returns exact qty*factor, including fractional results", () => {
+    expect(scaleQuantity(3, 0.5, "g")).toBeCloseTo(1.5);
+  });
+
+  it("continuous volume unit returns exact qty*factor, including fractional results", () => {
+    expect(scaleQuantity(3, 0.5, "cup")).toBeCloseTo(1.5);
+  });
+
+  it("each-dimension unit ceils (never under-buy an indivisible item)", () => {
+    expect(scaleQuantity(3, 0.5, "each")).toBe(2);
+  });
+
+  it("the literal 'discrete' third arg ceils regardless of the unit's own dimension", () => {
+    // Container-instance counts (Pattern 3 category 2) are always
+    // integer-conceptual, even for a continuous-mass/volume product.
+    expect(scaleQuantity(3, 0.5, "discrete")).toBe(2);
+  });
+
+  it("documents the deliberate ceil on container float drift (2 * 1.0000000001 rounds up to 3)", () => {
+    expect(scaleQuantity(2, 1.0000000001, "discrete")).toBe(3);
+  });
+
+  it("exact integers stay put (2 * 1 discrete does not spuriously round up)", () => {
+    expect(scaleQuantity(2, 1, "discrete")).toBe(2);
   });
 });
