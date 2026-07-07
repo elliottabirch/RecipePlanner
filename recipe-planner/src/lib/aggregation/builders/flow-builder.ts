@@ -8,6 +8,7 @@ import {
   createProductKey,
   shouldCreateInstances,
 } from "../utils/product-utils";
+import { scaleQuantity } from "../../units";
 
 // ============================================================================
 // Flow Connection Builder Functions
@@ -35,7 +36,7 @@ export function createProductToStepFlows(
 
     if (shouldCreateInstances(product.type)) {
       // Create flows for all instances
-      const instances = (node.quantity || 1) * mealCount;
+      const instances = scaleQuantity(node.quantity || 1, mealCount, "discrete");
       for (let i = 0; i < instances; i++) {
         const productKey = createProductKey(
           input.productId,
@@ -77,7 +78,7 @@ export function createStepToProductFlows(
 
     if (shouldCreateInstances(product.type)) {
       // Create flows for all instances
-      const instances = (node.quantity || 1) * mealCount;
+      const instances = scaleQuantity(node.quantity || 1, mealCount, "discrete");
       for (let i = 0; i < instances; i++) {
         const productKey = createProductKey(
           output.productId,

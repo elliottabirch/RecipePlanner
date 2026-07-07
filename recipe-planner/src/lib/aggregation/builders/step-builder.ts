@@ -5,7 +5,7 @@ import type {
   AggregatedFlowStep,
   ExpandedProductNode,
 } from "../types.js";
-import { canConvert, type Unit } from "../../units";
+import { canConvert, scaleQuantity, type Unit } from "../../units";
 import {
   createStepSignature,
   shouldIncludeInBatchPrep,
@@ -49,7 +49,7 @@ export function extractStepInputs(
         productName: product.name,
         productType: product.type,
         storageLocation: determineStorageLocation(product),
-        quantity: (node.quantity || 0) * mealCount,
+        quantity: scaleQuantity(node.quantity || 0, mealCount, node.unit as Unit),
         unit: node.unit || "",
       };
     })
@@ -83,7 +83,7 @@ export function extractStepOutputs(
       return {
         productId: product.id,
         productName: product.name,
-        quantity: (node.quantity || 0) * mealCount,
+        quantity: scaleQuantity(node.quantity || 0, mealCount, node.unit as Unit),
         unit: node.unit || "",
       };
     })
@@ -193,10 +193,11 @@ export function addOrMergeStep(
 export function processRecipeSteps(
   recipeData: RecipeGraphData,
   plannedMeal: PlannedMealWithRecipe,
-  steps: Map<string, AggregatedFlowStep>
+  steps: Map<string, AggregatedFlowStep>,
+  peopleMultiplier: number = 1
 ): void {
   const recipeName = recipeData.recipe.name;
-  const mealCount = plannedMeal.quantity || 1;
+  const mealCount = (plannedMeal.quantity || 1) * peopleMultiplier;
 
   recipeData.steps.forEach((step) => {
     if (!shouldIncludeInBatchPrep(step)) return;

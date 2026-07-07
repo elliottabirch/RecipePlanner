@@ -5,9 +5,8 @@ import type {
   PlannedMealWithRecipe,
   AggregatedFlowProduct,
 } from "../types.js";
-import { canConvert, getDimension, type Unit } from "../../units";
+import { canConvert, getDimension, scaleQuantity, type Unit } from "../../units";
 import {
-  calculateProductQuantity,
   createProductKey,
   shouldCreateInstances,
   createMealSource,
@@ -35,9 +34,9 @@ export function buildAggregatedProduct(
   instances: number;
 } {
   const quantity = node.quantity || 0;
-  const totalQuantity = calculateProductQuantity(quantity, mealCount);
-
   const nodeUnit = node.unit || "";
+  const totalQuantity = scaleQuantity(quantity, mealCount, nodeUnit as Unit);
+
   const baseProduct: AggregatedFlowProduct = {
     productId: product.id,
     productName: product.name,
@@ -59,7 +58,7 @@ export function buildAggregatedProduct(
 
   // Determine how many instances to create
   if (shouldCreateInstances(product.type)) {
-    const instances = (node.quantity || 1) * mealCount;
+    const instances = scaleQuantity(node.quantity || 1, mealCount, "discrete");
     return {
       key: createProductKey(
         product.id,
@@ -177,10 +176,11 @@ export function addOrMergeProduct(
 export function processRecipeProducts(
   recipeData: RecipeGraphData,
   plannedMeal: PlannedMealWithRecipe,
-  products: Map<string, AggregatedFlowProduct>
+  products: Map<string, AggregatedFlowProduct>,
+  peopleMultiplier: number = 1
 ): void {
   const recipeName = recipeData.recipe.name;
-  const mealCount = plannedMeal.quantity || 1;
+  const mealCount = (plannedMeal.quantity || 1) * peopleMultiplier;
 
   recipeData.productNodes.forEach((node) => {
     const product = node.expand?.product;

@@ -168,7 +168,8 @@ export function buildPullLists(
  */
 export function buildProductFlowGraph(
   plannedMeals: PlannedMealWithRecipe[],
-  recipeData: Map<string, RecipeGraphData>
+  recipeData: Map<string, RecipeGraphData>,
+  peopleMultiplier: number = 1
 ): ProductFlowGraphData {
   const products = new Map<string, AggregatedFlowProduct>();
   const steps = new Map<string, AggregatedFlowStep>();
@@ -180,13 +181,13 @@ export function buildProductFlowGraph(
     const data = recipeData.get(meal.id);
     if (!data) return;
 
-    const mealCount = meal.quantity || 1;
+    const mealCount = (meal.quantity || 1) * peopleMultiplier;
 
     // 1. Aggregate all products
-    processRecipeProducts(data, meal, products);
+    processRecipeProducts(data, meal, products, peopleMultiplier);
 
     // 2. Aggregate all steps
-    processRecipeSteps(data, meal, steps);
+    processRecipeSteps(data, meal, steps, peopleMultiplier);
 
     // 3. Build flow connections for all steps
     steps.forEach((step) => {
