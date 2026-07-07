@@ -128,12 +128,12 @@ Plans:
   3. Quick-create offers a "Search USDA" mode to pull in an item not already in the seeded set, on demand (REG-03)
   4. Seeded products carry nutrition fields in the background (FDC ID, macros) with no user-facing nutrition UI yet (REG-04)
 
-**Plans**: 2/6 plans executed
+**Plans**: 3/6 plans executed
 
 Plans:
 **Wave 1** *(parallel — schema, search module, seed-source spike)*
 
-- [ ] 03-01-PLAN.md — Nutrition-ready schema: 8 nullable fields on products (both DBs) + Product interface + pb_schema.json re-export [REG-04]
+- [x] 03-01-PLAN.md — Nutrition-ready schema: 8 nullable fields on products (both DBs) + Product interface + pb_schema.json re-export [REG-04]
 - [x] 03-02-PLAN.md — searchProducts fuzzy module (fuse.js) + wire all 5 product-search call sites [REG-02]
 - [x] 03-03-PLAN.md — Seed-build pipeline + USDA acquisition + 50-item catalog comparison → D-01 catalog decision [REG-01]
 
@@ -203,7 +203,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6. Phases 2 and 4
 |-------|----------------|--------|-----------|
 | 1. Data Hygiene | 8/8 | Complete    | 2026-07-06 |
 | 2. Shopping State & Live Substitution | 10/10 | Complete    | 2026-07-07 |
-| 3. Product Registry Seeding | 2/6 | In Progress|  |
+| 3. Product Registry Seeding | 3/6 | In Progress|  |
 | 4. Weekly Planning Memory | 0/TBD | Not started | - |
 | 5. Prep-Day Engine | 0/TBD | Not started | - |
 | 6. Import Pipeline & Recipe Lifecycle | 0/TBD | Not started | - |
