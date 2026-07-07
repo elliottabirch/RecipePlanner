@@ -23,7 +23,7 @@ inspiration and evolution. Authoritative decision record: `plans/workflow-redesi
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Data Hygiene** - Unit-disciplined data layer: enum + canonical units, convert-or-split aggregation fix, dedup + unique index, linter v1 (completed 2026-07-06)
-- [x] **Phase 2: Shopping State & Live Substitution** - Persisted shopping state, have-N, mid-shop swap, make-at-home, quick-create, tablet touch pass (code complete; blocked on end-of-phase human UAT) (completed 2026-07-07)
+- [x] **Phase 2: Shopping State & Live Substitution** - Persisted shopping state, have-N, mid-shop swap, make-at-home, quick-create, tablet touch pass (UAT approved, verified 7/7, completed 2026-07-06)
 - [ ] **Phase 3: Product Registry Seeding** - USDA Foundation Foods seed (~800 items), fuzzy search everywhere, "Search USDA" mode
 - [ ] **Phase 4: Weekly Planning Memory** - Plan start dates, people-multiplier, tag-based slot templates, guided-fill wizard
 - [ ] **Phase 5: Prep-Day Engine** - Step metadata + AI-assisted backfill, seeded GA scheduler, interactive cook mode, weights panel, linter v2
