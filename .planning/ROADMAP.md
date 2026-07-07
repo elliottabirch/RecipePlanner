@@ -156,11 +156,34 @@ Plans:
 **Success Criteria** (what must be TRUE):
 
   1. Every weekly plan has a start date (existing plans backfilled), shown in the plan list and header (WEEK-01)
-  2. Setting a plan's people-multiplier scales shopping, batch-prep, and container quantities accordingly, with a multiplier of 1 reproducing today's output exactly (WEEK-02)
+  2. Setting a plan's people-multiplier scales shopping, batch-prep, container, and pull-list quantities accordingly (D-03 folds pull lists in), with a multiplier of 1 reproducing today's output exactly for continuous units (WEEK-02)
   3. User can define a reusable week template of tag-based slots, and tagging a recipe makes it eligible for the matching slot's pool with no other change (WEEK-03)
   4. The guided-fill wizard leads with a staples slot pre-filled from last week's picks, then walks remaining slots ordering each pool's options least-recently-planned-first (WEEK-04)
 
-**Plans**: TBD
+**Plans**: 9 plans
+
+Plans:
+**Wave 0** *(test scaffolds)*
+
+- [ ] 04-01-PLAN.md — Wave 0 Nyquist test scaffolds: LRU/pool, multiplier+D-03 pull-list regression, scaleQuantity, backfill resolver [WEEK-01, WEEK-02, WEEK-03, WEEK-04]
+
+**Wave 1** *(schema + pure aggregation core, parallel)*
+
+- [ ] 04-02-PLAN.md — Schema foundation: weekly_plans fields + week_templates/template_slots + planned_meals.template_slot (manual PB both instances) + pb_schema/types/api/sync-to-test [WEEK-01, WEEK-02, WEEK-03]
+- [ ] 04-03-PLAN.md — Multiplier core: scaleQuantity (D-04) + three-site threading + buildPullLists D-03 fix + REQUIREMENTS/phase-doc reconciliation [WEEK-02]
+
+**Wave 2** *(services, scripts, and UI surfacing — parallel, no file overlap)*
+
+- [ ] 04-04-PLAN.md — LRU history service: computeLastPlannedDates + orderPoolByLRU + poolForSlot (pure, tested) [WEEK-03, WEEK-04]
+- [ ] 04-05-PLAN.md — start_date backfill script (pure resolver + dry-run/backup, both instances) + tighten to required [WEEK-01]
+- [ ] 04-06-PLAN.md — Seed one week_templates row + template_slots (Staples-first, tag pools) idempotent script, both instances [WEEK-03]
+- [ ] 04-07-PLAN.md — Outputs.tsx: thread people_multiplier into both aggregation call sites + useMemo deps + ×N badge [WEEK-02]
+- [ ] 04-08-PLAN.md — New Plan dialog start_date + people_multiplier + list/header date display + dates helper [WEEK-01, WEEK-02]
+
+**Wave 3** *(wizard)*
+
+- [ ] 04-09-PLAN.md — WeekWizard.tsx accordion (staples pre-fill, LRU pools, off-pool add, skippable) + Fill Week launch [WEEK-03, WEEK-04]
+
 **UI hint**: yes
 
 ### Phase 5: Prep-Day Engine
@@ -204,6 +227,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6. Phases 2 and 4
 | 1. Data Hygiene | 8/8 | Complete    | 2026-07-06 |
 | 2. Shopping State & Live Substitution | 10/10 | Complete    | 2026-07-07 |
 | 3. Product Registry Seeding | 6/6 | Complete   | 2026-07-07 |
-| 4. Weekly Planning Memory | 0/TBD | Not started | - |
+| 4. Weekly Planning Memory | 0/9 | Not started | - |
 | 5. Prep-Day Engine | 0/TBD | Not started | - |
 | 6. Import Pipeline & Recipe Lifecycle | 0/TBD | Not started | - |
