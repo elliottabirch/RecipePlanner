@@ -199,6 +199,29 @@ export function promoteUnit(qty: number, unit: Unit): DisplayResult {
 }
 
 /**
+ * D-04: scale a quantity by a (possibly fractional) factor. Continuous
+ * mass/volume dimensions stay exact — fractional grams/cups are real,
+ * weighable numbers, consistent with this module's exact/reviewable
+ * aggregation stance (D-11). Discrete `each`-dimension counts get a
+ * deliberate ceil — never under-buy an indivisible item. The literal
+ * `"discrete"` marker forces the ceil regardless of the product's own
+ * unit dimension — used for container-instance counts, which are always
+ * integer-conceptual, replacing any reliance on incidental float-loop
+ * truncation (a known source of drift in this codebase).
+ */
+export function scaleQuantity(
+  qty: number,
+  factor: number,
+  unitOrForceDiscrete: Unit | "discrete"
+): number {
+  const isDiscrete =
+    unitOrForceDiscrete === "discrete" ||
+    getDimension(unitOrForceDiscrete as Unit) === "count";
+  const scaled = qty * factor;
+  return isDiscrete ? Math.ceil(scaled) : scaled;
+}
+
+/**
  * Choose the display unit for a merged aggregation line (D-10). When the
  * product's canonical_unit is set, that is always the display unit
  * (primary path) — convert the total into it. When null (edge case; the
