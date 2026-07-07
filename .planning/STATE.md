@@ -5,8 +5,8 @@ milestone_name: Workflow Redesign
 current_phase: 04
 current_phase_name: weekly-planning-memory
 status: executing
-stopped_at: Completed 04-01-PLAN.md (Wave 0 RED test scaffolds)
-last_updated: "2026-07-07T19:01:55.152Z"
+stopped_at: "Paused at 04-02 Task 1 human-action checkpoint (manual PocketBase schema creation on both prod :8090 and test :8091)"
+last_updated: "2026-07-07T19:10:16.478Z"
 last_activity: 2026-07-07
 last_activity_desc: Phase 04 execution started
 progress:
@@ -155,6 +155,8 @@ Recent decisions affecting current work:
 
 *(All Phase 2 re-verification blockers resolved — UAT approved 2026-07-06, verification passed 7/7.)*
 
+- Phase 04-02 paused at Task 1 human-action checkpoint: PocketBase schema (weekly_plans.start_date/people_multiplier, week_templates, template_slots, planned_meals.template_slot) must be created manually on both prod (:8090) and test (:8091) admin UIs before Task 2's live read-back verification can run.
+
 ## Deferred Items
 
 Items acknowledged and carried forward from previous milestone close:
@@ -167,6 +169,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-07T19:01:55.147Z
-Stopped at: Completed 04-01-PLAN.md (Wave 0 RED test scaffolds)
-Resume file: None
+Last session: 2026-07-07T19:10:16.473Z
+Stopped at: Paused at 04-02 Task 1 human-action checkpoint (manual PocketBase schema creation on both prod :8090 and test :8091)
+Resume file: 04-02-PLAN.md
