@@ -24,7 +24,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Data Hygiene** - Unit-disciplined data layer: enum + canonical units, convert-or-split aggregation fix, dedup + unique index, linter v1 (completed 2026-07-06)
 - [x] **Phase 2: Shopping State & Live Substitution** - Persisted shopping state, have-N, mid-shop swap, make-at-home, quick-create, tablet touch pass (UAT approved, verified 7/7, completed 2026-07-06)
-- [ ] **Phase 3: Product Registry Seeding** - external plain-name ingredient seed (USDA-linked via fdc_id), fuzzy search everywhere, "Search USDA" mode
+- [x] **Phase 3: Product Registry Seeding** - external plain-name ingredient seed (USDA-linked via fdc_id), fuzzy search everywhere, "Search USDA" mode (completed 2026-07-07)
 - [ ] **Phase 4: Weekly Planning Memory** - Plan start dates, people-multiplier, tag-based slot templates, guided-fill wizard
 - [ ] **Phase 5: Prep-Day Engine** - Step metadata + AI-assisted backfill, seeded GA scheduler, interactive cook mode, weights panel, linter v2
 - [ ] **Phase 6: Import Pipeline & Recipe Lifecycle** - Draft/published recipes, in-app JSON import, recipe-import skill rewrite, /suggest-recipes, evolution loop
@@ -128,7 +128,7 @@ Plans:
   3. Quick-create offers a "Search USDA" mode to pull in an item not already in the seeded set, on demand (REG-03)
   4. Seeded products carry nutrition fields in the background (FDC ID, macros) with no user-facing nutrition UI yet (REG-04)
 
-**Plans**: 5/6 plans executed
+**Plans**: 6/6 plans complete
 
 Plans:
 **Wave 1** *(parallel — schema, search module, seed-source spike)*
@@ -144,7 +144,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2)*
 
-- [ ] 03-06-PLAN.md — "Search USDA" tab in QuickCreateProductDialog (prefill name/section/fdc_id, unit manual) [REG-03]
+- [x] 03-06-PLAN.md — "Search USDA" tab in QuickCreateProductDialog (prefill name/section/fdc_id, unit manual) [REG-03]
 
 **UI hint**: yes
 
@@ -203,7 +203,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6. Phases 2 and 4
 |-------|----------------|--------|-----------|
 | 1. Data Hygiene | 8/8 | Complete    | 2026-07-06 |
 | 2. Shopping State & Live Substitution | 10/10 | Complete    | 2026-07-07 |
-| 3. Product Registry Seeding | 5/6 | In Progress|  |
+| 3. Product Registry Seeding | 6/6 | Complete   | 2026-07-07 |
 | 4. Weekly Planning Memory | 0/TBD | Not started | - |
 | 5. Prep-Day Engine | 0/TBD | Not started | - |
 | 6. Import Pipeline & Recipe Lifecycle | 0/TBD | Not started | - |
