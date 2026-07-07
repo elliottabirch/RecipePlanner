@@ -57,6 +57,16 @@ export interface Product extends BaseRecord {
   meal_slot?: "snack" | "meal";
   source_recipe?: string; // relation ID to recipes (batch prep that produces this)
   store_bought_product?: string; // relation ID to products (store-bought alternative)
+  // Nutrition-ready schema (D-07/REG-04) — nullable, no nutrition UI yet.
+  // Only fdc_id is populated at seed time; macros backfill in a later phase.
+  fdc_id?: number;
+  usda_data_type?: "foundation_food" | "sr_legacy" | "";
+  usda_category?: string;
+  nutrient_basis_g?: number;
+  kcal?: number;
+  protein_g?: number;
+  fat_g?: number;
+  carb_g?: number;
 }
 
 // Recipes
