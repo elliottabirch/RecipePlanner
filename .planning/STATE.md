@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Workflow Redesign
-current_phase: 3
-current_phase_name: product-registry-seeding
+current_phase: 04
+current_phase_name: weekly-planning-memory
 status: executing
-stopped_at: Phase 4 UI-SPEC approved
-last_updated: "2026-07-07T18:48:16.311Z"
+stopped_at: Completed 04-01-PLAN.md (Wave 0 RED test scaffolds)
+last_updated: "2026-07-07T19:01:55.152Z"
 last_activity: 2026-07-07
-last_activity_desc: Phase 3 execution started
+last_activity_desc: Phase 04 execution started
 progress:
   total_phases: 6
   completed_phases: 3
-  total_plans: 24
-  completed_plans: 24
+  total_plans: 33
+  completed_plans: 25
   percent: 50
 ---
 
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-06)
 
 **Core value:** The derived weekly outputs — shopping list and prep plan — must be trustworthy and low-friction for the real weekly shop-and-prep cycle.
-**Current focus:** Phase 3 — product-registry-seeding
+**Current focus:** Phase 04 — weekly-planning-memory
 
 ## Current Position
 
-Phase: 3 (product-registry-seeding) — EXECUTING
-Plan: 6 of 6
+Phase: 04 (weekly-planning-memory) — EXECUTING
+Plan: 2 of 9
 Status: Ready to execute
-Last activity: 2026-07-07 — Phase 3 execution started
+Last activity: 2026-07-07 — Phase 04 execution started
 
 Progress: [██████░░░░] 56%
 
@@ -80,6 +80,7 @@ Progress: [██████░░░░] 56%
 | Phase 03 P05 | 3min | 2 tasks | 5 files |
 | Phase 03-product-registry-seeding P04 | 21min | 3 tasks | 3 files |
 | Phase 03 P06 | 20min | 2 tasks | 1 files |
+| Phase 04-weekly-planning-memory P01 | 9min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -140,6 +141,8 @@ Recent decisions affecting current work:
 - [Phase 03-04]: 27 SKIP_REVIEW near-matches (onion/garlic/tomato/etc.) kept as-is per user policy: existing registry products are more specific than seed near-dupes — Resolver's default conservative behavior; no override needed
 - [Phase 03-04]: Prod registry seeded: 432 net-new raw products inserted, 49 backfilled with fdc_id/usda_data_type/usda_category, 0 failures — REG-01 completion; zero duplicate-index violations confirmed post-insert
 - [Phase 03-06]: Search-USDA prefill verified live in prod persisting fdc_id + usda_data_type='sr_legacy'; bundled index's verbose SR-Legacy names deferred to usda-search-plain-rename todo
+- [Phase 04-01]: poolForSlot/TemplateSlot fixtures use inline object literals cast with as any rather than importing a not-yet-existing TemplateSlot type — matches 04-RESEARCH's Code Example convention
+- [Phase 04-01]: resolvePlanDate designed as (plan, index, baseMonday) pure function; descending-by-created/id-asc sort exercised inline in the test, not a second exported symbol
 
 ### Pending Todos
 
@@ -164,6 +167,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-07T18:28:58.987Z
-Stopped at: Phase 4 UI-SPEC approved
-Resume file: .planning/phases/04-weekly-planning-memory/04-UI-SPEC.md
+Last session: 2026-07-07T19:01:55.147Z
+Stopped at: Completed 04-01-PLAN.md (Wave 0 RED test scaffolds)
+Resume file: None

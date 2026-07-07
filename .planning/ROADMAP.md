@@ -160,12 +160,12 @@ Plans:
   3. User can define a reusable week template of tag-based slots, and tagging a recipe makes it eligible for the matching slot's pool with no other change (WEEK-03)
   4. The guided-fill wizard leads with a staples slot pre-filled from last week's picks, then walks remaining slots ordering each pool's options least-recently-planned-first (WEEK-04)
 
-**Plans**: 9 plans
+**Plans**: 1/9 plans executed
 
 Plans:
 **Wave 0** *(test scaffolds)*
 
-- [ ] 04-01-PLAN.md — Wave 0 Nyquist test scaffolds: LRU/pool, multiplier+D-03 pull-list regression, scaleQuantity, backfill resolver [WEEK-01, WEEK-02, WEEK-03, WEEK-04]
+- [x] 04-01-PLAN.md — Wave 0 Nyquist test scaffolds: LRU/pool, multiplier+D-03 pull-list regression, scaleQuantity, backfill resolver [WEEK-01, WEEK-02, WEEK-03, WEEK-04]
 
 **Wave 1** *(schema + pure aggregation core, parallel)*
 
@@ -227,6 +227,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6. Phases 2 and 4
 | 1. Data Hygiene | 8/8 | Complete    | 2026-07-06 |
 | 2. Shopping State & Live Substitution | 10/10 | Complete    | 2026-07-07 |
 | 3. Product Registry Seeding | 6/6 | Complete   | 2026-07-07 |
-| 4. Weekly Planning Memory | 0/9 | Not started | - |
+| 4. Weekly Planning Memory | 1/9 | In Progress|  |
 | 5. Prep-Day Engine | 0/TBD | Not started | - |
 | 6. Import Pipeline & Recipe Lifecycle | 0/TBD | Not started | - |
