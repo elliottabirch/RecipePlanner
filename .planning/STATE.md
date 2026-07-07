@@ -6,14 +6,14 @@ current_phase: 3
 current_phase_name: product-registry-seeding
 status: executing
 stopped_at: Completed 03-05-PLAN.md
-last_updated: "2026-07-07T07:05:05.241Z"
+last_updated: "2026-07-07T07:37:22.526Z"
 last_activity: 2026-07-07
 last_activity_desc: Phase 3 execution started
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 24
-  completed_plans: 22
+  completed_plans: 23
   percent: 33
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 3 (product-registry-seeding) — EXECUTING
-Plan: 5 of 6
+Plan: 6 of 6
 Status: Ready to execute
 Last activity: 2026-07-07 — Phase 3 execution started
 
@@ -78,6 +78,7 @@ Progress: [██████░░░░] 56%
 | Phase 03 P03 | 1min | 2 tasks | 3 files |
 | Phase 03 P01 | 3min | 2 tasks | 3 files |
 | Phase 03 P05 | 3min | 2 tasks | 5 files |
+| Phase 03-product-registry-seeding P04 | 21min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -135,6 +136,8 @@ Recent decisions affecting current work:
 - [Phase 03]: REG-04 nutrition-ready schema landed: 8 nullable fields added to products on both DBs (idempotent script), Product interface mirrors them; density/purchase-unit fields stay deferred/unchanged
 - [Phase 03]: Bundled asset came in at 117KB gzipped (7,793 rows) — under the D-06 150-250KB target after dropping duplicate/blank-name rows
 - [Phase 03]: category-section-map.ts returns a section NAME not a live PocketBase id — id resolution against the live sections collection is deferred to Plan 06
+- [Phase 03-04]: 27 SKIP_REVIEW near-matches (onion/garlic/tomato/etc.) kept as-is per user policy: existing registry products are more specific than seed near-dupes — Resolver's default conservative behavior; no override needed
+- [Phase 03-04]: Prod registry seeded: 432 net-new raw products inserted, 49 backfilled with fdc_id/usda_data_type/usda_category, 0 failures — REG-01 completion; zero duplicate-index violations confirmed post-insert
 
 ### Pending Todos
 
@@ -159,6 +162,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-07T07:05:05.236Z
+Last session: 2026-07-07T07:36:50.202Z
 Stopped at: Completed 03-05-PLAN.md
 Resume file: None
