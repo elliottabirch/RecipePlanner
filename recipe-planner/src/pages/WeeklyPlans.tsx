@@ -61,6 +61,11 @@ import { VariantsList } from "../components/VariantsList";
 import { VariantEditorDialog } from "../components/VariantEditorDialog";
 import type { RecipeGraphData } from "../lib/aggregation";
 import { useRecipeQueue } from "../hooks/useRecipeQueue";
+import { formatWeekOf, getUpcomingMonday } from "../lib/planning/dates";
+
+// Client-side floor for people_multiplier (Security V5 / T-04-08a) — mirrors
+// the PocketBase field's own Min 0.1 constraint as defense in depth.
+const MIN_PEOPLE_MULTIPLIER = 0.1;
 
 interface PlannedMealExpanded extends PlannedMeal {
   expand?: {
@@ -95,6 +100,10 @@ export default function WeeklyPlans() {
   const [planDialogOpen, setPlanDialogOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<WeeklyPlan | null>(null);
   const [planName, setPlanName] = useState("");
+  const [planStartDate, setPlanStartDate] = useState(getUpcomingMonday());
+  const [planPeopleMultiplier, setPlanPeopleMultiplier] = useState<
+    number | ""
+  >(1);
   const [savingPlan, setSavingPlan] = useState(false);
 
   // Add meal dialog
@@ -346,9 +355,15 @@ export default function WeeklyPlans() {
     if (plan) {
       setEditingPlan(plan);
       setPlanName(plan.name || "");
+      setPlanStartDate(
+        plan.start_date ? plan.start_date.slice(0, 10) : getUpcomingMonday()
+      );
+      setPlanPeopleMultiplier(plan.people_multiplier ?? 1);
     } else {
       setEditingPlan(null);
       setPlanName("");
+      setPlanStartDate(getUpcomingMonday());
+      setPlanPeopleMultiplier(1);
     }
     setPlanDialogOpen(true);
   };
@@ -356,15 +371,26 @@ export default function WeeklyPlans() {
   const handleSavePlan = async () => {
     if (!planName.trim()) return;
 
+    // Reject/clamp people_multiplier <= 0 client-side (Security V5 / T-04-08a).
+    const rawMultiplier =
+      planPeopleMultiplier === "" ? 1 : Number(planPeopleMultiplier);
+    const safeMultiplier =
+      Number.isFinite(rawMultiplier) && rawMultiplier > 0
+        ? rawMultiplier
+        : MIN_PEOPLE_MULTIPLIER;
+
     try {
       setSavingPlan(true);
+      const payload: Partial<WeeklyPlan> = {
+        name: planName.trim(),
+        start_date: planStartDate || undefined,
+        people_multiplier: safeMultiplier,
+      };
       if (editingPlan) {
         const updated = await update<WeeklyPlan>(
           collections.weeklyPlans,
           editingPlan.id,
-          {
-            name: planName.trim(),
-          }
+          payload
         );
         setPlans((prev) =>
           prev.map((p) => (p.id === updated.id ? updated : p))
@@ -373,14 +399,17 @@ export default function WeeklyPlans() {
           setSelectedPlan(updated);
         }
       } else {
-        const created = await create<WeeklyPlan>(collections.weeklyPlans, {
-          name: planName.trim(),
-        });
+        const created = await create<WeeklyPlan>(
+          collections.weeklyPlans,
+          payload
+        );
         setPlans((prev) => [created, ...prev]);
         setSelectedPlan(created);
       }
       setPlanDialogOpen(false);
       setPlanName("");
+      setPlanStartDate(getUpcomingMonday());
+      setPlanPeopleMultiplier(1);
       setEditingPlan(null);
     } catch (err) {
       setError("Failed to save plan");
@@ -583,6 +612,7 @@ export default function WeeklyPlans() {
                 >
                   <ListItemText
                     primary={plan.name || "Unnamed Plan"}
+                    secondary={formatWeekOf(plan.start_date) || undefined}
                     sx={{ mr: 1, overflow: "hidden", textOverflow: "ellipsis" }}
                   />
                   <Box sx={{ display: "flex", flexShrink: 0 }}>
@@ -789,9 +819,16 @@ export default function WeeklyPlans() {
                 alignItems="center"
                 mb={2}
               >
-                <Typography variant="h6">
-                  {selectedPlan.name || "Unnamed Plan"}
-                </Typography>
+                <Box>
+                  <Typography variant="h6">
+                    {selectedPlan.name || "Unnamed Plan"}
+                  </Typography>
+                  {formatWeekOf(selectedPlan.start_date) && (
+                    <Typography variant="body2" color="text.secondary">
+                      {formatWeekOf(selectedPlan.start_date)}
+                    </Typography>
+                  )}
+                </Box>
                 <Button
                   variant="outlined"
                   startIcon={<AddIcon />}
@@ -972,6 +1009,29 @@ export default function WeeklyPlans() {
                 handleSavePlan();
               }
             }}
+          />
+          <TextField
+            margin="dense"
+            label="Week starting (Monday)"
+            type="date"
+            fullWidth
+            value={planStartDate}
+            onChange={(e) => setPlanStartDate(e.target.value)}
+            slotProps={{ inputLabel: { shrink: true } }}
+          />
+          <TextField
+            margin="dense"
+            label="People multiplier"
+            type="number"
+            fullWidth
+            value={planPeopleMultiplier}
+            onChange={(e) =>
+              setPlanPeopleMultiplier(
+                e.target.value === "" ? "" : Number(e.target.value)
+              )
+            }
+            inputProps={{ step: 0.5, min: 0.1 }}
+            helperText="Scales shopping, prep, containers, and pull lists (e.g. 1.5 for a guest week). Leave at 1 for normal."
           />
         </DialogContent>
         <DialogActions>
