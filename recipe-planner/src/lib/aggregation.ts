@@ -6,7 +6,7 @@ import {
   type Product,
   type InventoryItemExpanded,
 } from "./types";
-import { convert, type Unit } from "./units";
+import { convert, scaleQuantity, type Unit } from "./units";
 
 // Re-export types from aggregation module
 export type {
@@ -101,7 +101,8 @@ export function groupShoppingList(items: AggregatedProduct[]): {
  */
 export function buildPullLists(
   plannedMeals: PlannedMealWithRecipe[],
-  recipeDataMap: Map<string, RecipeGraphData>
+  recipeDataMap: Map<string, RecipeGraphData>,
+  peopleMultiplier: number = 1
 ): PullListMeal[] {
   const lists: PullListMeal[] = [];
 
@@ -136,7 +137,16 @@ export function buildPullLists(
 
         items.push({
           productName: product.name,
-          quantity: node.quantity,
+          // D-03: honors both per-meal quantity and the plan's
+          // people-multiplier — continuous units stay exact fractional,
+          // each-dimension pulls ceil (never under-pull an indivisible
+          // item). This also fixes a latent bug: quantity>1 meals were
+          // previously emitted unscaled.
+          quantity: scaleQuantity(
+            node.quantity ?? 0,
+            (meal.quantity || 1) * peopleMultiplier,
+            node.unit as Unit
+          ),
           unit: node.unit,
           containerTypeName: product.expand?.container_type?.name,
           fromStorage,
