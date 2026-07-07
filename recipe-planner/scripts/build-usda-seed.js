@@ -563,6 +563,174 @@ const HAND_CURATED_50 = [
 ];
 
 // ---------------------------------------------------------------------------
+// Full ~500-item hand-curated household-staple catalog (Plan 04, D-01/03-03
+// LOCKED decision). Authored (LLM-assisted) directly into the 8 existing
+// sections, per 03-03-SUMMARY.md's target breadth. `frozen`/`international`
+// entries are hand-assigned since neither has a USDA/category equivalent
+// (D-04). Internal exact-name duplicates (if any slipped in during authoring)
+// are dropped at build time by `dedupeByNormalizedName` — see Full Seed
+// Build below — so a stray repeat here is a safety-netted non-issue, not a
+// silent bug.
+// ---------------------------------------------------------------------------
+
+const HAND_CURATED_FULL = [
+  // produce (114)
+  ...[
+    "onion", "red onion", "white onion", "yellow onion", "sweet onion",
+    "shallot", "garlic", "ginger", "scallion", "leek", "carrot", "celery",
+    "celery root", "tomato", "cherry tomato", "roma tomato", "grape tomato",
+    "potato", "russet potato", "red potato", "yukon gold potato",
+    "sweet potato", "yam", "bell pepper", "red bell pepper",
+    "green bell pepper", "yellow bell pepper", "jalapeno pepper",
+    "serrano pepper", "poblano pepper", "habanero pepper", "spinach", "kale",
+    "romaine lettuce", "iceberg lettuce", "butter lettuce", "arugula",
+    "swiss chard", "collard greens", "broccoli", "broccolini", "cauliflower",
+    "brussels sprouts", "cabbage", "red cabbage", "napa cabbage", "bok choy",
+    "asparagus", "green beans", "snap peas", "snow peas", "zucchini",
+    "yellow squash", "butternut squash", "acorn squash", "spaghetti squash",
+    "cucumber", "eggplant", "corn on the cob", "mushroom", "cremini mushroom",
+    "portobello mushroom", "shiitake mushroom", "radish", "beet", "turnip",
+    "parsnip", "fennel", "artichoke", "avocado", "lemon", "lime", "orange",
+    "grapefruit", "apple", "banana", "pear", "peach", "plum", "nectarine",
+    "apricot", "grape", "strawberry", "blueberry", "raspberry", "blackberry",
+    "watermelon", "cantaloupe", "honeydew melon", "pineapple", "mango",
+    "kiwi", "papaya", "pomegranate", "cherry", "fig", "date", "cranberry",
+    "cilantro", "parsley", "basil", "mint", "rosemary", "thyme", "sage",
+    "dill", "chives", "oregano", "tarragon", "bay leaf", "green onion",
+    "jicama", "okra", "rutabaga",
+  ].map((name) => ({ name, section: "produce" })),
+
+  // dairy (54)
+  ...[
+    "whole milk", "2% milk", "1% milk", "skim milk", "half and half",
+    "heavy cream", "whipping cream", "buttermilk", "butter", "unsalted butter",
+    "salted butter", "margarine", "cheddar cheese", "sharp cheddar cheese",
+    "mild cheddar cheese", "mozzarella cheese", "shredded mozzarella cheese",
+    "parmesan cheese", "grated parmesan cheese", "swiss cheese",
+    "provolone cheese", "feta cheese", "goat cheese", "cream cheese",
+    "cottage cheese", "ricotta cheese", "blue cheese", "gruyere cheese",
+    "monterey jack cheese", "pepper jack cheese", "string cheese",
+    "plain yogurt", "greek yogurt", "vanilla yogurt", "strawberry yogurt",
+    "sour cream", "whipped cream", "coffee creamer", "egg", "egg white",
+    "egg substitute", "almond milk", "oat milk", "soy milk", "coconut milk",
+    "lactose free milk", "kefir", "mascarpone cheese", "queso fresco",
+    "shredded cheddar cheese", "sliced american cheese", "evaporated milk",
+    "condensed milk", "ghee",
+  ].map((name) => ({ name, section: "dairy" })),
+
+  // baking supplies (96)
+  ...[
+    "all-purpose flour", "whole wheat flour", "bread flour", "cake flour",
+    "self-rising flour", "almond flour", "cornmeal", "cornstarch",
+    "granulated sugar", "brown sugar", "light brown sugar", "dark brown sugar",
+    "powdered sugar", "confectioners sugar", "honey", "maple syrup",
+    "corn syrup", "molasses", "agave nectar", "baking soda", "baking powder",
+    "active dry yeast", "instant yeast", "vanilla extract", "almond extract",
+    "cocoa powder", "unsweetened cocoa powder", "chocolate chips",
+    "semi-sweet chocolate chips", "dark chocolate chips",
+    "white chocolate chips", "baking chocolate", "sprinkles", "food coloring",
+    "gelatin", "cream of tartar", "salt", "kosher salt", "sea salt",
+    "black pepper", "ground black pepper", "white rice", "brown rice",
+    "jasmine rice", "basmati rice", "wild rice", "quinoa", "oats",
+    "rolled oats", "steel cut oats", "instant oatmeal", "pasta", "spaghetti",
+    "penne pasta", "macaroni", "fettuccine", "linguine", "lasagna noodles",
+    "egg noodles", "couscous", "barley", "lentils", "red lentils",
+    "split peas", "black beans", "kidney beans", "pinto beans", "chickpeas",
+    "garbanzo beans", "cannellini beans", "navy beans", "black eyed peas",
+    "almonds", "walnuts", "pecans", "cashews", "peanuts", "peanut butter",
+    "almond butter", "pine nuts", "sunflower seeds", "chia seeds",
+    "flax seeds", "sesame seeds", "vegetable oil", "canola oil", "olive oil",
+    "extra virgin olive oil", "coconut oil", "sesame oil", "vinegar",
+    "balsamic vinegar", "apple cider vinegar", "white vinegar",
+    "rice vinegar", "red wine vinegar",
+  ].map((name) => ({ name, section: "baking supplies" })),
+
+  // meat (70)
+  ...[
+    "chicken breast", "boneless chicken breast", "chicken thigh",
+    "boneless chicken thigh", "chicken drumstick", "chicken wing",
+    "whole chicken", "ground chicken", "turkey breast", "ground turkey",
+    "turkey bacon", "turkey sausage", "ground beef", "lean ground beef",
+    "beef chuck roast", "beef brisket", "ribeye steak", "sirloin steak",
+    "flank steak", "skirt steak", "beef stew meat", "beef short ribs",
+    "ground pork", "pork chop", "pork tenderloin", "pork shoulder",
+    "pork loin", "bacon", "ham", "deli ham", "prosciutto", "sausage",
+    "italian sausage", "breakfast sausage", "chorizo", "hot dog", "bratwurst",
+    "lamb chop", "ground lamb", "leg of lamb", "salmon fillet", "salmon steak",
+    "tuna steak", "canned tuna", "cod fillet", "tilapia fillet", "halibut",
+    "shrimp", "jumbo shrimp", "scallops", "crab meat", "lobster tail",
+    "mussels", "clams", "ground veal", "veal cutlet", "deli turkey",
+    "deli roast beef", "deli salami", "pepperoni", "andouille sausage",
+    "chicken tenders", "chicken liver", "corned beef", "pastrami",
+    "canned salmon", "smoked salmon", "anchovies", "sardines", "duck breast",
+  ].map((name) => ({ name, section: "meat" })),
+
+  // bakery (35)
+  ...[
+    "white bread", "whole wheat bread", "sourdough bread", "multigrain bread",
+    "rye bread", "french bread", "baguette", "ciabatta bread", "brioche bread",
+    "english muffin", "bagel", "everything bagel", "dinner rolls",
+    "hamburger buns", "hot dog buns", "pita bread", "naan bread", "tortilla",
+    "flour tortilla", "corn tortilla", "croissant", "muffin",
+    "blueberry muffin", "banana bread", "biscuit", "pancake mix", "waffle",
+    "breadcrumbs", "panko breadcrumbs", "pie crust", "pizza dough",
+    "focaccia bread", "cornbread", "donut", "cinnamon roll",
+  ].map((name) => ({ name, section: "bakery" })),
+
+  // prepared meals (50)
+  ...[
+    "rotisserie chicken", "frozen pizza", "canned chicken noodle soup",
+    "canned tomato soup", "canned vegetable soup", "canned minestrone soup",
+    "canned black bean soup", "mac and cheese", "instant ramen",
+    "canned chili", "canned beef stew", "frozen lasagna", "frozen burrito",
+    "frozen chicken nuggets", "frozen fish sticks", "frozen mozzarella sticks",
+    "canned baked beans", "canned refried beans", "canned corn",
+    "canned green beans", "canned peas", "canned carrots",
+    "canned diced tomatoes", "canned crushed tomatoes", "canned tomato sauce",
+    "canned tomato paste", "marinara sauce", "alfredo sauce", "pesto sauce",
+    "bbq sauce", "ketchup", "mustard", "mayonnaise", "ranch dressing",
+    "italian dressing", "caesar dressing", "salad dressing", "hot sauce",
+    "worcestershire sauce", "teriyaki sauce", "gravy", "chicken broth",
+    "beef broth", "vegetable broth", "bouillon cubes",
+    "cream of mushroom soup", "canned clam chowder", "frozen tv dinner",
+    "frozen pot pie", "hummus",
+  ].map((name) => ({ name, section: "prepared meals" })),
+
+  // frozen (40) — D-04: no USDA/category equivalent, section assigned by hand
+  ...[
+    "frozen peas", "frozen corn", "frozen strawberries", "frozen blueberries",
+    "frozen mixed berries", "frozen mixed vegetables", "frozen broccoli",
+    "frozen cauliflower", "frozen spinach", "frozen green beans",
+    "frozen carrots", "frozen hash browns", "frozen french fries",
+    "frozen tater tots", "frozen waffles", "frozen pancakes", "frozen shrimp",
+    "frozen chicken breast", "frozen ground beef", "frozen edamame",
+    "frozen mango", "frozen pineapple", "frozen banana",
+    "frozen peach slices", "frozen raspberries", "frozen blackberries",
+    "frozen brussels sprouts", "frozen okra", "frozen bell pepper strips",
+    "frozen diced onion", "frozen stir fry vegetables", "frozen dumplings",
+    "frozen egg rolls", "frozen ice cream", "frozen sorbet",
+    "frozen popsicles", "frozen whipped topping", "frozen puff pastry",
+    "frozen pie crust", "frozen garlic bread",
+  ].map((name) => ({ name, section: "frozen" })),
+
+  // international (49) — D-04: no USDA/category equivalent, section assigned by hand
+  ...[
+    "soy sauce", "curry powder", "salsa", "curry paste", "red curry paste",
+    "green curry paste", "canned coconut milk", "fish sauce", "hoisin sauce",
+    "oyster sauce", "mirin", "sriracha", "gochujang", "miso paste", "tahini",
+    "harissa", "garam masala", "cumin seed", "ground cumin", "coriander seed",
+    "ground coriander", "turmeric", "paprika", "smoked paprika",
+    "cayenne pepper", "chili powder", "chili flakes", "five spice powder",
+    "za'atar", "sumac", "tamarind paste", "wasabi paste", "pickled ginger",
+    "nori sheets", "rice paper wrappers", "wonton wrappers",
+    "egg roll wrappers", "ramen noodles", "udon noodles", "soba noodles",
+    "rice noodles", "panang curry paste", "salsa verde", "adobo sauce",
+    "chipotle peppers in adobo", "taco seasoning", "enchilada sauce",
+    "tortilla chips", "kimchi",
+  ].map((name) => ({ name, section: "international" })),
+];
+
+// ---------------------------------------------------------------------------
 // Pipeline runner
 // ---------------------------------------------------------------------------
 
@@ -737,12 +905,77 @@ function buildComparisonReport({ offResults, offMeta, curatedResults }) {
 }
 
 // ---------------------------------------------------------------------------
+// Full seed build (Plan 04) — runs the locked hand-curated catalog through
+// the pipeline and emits scripts/data/usda-seed.json for seed-usda.js.
+// ---------------------------------------------------------------------------
+
+/** Drops any internal exact-name (case-insensitive, trimmed) duplicates from
+ *  a candidate list, keeping the first occurrence. Safety net for hand
+ *  authoring — a repeat here would otherwise make seed-usda.js attempt two
+ *  INSERTs for the same normalized name in one run (unique-index violation
+ *  on the second), since seed-usda.js resolves against a single snapshot of
+ *  existing raw products taken before any writes in that run. */
+function dedupeByNormalizedName(candidates) {
+  const seen = new Set();
+  const deduped = [];
+  let droppedCount = 0;
+  for (const c of candidates) {
+    const key = normalizeName(typeof c === "string" ? c : c.name);
+    if (seen.has(key)) {
+      droppedCount++;
+      continue;
+    }
+    seen.add(key);
+    deduped.push(c);
+  }
+  return { deduped, droppedCount };
+}
+
+/**
+ * Runs the full hand-curated catalog through the pipeline and maps each
+ * result to the final seed-row shape consumed by seed-usda.js:
+ * {name, type: "raw", storeId, sectionId, fdc_id, usda_data_type,
+ *  usda_category, canonical_unit, dimension}. `storeId`/`sectionId` are
+ * resolved by name against the live collections (Pitfall 3) — never
+ * hardcoded IDs.
+ */
+function buildFullSeedRows(ctx, sectionNameToId, storeNameToId) {
+  const { deduped, droppedCount } = dedupeByNormalizedName(HAND_CURATED_FULL);
+  console.log(
+    `  Catalog: ${HAND_CURATED_FULL.length} authored items, ${droppedCount} internal duplicate(s) dropped, ${deduped.length} unique rows`
+  );
+
+  const results = runPipeline(deduped, ctx, () => null);
+
+  return results.map((r) => ({
+    name: r.name,
+    type: "raw",
+    storeId: storeNameToId.get(r.store) ?? null,
+    sectionId: r.section ? (sectionNameToId.get(r.section) ?? null) : null,
+    fdc_id: r.fdc_id,
+    usda_data_type: r.usda_data_type || null,
+    usda_category: r.usda_category,
+    canonical_unit: r.canonical_unit,
+    dimension: r.dimension,
+  }));
+}
+
+// ---------------------------------------------------------------------------
 // Entrypoint
 // ---------------------------------------------------------------------------
 
+// --full-seed (Plan 04): run the LOCKED hand-curated catalog through the
+// pipeline and emit scripts/data/usda-seed.json. Default (no flag): the
+// original Plan 03 Task 1 catalog-comparison spike, unchanged.
+const FULL_SEED = process.argv.includes("--full-seed");
+
 async function main() {
   console.log("=".repeat(80));
-  console.log("BUILD USDA SEED — pipeline scaffolding + catalog comparison spike");
+  console.log(
+    FULL_SEED
+      ? "BUILD USDA SEED — full ~500-item hand-curated seed build (Plan 04)"
+      : "BUILD USDA SEED — pipeline scaffolding + catalog comparison spike"
+  );
   console.log(`PB (read-only): ${PB_URL}`);
   console.log("=".repeat(80));
 
@@ -771,6 +1004,37 @@ async function main() {
   );
   console.log(`  ${stores.length} stores: ${stores.map((s) => s.name).join(", ")}`);
 
+  const ctx = { foundation, foundationFuse, srLegacy, srFuse, existingRawNames };
+
+  if (FULL_SEED) {
+    console.log("\nBuilding full seed rows from the locked hand-curated catalog...");
+    const sectionNameToId = new Map(sections.map((s) => [s.name, s.id]));
+    const storeNameToId = new Map(stores.map((s) => [s.name, s.id]));
+    const seedRows = buildFullSeedRows(ctx, sectionNameToId, storeNameToId);
+
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    const seedJsonPath = path.join(DATA_DIR, "usda-seed.json");
+    fs.writeFileSync(seedJsonPath, JSON.stringify(seedRows, null, 2), "utf-8");
+
+    const withFdc = seedRows.filter((r) => r.fdc_id).length;
+    const withSection = seedRows.filter((r) => r.sectionId).length;
+    const overlapCount = HAND_CURATED_FULL.filter((c) =>
+      existingRawNames.has(normalizeName(c.name))
+    ).length;
+    console.log(`\nWrote ${seedRows.length} seed rows to: ${seedJsonPath}`);
+    console.log(
+      `  fdc_id join coverage: ${withFdc}/${seedRows.length} (${((withFdc / seedRows.length) * 100).toFixed(1)}%)`
+    );
+    console.log(`  section-mapped: ${withSection}/${seedRows.length}`);
+    console.log(
+      `  already-in-registry overlap (informational only, seed-usda.js resolves these): ${overlapCount}`
+    );
+    console.log(
+      "\nNo PocketBase writes performed by this script — seed-usda.js (Plan 04 Task 2) does the actual insert/backfill."
+    );
+    return;
+  }
+
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   // Helper artifact for Plan 04's seed-usda.js (avoids re-querying section/
   // store IDs by name on every future run of this pipeline).
@@ -790,8 +1054,6 @@ async function main() {
   console.log("\nLoading + filtering Open Food Facts categories taxonomy...");
   const { sample: offSample, totalFiltered } = loadOffCategoriesFiltered(50);
   console.log(`  ${totalFiltered} candidates after filtering; sampled ${offSample.length}`);
-
-  const ctx = { foundation, foundationFuse, srLegacy, srFuse, existingRawNames };
 
   console.log("\nRunning pipeline over OFF-filtered 50-item sample...");
   const offResults = runPipeline(offSample, ctx, (c) => c.root);
