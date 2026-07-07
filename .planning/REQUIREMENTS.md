@@ -37,7 +37,7 @@ Requirements for milestone v1.1 Workflow Redesign. Each maps to roadmap phases. 
 ### Week Memory
 
 - [ ] **WEEK-01**: Weekly plans have a start date (existing plans backfilled)
-- [ ] **WEEK-02**: A per-plan people-multiplier stacks on per-meal quantities through all aggregation outputs, including pull lists (D-03: `PULL-F1` folded in — `buildPullLists` now honors `node.quantity × (meal.quantity || 1) × peopleMultiplier`)
+- [x] **WEEK-02**: A per-plan people-multiplier stacks on per-meal quantities through all aggregation outputs, including pull lists (D-03: `PULL-F1` folded in — `buildPullLists` now honors `node.quantity × (meal.quantity || 1) × peopleMultiplier`)
 - [ ] **WEEK-03**: User can define a week template of tag-based slots (`week_templates` + `template_slots`)
 - [ ] **WEEK-04**: Guided-fill wizard leads with a staples slot pre-filled from last week and orders each pool least-recently-planned-first
 
@@ -112,7 +112,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REG-03 | Phase 3 | Complete |
 | REG-04 | Phase 3 | Complete |
 | WEEK-01 | Phase 4 | Pending |
-| WEEK-02 | Phase 4 | Pending |
+| WEEK-02 | Phase 4 | Complete |
 | WEEK-03 | Phase 4 | Pending |
 | WEEK-04 | Phase 4 | Pending |
 | PREP-01 | Phase 5 | Pending |
