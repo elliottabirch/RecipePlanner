@@ -5,8 +5,8 @@ milestone_name: Workflow Redesign
 current_phase: 04
 current_phase_name: weekly-planning-memory
 status: executing
-stopped_at: Completed 04-08-PLAN.md
-last_updated: "2026-07-07T19:50:22.362Z"
+stopped_at: Paused at 04-05 Task 2/3 human-action checkpoint (Task 1 committed; dry-run reviewed, awaiting apply approval)
+last_updated: "2026-07-07T19:55:33.427Z"
 last_activity: 2026-07-07
 last_activity_desc: Phase 04 execution started
 progress:
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 04 (weekly-planning-memory) — EXECUTING
-Plan: 6 of 9
-Status: Ready to execute
-Last activity: 2026-07-07 — Phase 04 execution started
+Plan: 6 of 9 (04-05)
+Status: PAUSED — human-action checkpoint (Task 2/3: backfill dry-run reviewed on prod+test, awaiting apply approval)
+Last activity: 2026-07-07 — 04-05 Task 1 (backfill-plan-dates.js resolver) committed; dry-run executed on both instances
 
 Progress: [██████░░░░] 56%
 
@@ -153,6 +153,7 @@ Recent decisions affecting current work:
 - [Phase 04-weekly-planning-memory]: planning-history LRU module implemented per 04-RESEARCH.md Pattern 5/6 verbatim; poolForSlot typed against Pick<TemplateSlot, 'pool_tags'> for narrow dependency surface — Matches history.test.ts's exact import contract with no deviation needed
 - [Phase 04-08]: people_multiplier <= 0 is clamped to 0.1 (not reset to 1) at save time in the New Plan dialog — matches the PocketBase field's own Min 0.1 constraint, defense-in-depth for T-04-08a
 - [Phase 04-08]: formatWeekOf renders dates in UTC to avoid a local-timezone off-by-one-day shift on the date-only start_date value
+- [Phase 04-05]: backfill-plan-dates.js resolvePlanDate implements 'Week of <Month> <Day>, <Year>' regex parse (rounds back to that week's Monday) with a descending-Mondays-by-created-order fallback (id-asc tie-break) — Dry-run against both prod/test found exactly 1 undated plan on each instance, name '6/22', which does not match the Week-of pattern and falls back to this-week's Monday rather than a June 22 date the name implies -- flagged for human review before apply
 
 ### Pending Todos
 
@@ -177,6 +178,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-07T19:50:22.356Z
-Stopped at: Completed 04-08-PLAN.md
-Resume file: None
+Last session: 2026-07-07T19:55:33.421Z
+Stopped at: Paused at 04-05 Task 2/3 human-action checkpoint (Task 1 committed; dry-run reviewed, awaiting apply approval)
+Resume file: .planning/phases/04-weekly-planning-memory/04-05-PLAN.md
