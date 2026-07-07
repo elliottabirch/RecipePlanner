@@ -160,7 +160,7 @@ Plans:
   3. User can define a reusable week template of tag-based slots, and tagging a recipe makes it eligible for the matching slot's pool with no other change (WEEK-03)
   4. The guided-fill wizard leads with a staples slot pre-filled from last week's picks, then walks remaining slots ordering each pool's options least-recently-planned-first (WEEK-04)
 
-**Plans**: 4/9 plans executed
+**Plans**: 5/9 plans executed
 
 Plans:
 **Wave 0** *(test scaffolds)*
@@ -178,7 +178,7 @@ Plans:
 - [ ] 04-05-PLAN.md — start_date backfill script (pure resolver + dry-run/backup, both instances) + tighten to required [WEEK-01]
 - [ ] 04-06-PLAN.md — Seed one week_templates row + template_slots (Staples-first, tag pools) idempotent script, both instances [WEEK-03]
 - [ ] 04-07-PLAN.md — Outputs.tsx: thread people_multiplier into both aggregation call sites + useMemo deps + ×N badge [WEEK-02]
-- [ ] 04-08-PLAN.md — New Plan dialog start_date + people_multiplier + list/header date display + dates helper [WEEK-01, WEEK-02]
+- [x] 04-08-PLAN.md — New Plan dialog start_date + people_multiplier + list/header date display + dates helper [WEEK-01, WEEK-02]
 
 **Wave 3** *(wizard)*
 
@@ -227,6 +227,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6. Phases 2 and 4
 | 1. Data Hygiene | 8/8 | Complete    | 2026-07-06 |
 | 2. Shopping State & Live Substitution | 10/10 | Complete    | 2026-07-07 |
 | 3. Product Registry Seeding | 6/6 | Complete   | 2026-07-07 |
-| 4. Weekly Planning Memory | 4/9 | In Progress|  |
+| 4. Weekly Planning Memory | 5/9 | In Progress|  |
 | 5. Prep-Day Engine | 0/TBD | Not started | - |
 | 6. Import Pipeline & Recipe Lifecycle | 0/TBD | Not started | - |

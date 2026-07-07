@@ -5,15 +5,15 @@ milestone_name: Workflow Redesign
 current_phase: 04
 current_phase_name: weekly-planning-memory
 status: executing
-stopped_at: Completed 04-04-PLAN.md
-last_updated: "2026-07-07T19:43:08.314Z"
+stopped_at: Completed 04-08-PLAN.md
+last_updated: "2026-07-07T19:50:22.362Z"
 last_activity: 2026-07-07
 last_activity_desc: Phase 04 execution started
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 33
-  completed_plans: 28
+  completed_plans: 29
   percent: 50
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 04 (weekly-planning-memory) — EXECUTING
-Plan: 5 of 9
+Plan: 6 of 9
 Status: Ready to execute
 Last activity: 2026-07-07 — Phase 04 execution started
 
@@ -84,6 +84,7 @@ Progress: [██████░░░░] 56%
 | Phase 04 P02 | 20min | 2 tasks | 4 files |
 | Phase 04 P03 | 6min | 3 tasks | 7 files |
 | Phase 04-weekly-planning-memory P04 | 6min | 1 tasks | 1 files |
+| Phase 04 P08 | 12min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -150,6 +151,8 @@ Recent decisions affecting current work:
 - [Phase 04-03]: scaleQuantity(qty, factor, unitOrForceDiscrete) centralizes D-04 rounding -- continuous mass/volume exact, each-dimension/discrete marker ceils; used at all product-total, container-instance, and step in/out call sites
 - [Phase 04-03]: buildPullLists D-03 fix bundles a feature (peopleMultiplier support) with a latent correctness fix (existing quantity>1 meals were previously unscaled) -- covered by a dedicated regression test, not folded into the multiplier=1 no-op assertion
 - [Phase 04-weekly-planning-memory]: planning-history LRU module implemented per 04-RESEARCH.md Pattern 5/6 verbatim; poolForSlot typed against Pick<TemplateSlot, 'pool_tags'> for narrow dependency surface — Matches history.test.ts's exact import contract with no deviation needed
+- [Phase 04-08]: people_multiplier <= 0 is clamped to 0.1 (not reset to 1) at save time in the New Plan dialog — matches the PocketBase field's own Min 0.1 constraint, defense-in-depth for T-04-08a
+- [Phase 04-08]: formatWeekOf renders dates in UTC to avoid a local-timezone off-by-one-day shift on the date-only start_date value
 
 ### Pending Todos
 
@@ -174,6 +177,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-07T19:43:08.309Z
-Stopped at: Completed 04-04-PLAN.md
+Last session: 2026-07-07T19:50:22.356Z
+Stopped at: Completed 04-08-PLAN.md
 Resume file: None
