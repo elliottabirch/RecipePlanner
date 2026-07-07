@@ -245,8 +245,14 @@ export function applyVariantOverrides(
     if (orphanedIds.has(edge.source)) return false;
     // Remove if target step is orphaned
     if (orphanedIds.has(edge.target)) return false;
-    // Remove if source is a replaced node (it no longer has upstream inputs)
-    if (replacedNodeIds.has(edge.source)) return false;
+    // NOTE: a replaced node KEEPS its outgoing product->step edges. The
+    // replacement product must still feed whatever the original fed — for a
+    // raw-ingredient swap (sweet potato -> potato) this re-points the prep
+    // step's input to the new product; for a made-component -> store-bought
+    // swap the upstream production chain is dropped via the stepToProductEdges
+    // filter below + orphan removal, but the downstream connection stays.
+    // (Previously this severed the edge, disconnecting the swap from all
+    // downstream prep/pull outputs — SHOP-03 re-derivation gap.)
     return true;
   });
   

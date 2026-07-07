@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ProductType, type Product } from "../../types";
+import { ProductType, StepType, type Product } from "../../types";
 import type { ExpandedProductNode, RecipeGraphData } from "../types";
 import { applyVariantOverrides, type VariantOverride } from "./variant-utils";
 
@@ -150,5 +150,114 @@ describe("applyVariantOverrides — substitute quantity/unit threading (SHOP-03,
     expect(replacementNode!.meal_destination).toBe("freezer");
     expect(replacementNode!.expand?.product?.id).toBe("canola-oil");
     expect(replacementNode!.expand?.product?.name).toBe("Canola Oil");
+  });
+});
+
+describe("applyVariantOverrides — raw-ingredient swap keeps downstream prep edges (SHOP-03 gap)", () => {
+  // A raw ingredient node (sweet potato) feeds a prep step (dice), which
+  // outputs a diced node. Swapping the raw ingredient must KEEP the
+  // product->step edge so the prep step re-derives with the new product as
+  // its input — it must NOT sever the swapped node from the step it feeds.
+  function makeRawFeedsPrepData(): RecipeGraphData {
+    const rawNode: ExpandedProductNode = {
+      id: "sp-node",
+      created: "",
+      updated: "",
+      collectionId: "recipe_product_nodes",
+      collectionName: "recipe_product_nodes",
+      recipe: "recipe-1",
+      product: "sweet-potato",
+      quantity: 2,
+      unit: "each",
+      expand: {
+        product: makeProduct({ id: "sweet-potato", name: "sweet potato" }),
+      },
+    };
+    const dicedNode: ExpandedProductNode = {
+      id: "diced-node",
+      created: "",
+      updated: "",
+      collectionId: "recipe_product_nodes",
+      collectionName: "recipe_product_nodes",
+      recipe: "recipe-1",
+      product: "diced-sweet-potato",
+      quantity: 2,
+      unit: "each",
+      expand: {
+        product: makeProduct({
+          id: "diced-sweet-potato",
+          name: "diced sweet potato",
+        }),
+      },
+    };
+    return {
+      recipe: {
+        id: "recipe-1",
+        created: "",
+        updated: "",
+        collectionId: "recipes",
+        collectionName: "recipes",
+        name: "Roasted Sweet Potato",
+      } as RecipeGraphData["recipe"],
+      productNodes: [rawNode, dicedNode],
+      steps: [
+        {
+          id: "dice-step",
+          created: "",
+          updated: "",
+          collectionId: "recipe_steps",
+          collectionName: "recipe_steps",
+          recipe: "recipe-1",
+          name: "dice sweet potato (large dice)",
+          step_type: StepType.Prep,
+        },
+      ],
+      productToStepEdges: [
+        {
+          id: "e1",
+          created: "",
+          updated: "",
+          collectionId: "product_to_step_edges",
+          collectionName: "product_to_step_edges",
+          recipe: "recipe-1",
+          source: "sp-node",
+          target: "dice-step",
+        },
+      ],
+      stepToProductEdges: [
+        {
+          id: "e2",
+          created: "",
+          updated: "",
+          collectionId: "step_to_product_edges",
+          collectionName: "step_to_product_edges",
+          recipe: "recipe-1",
+          source: "dice-step",
+          target: "diced-node",
+        },
+      ],
+    };
+  }
+
+  it("keeps the product->step edge so the swapped ingredient still feeds the prep step", () => {
+    const recipeData = makeRawFeedsPrepData();
+    const override: VariantOverride = {
+      originalNodeId: "sp-node",
+      replacementProduct: makeProduct({ id: "potato", name: "potato (russet)" }),
+    };
+
+    const result = applyVariantOverrides(recipeData, [override]);
+
+    // The dice step must survive and still receive the swapped node as input.
+    expect(result.steps.some((s) => s.id === "dice-step")).toBe(true);
+    const inputEdge = result.productToStepEdges.find(
+      (e) => e.source === "sp-node" && e.target === "dice-step"
+    );
+    expect(inputEdge).toBeDefined();
+
+    // And that node now resolves to the replacement product, so the step's
+    // derived input re-derives to potato rather than sweet potato.
+    const swappedNode = result.productNodes.find((n) => n.id === "sp-node");
+    expect(swappedNode?.expand?.product?.name).toBe("potato (russet)");
   });
 });
