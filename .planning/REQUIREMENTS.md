@@ -43,11 +43,11 @@ Requirements for milestone v1.1 Workflow Redesign. Each maps to roadmap phases. 
 
 ### Prep-Day Engine
 
-- [x] **PREP-01**: Recipe steps carry `active_minutes`, `passive_minutes`, `instructions`, and a controlled `prep_action` vocabulary
+- [ ] **PREP-01**: Recipe steps carry `active_minutes`, `passive_minutes`, `instructions`, and a controlled `prep_action` vocabulary
 - [ ] **PREP-02**: The 185 existing steps are backfilled via an AI-assisted offline pass, reviewed in batches
-- [x] **PREP-03**: A seeded, deterministic GA scheduler orders the merged week-graph with a resource model (oven racks + temperature, burners, singleton appliances)
-- [x] **PREP-04**: Interactive tablet cook mode shows now/next cards, readiness states, scaled quantities + instructions, and recomputes on check-off
-- [x] **PREP-05**: User can tune scheduler weights in-app and regenerate the plan
+- [ ] **PREP-03**: A seeded, deterministic GA scheduler orders the merged week-graph with a resource model (oven racks + temperature, burners, singleton appliances)
+- [ ] **PREP-04**: Interactive tablet cook mode shows now/next cards, readiness states, scaled quantities + instructions, and recomputes on check-off
+- [ ] **PREP-05**: User can tune scheduler weights in-app and regenerate the plan
 - [ ] **PREP-06**: Linter v2 flags the 3 step-metadata/pull-step rules on demand
 
 ### Import & Lifecycle
@@ -115,11 +115,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | WEEK-02 | Phase 4 | Complete |
 | WEEK-03 | Phase 4 | Complete |
 | WEEK-04 | Phase 4 | Complete |
-| PREP-01 | Phase 5 | Complete |
+| PREP-01 | Phase 5 | Pending |
 | PREP-02 | Phase 5 | Pending |
-| PREP-03 | Phase 5 | Complete |
-| PREP-04 | Phase 5 | Complete |
-| PREP-05 | Phase 5 | Complete |
+| PREP-03 | Phase 5 | Pending |
+| PREP-04 | Phase 5 | Pending |
+| PREP-05 | Phase 5 | Pending |
 | PREP-06 | Phase 5 | Pending |
 | IMP-01 | Phase 6 | Pending |
 | IMP-02 | Phase 6 | Pending |
