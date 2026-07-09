@@ -90,7 +90,7 @@
       "CREATE INDEX `idx_mfas_collectionRef_recordRef` ON `_mfas` (collectionRef,recordRef)"
     ],
     "created": "2026-01-02 00:23:36.538Z",
-    "updated": "2026-07-06 21:36:41.069Z",
+    "updated": "2026-07-09 22:17:21.598Z",
     "system": true
   },
   {
@@ -197,7 +197,7 @@
       "CREATE INDEX `idx_otps_collectionRef_recordRef` ON `_otps` (collectionRef, recordRef)"
     ],
     "created": "2026-01-02 00:23:36.543Z",
-    "updated": "2026-07-06 21:36:41.075Z",
+    "updated": "2026-07-09 22:17:21.613Z",
     "system": true
   },
   {
@@ -306,7 +306,7 @@
       "CREATE UNIQUE INDEX `idx_externalAuths_collection_provider` ON `_externalAuths` (collectionRef, provider, providerId)"
     ],
     "created": "2026-01-02 00:23:36.546Z",
-    "updated": "2026-07-06 21:36:41.081Z",
+    "updated": "2026-07-09 22:17:21.632Z",
     "system": true
   },
   {
@@ -400,7 +400,7 @@
       "CREATE UNIQUE INDEX `idx_authOrigins_unique_pairs` ON `_authOrigins` (collectionRef, recordRef, fingerprint)"
     ],
     "created": "2026-01-02 00:23:36.550Z",
-    "updated": "2026-07-06 21:36:41.087Z",
+    "updated": "2026-07-09 22:17:21.654Z",
     "system": true
   },
   {
@@ -509,7 +509,7 @@
       "CREATE UNIQUE INDEX `idx_email_pbc_3142635823` ON `_superusers` (`email`) WHERE `email` != ''"
     ],
     "created": "2026-01-02 00:23:36.561Z",
-    "updated": "2026-07-06 21:36:41.092Z",
+    "updated": "2026-07-09 22:17:21.672Z",
     "system": true,
     "authRule": "",
     "manageRule": null,
@@ -718,7 +718,7 @@
       "CREATE UNIQUE INDEX `idx_email__pb_users_auth_` ON `users` (`email`) WHERE `email` != ''"
     ],
     "created": "2026-01-02 00:23:36.577Z",
-    "updated": "2026-07-06 21:36:41.098Z",
+    "updated": "2026-07-09 22:17:21.691Z",
     "system": false,
     "authRule": "",
     "manageRule": null,
@@ -828,7 +828,7 @@
     ],
     "indexes": [],
     "created": "2026-01-02 00:34:39.557Z",
-    "updated": "2026-07-06 21:36:41.105Z",
+    "updated": "2026-07-09 22:17:21.709Z",
     "system": false
   },
   {
@@ -872,7 +872,7 @@
     ],
     "indexes": [],
     "created": "2026-01-02 00:35:02.231Z",
-    "updated": "2026-07-06 21:36:41.113Z",
+    "updated": "2026-07-09 22:17:21.725Z",
     "system": false
   },
   {
@@ -916,7 +916,7 @@
     ],
     "indexes": [],
     "created": "2026-01-02 00:52:20.375Z",
-    "updated": "2026-07-06 21:36:41.119Z",
+    "updated": "2026-07-09 22:17:21.740Z",
     "system": false
   },
   {
@@ -974,7 +974,7 @@
     ],
     "indexes": [],
     "created": "2026-01-02 00:52:20.390Z",
-    "updated": "2026-07-06 21:36:41.127Z",
+    "updated": "2026-07-09 22:17:21.754Z",
     "system": false
   },
   {
@@ -1046,7 +1046,7 @@
     ],
     "indexes": [],
     "created": "2026-01-02 00:52:20.401Z",
-    "updated": "2026-07-06 21:36:41.136Z",
+    "updated": "2026-07-09 22:17:21.768Z",
     "system": false
   },
   {
@@ -1113,7 +1113,7 @@
     ],
     "indexes": [],
     "created": "2026-01-02 00:52:20.411Z",
-    "updated": "2026-07-06 21:36:41.142Z",
+    "updated": "2026-07-09 22:17:21.778Z",
     "system": false
   },
   {
@@ -1437,7 +1437,7 @@
       "CREATE UNIQUE INDEX idx_products_name_type_ci ON products (name COLLATE NOCASE, type)"
     ],
     "created": "2026-01-02 00:55:13.212Z",
-    "updated": "2026-07-07 06:49:21.365Z",
+    "updated": "2026-07-09 22:17:21.786Z",
     "system": false
   },
   {
@@ -1493,7 +1493,7 @@
     ],
     "indexes": [],
     "created": "2026-01-02 00:55:42.524Z",
-    "updated": "2026-07-06 21:36:41.156Z",
+    "updated": "2026-07-09 22:17:21.796Z",
     "system": false
   },
   {
@@ -1613,7 +1613,7 @@
     ],
     "indexes": [],
     "created": "2026-01-02 00:55:42.530Z",
-    "updated": "2026-07-06 21:36:41.161Z",
+    "updated": "2026-07-09 22:17:21.802Z",
     "system": false
   },
   {
@@ -1718,11 +1718,109 @@
         "required": false,
         "system": false,
         "type": "number"
+      },
+      {
+        "hidden": false,
+        "id": "number_active_minutes",
+        "max": null,
+        "min": null,
+        "name": "active_minutes",
+        "onlyInt": false,
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "number"
+      },
+      {
+        "hidden": false,
+        "id": "number_passive_minutes",
+        "max": null,
+        "min": null,
+        "name": "passive_minutes",
+        "onlyInt": false,
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "number"
+      },
+      {
+        "autogeneratePattern": "",
+        "hidden": false,
+        "id": "text_instructions",
+        "max": 0,
+        "min": 0,
+        "name": "instructions",
+        "pattern": "",
+        "presentable": false,
+        "primaryKey": false,
+        "required": false,
+        "system": false,
+        "type": "text"
+      },
+      {
+        "hidden": false,
+        "id": "select_prep_action",
+        "maxSelect": 1,
+        "name": "prep_action",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "select",
+        "values": [
+          "sliced",
+          "diced",
+          "minced",
+          "chopped",
+          "grated",
+          "shredded"
+        ]
+      },
+      {
+        "hidden": false,
+        "id": "select_resource",
+        "maxSelect": 1,
+        "name": "resource",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "select",
+        "values": [
+          "oven",
+          "stovetop",
+          "blender",
+          "food_processor",
+          "instant_pot",
+          "none"
+        ]
+      },
+      {
+        "hidden": false,
+        "id": "number_oven_temp_f",
+        "max": null,
+        "min": null,
+        "name": "oven_temp_f",
+        "onlyInt": false,
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "number"
+      },
+      {
+        "hidden": false,
+        "id": "number_rack_slots",
+        "max": null,
+        "min": null,
+        "name": "rack_slots",
+        "onlyInt": false,
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "number"
       }
     ],
     "indexes": [],
     "created": "2026-01-02 00:55:42.538Z",
-    "updated": "2026-07-06 21:36:41.168Z",
+    "updated": "2026-07-09 23:47:25.267Z",
     "system": false
   },
   {
@@ -1791,7 +1889,7 @@
     ],
     "indexes": [],
     "created": "2026-01-02 00:55:52.690Z",
-    "updated": "2026-07-06 21:36:41.174Z",
+    "updated": "2026-07-09 22:17:21.815Z",
     "system": false
   },
   {
@@ -1860,7 +1958,7 @@
     ],
     "indexes": [],
     "created": "2026-01-02 00:55:52.700Z",
-    "updated": "2026-07-06 21:36:41.179Z",
+    "updated": "2026-07-09 22:17:21.821Z",
     "system": false
   },
   {
@@ -1977,7 +2075,350 @@
     ],
     "indexes": [],
     "created": "2026-01-02 00:55:52.706Z",
-    "updated": "2026-07-06 21:36:41.184Z",
+    "updated": "2026-07-09 22:17:21.827Z",
+    "system": false
+  },
+  {
+    "id": "pbc_inventory_items",
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "",
+    "updateRule": "",
+    "deleteRule": "",
+    "name": "inventory_items",
+    "type": "base",
+    "fields": [
+      {
+        "autogeneratePattern": "[a-z0-9]{15}",
+        "hidden": false,
+        "id": "text3208210256",
+        "max": 15,
+        "min": 15,
+        "name": "id",
+        "pattern": "^[a-z0-9]+$",
+        "presentable": false,
+        "primaryKey": true,
+        "required": true,
+        "system": true,
+        "type": "text"
+      },
+      {
+        "cascadeDelete": false,
+        "collectionId": "pbc_7402169584",
+        "hidden": false,
+        "id": "relation_inventory_product",
+        "maxSelect": 1,
+        "minSelect": 0,
+        "name": "product",
+        "presentable": false,
+        "required": true,
+        "system": false,
+        "type": "relation"
+      },
+      {
+        "hidden": false,
+        "id": "bool_inventory_instock",
+        "name": "in_stock",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "bool"
+      },
+      {
+        "autogeneratePattern": "",
+        "hidden": false,
+        "id": "text_inventory_notes",
+        "max": 0,
+        "min": 0,
+        "name": "notes",
+        "pattern": "",
+        "presentable": false,
+        "primaryKey": false,
+        "required": false,
+        "system": false,
+        "type": "text"
+      }
+    ],
+    "indexes": [],
+    "created": "2026-01-05 08:21:08.834Z",
+    "updated": "2026-07-09 22:17:21.833Z",
+    "system": false
+  },
+  {
+    "id": "pbc_8471023956",
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "",
+    "updateRule": "",
+    "deleteRule": "",
+    "name": "meal_variant_overrides",
+    "type": "base",
+    "fields": [
+      {
+        "autogeneratePattern": "[a-z0-9]{15}",
+        "hidden": false,
+        "id": "text3208210256",
+        "max": 15,
+        "min": 15,
+        "name": "id",
+        "pattern": "^[a-z0-9]+$",
+        "presentable": false,
+        "primaryKey": true,
+        "required": true,
+        "system": true,
+        "type": "text"
+      },
+      {
+        "cascadeDelete": true,
+        "collectionId": "pbc_4068725140",
+        "hidden": false,
+        "id": "relation_planned_meal",
+        "maxSelect": 1,
+        "minSelect": 0,
+        "name": "planned_meal",
+        "presentable": false,
+        "required": true,
+        "system": false,
+        "type": "relation"
+      },
+      {
+        "cascadeDelete": false,
+        "collectionId": "pbc_9624381706",
+        "hidden": false,
+        "id": "relation_original_node",
+        "maxSelect": 1,
+        "minSelect": 0,
+        "name": "original_node",
+        "presentable": false,
+        "required": true,
+        "system": false,
+        "type": "relation"
+      },
+      {
+        "cascadeDelete": false,
+        "collectionId": "pbc_7402169584",
+        "hidden": false,
+        "id": "relation_replacement_product",
+        "maxSelect": 1,
+        "minSelect": 0,
+        "name": "replacement_product",
+        "presentable": false,
+        "required": true,
+        "system": false,
+        "type": "relation"
+      },
+      {
+        "hidden": false,
+        "id": "number_mvo_quantity",
+        "max": null,
+        "min": null,
+        "name": "quantity",
+        "onlyInt": false,
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "number"
+      },
+      {
+        "hidden": false,
+        "id": "select_mvo_unit",
+        "maxSelect": 1,
+        "name": "unit",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "select",
+        "values": [
+          "tsp",
+          "tbsp",
+          "fl_oz",
+          "cup",
+          "pint",
+          "qt",
+          "gal",
+          "ml",
+          "l",
+          "g",
+          "kg",
+          "oz",
+          "lb",
+          "each"
+        ]
+      }
+    ],
+    "indexes": [],
+    "created": "2026-01-25 17:13:22.311Z",
+    "updated": "2026-07-09 22:17:21.839Z",
+    "system": false
+  },
+  {
+    "id": "pbc_recipe_queue",
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "",
+    "updateRule": "",
+    "deleteRule": "",
+    "name": "recipe_queue",
+    "type": "base",
+    "fields": [
+      {
+        "autogeneratePattern": "[a-z0-9]{15}",
+        "hidden": false,
+        "id": "text3208210256",
+        "max": 15,
+        "min": 15,
+        "name": "id",
+        "pattern": "^[a-z0-9]+$",
+        "presentable": false,
+        "primaryKey": true,
+        "required": true,
+        "system": true,
+        "type": "text"
+      },
+      {
+        "cascadeDelete": false,
+        "collectionId": "pbc_5183946072",
+        "hidden": false,
+        "id": "relation_queue_recipe",
+        "maxSelect": 1,
+        "minSelect": 0,
+        "name": "recipe",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "relation"
+      },
+      {
+        "hidden": false,
+        "id": "number_queue_sort",
+        "max": null,
+        "min": null,
+        "name": "sort_order",
+        "onlyInt": false,
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "number"
+      },
+      {
+        "hidden": false,
+        "id": "autodate2990389176",
+        "name": "created",
+        "onCreate": true,
+        "onUpdate": false,
+        "presentable": false,
+        "system": false,
+        "type": "autodate"
+      },
+      {
+        "hidden": false,
+        "id": "autodate3332085495",
+        "name": "updated",
+        "onCreate": true,
+        "onUpdate": true,
+        "presentable": false,
+        "system": false,
+        "type": "autodate"
+      }
+    ],
+    "indexes": [],
+    "created": "2026-04-18 19:29:46.696Z",
+    "updated": "2026-07-09 22:17:21.845Z",
+    "system": false
+  },
+  {
+    "id": "pbc_shopping_state",
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "",
+    "updateRule": "",
+    "deleteRule": "",
+    "name": "shopping_state",
+    "type": "base",
+    "fields": [
+      {
+        "autogeneratePattern": "[a-z0-9]{15}",
+        "hidden": false,
+        "id": "text3208210256",
+        "max": 15,
+        "min": 15,
+        "name": "id",
+        "pattern": "^[a-z0-9]+$",
+        "presentable": false,
+        "primaryKey": true,
+        "required": true,
+        "system": true,
+        "type": "text"
+      },
+      {
+        "cascadeDelete": true,
+        "collectionId": "pbc_6291058473",
+        "hidden": false,
+        "id": "relation_ss_weekly_plan",
+        "maxSelect": 1,
+        "minSelect": 0,
+        "name": "weekly_plan",
+        "presentable": false,
+        "required": true,
+        "system": false,
+        "type": "relation"
+      },
+      {
+        "autogeneratePattern": "",
+        "hidden": false,
+        "id": "text_ss_line_key",
+        "max": 0,
+        "min": 0,
+        "name": "line_key",
+        "pattern": "",
+        "presentable": false,
+        "primaryKey": false,
+        "required": true,
+        "system": false,
+        "type": "text"
+      },
+      {
+        "hidden": false,
+        "id": "bool_ss_checked",
+        "name": "checked",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "bool"
+      },
+      {
+        "hidden": false,
+        "id": "number_ss_have_quantity",
+        "max": null,
+        "min": null,
+        "name": "have_quantity",
+        "onlyInt": false,
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "number"
+      },
+      {
+        "hidden": false,
+        "id": "select_ss_resolution",
+        "maxSelect": 1,
+        "name": "resolution",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "select",
+        "values": [
+          "buy",
+          "make",
+          "skip"
+        ]
+      }
+    ],
+    "indexes": [
+      "CREATE UNIQUE INDEX `idx_shopping_state_plan_line` ON `shopping_state` (`weekly_plan`, `line_key`)"
+    ],
+    "created": "2026-07-06 21:36:52.807Z",
+    "updated": "2026-07-09 22:17:21.850Z",
     "system": false
   },
   {
@@ -2020,8 +2461,8 @@
       }
     ],
     "indexes": [],
-    "created": "2026-07-07 00:00:00.000Z",
-    "updated": "2026-07-07 00:00:00.000Z",
+    "created": "2026-07-07 19:20:54.227Z",
+    "updated": "2026-07-09 22:17:21.855Z",
     "system": false
   },
   {
@@ -2159,266 +2600,18 @@
       }
     ],
     "indexes": [],
-    "created": "2026-07-07 00:00:00.000Z",
-    "updated": "2026-07-07 00:00:00.000Z",
+    "created": "2026-07-07 19:20:54.235Z",
+    "updated": "2026-07-09 22:17:21.860Z",
     "system": false
   },
   {
-    "id": "pbc_inventory_items",
+    "id": "pbc_257687787",
     "listRule": "",
     "viewRule": "",
     "createRule": "",
     "updateRule": "",
     "deleteRule": "",
-    "name": "inventory_items",
-    "type": "base",
-    "fields": [
-      {
-        "autogeneratePattern": "[a-z0-9]{15}",
-        "hidden": false,
-        "id": "text3208210256",
-        "max": 15,
-        "min": 15,
-        "name": "id",
-        "pattern": "^[a-z0-9]+$",
-        "presentable": false,
-        "primaryKey": true,
-        "required": true,
-        "system": true,
-        "type": "text"
-      },
-      {
-        "cascadeDelete": false,
-        "collectionId": "pbc_7402169584",
-        "hidden": false,
-        "id": "relation_inventory_product",
-        "maxSelect": 1,
-        "minSelect": 0,
-        "name": "product",
-        "presentable": false,
-        "required": true,
-        "system": false,
-        "type": "relation"
-      },
-      {
-        "hidden": false,
-        "id": "bool_inventory_instock",
-        "name": "in_stock",
-        "presentable": false,
-        "required": false,
-        "system": false,
-        "type": "bool"
-      },
-      {
-        "autogeneratePattern": "",
-        "hidden": false,
-        "id": "text_inventory_notes",
-        "max": 0,
-        "min": 0,
-        "name": "notes",
-        "pattern": "",
-        "presentable": false,
-        "primaryKey": false,
-        "required": false,
-        "system": false,
-        "type": "text"
-      }
-    ],
-    "indexes": [],
-    "created": "2026-01-05 08:21:08.834Z",
-    "updated": "2026-07-06 21:36:41.190Z",
-    "system": false
-  },
-  {
-    "id": "pbc_8471023956",
-    "listRule": "",
-    "viewRule": "",
-    "createRule": "",
-    "updateRule": "",
-    "deleteRule": "",
-    "name": "meal_variant_overrides",
-    "type": "base",
-    "fields": [
-      {
-        "autogeneratePattern": "[a-z0-9]{15}",
-        "hidden": false,
-        "id": "text3208210256",
-        "max": 15,
-        "min": 15,
-        "name": "id",
-        "pattern": "^[a-z0-9]+$",
-        "presentable": false,
-        "primaryKey": true,
-        "required": true,
-        "system": true,
-        "type": "text"
-      },
-      {
-        "cascadeDelete": true,
-        "collectionId": "pbc_4068725140",
-        "hidden": false,
-        "id": "relation_planned_meal",
-        "maxSelect": 1,
-        "minSelect": 0,
-        "name": "planned_meal",
-        "presentable": false,
-        "required": true,
-        "system": false,
-        "type": "relation"
-      },
-      {
-        "cascadeDelete": false,
-        "collectionId": "pbc_9624381706",
-        "hidden": false,
-        "id": "relation_original_node",
-        "maxSelect": 1,
-        "minSelect": 0,
-        "name": "original_node",
-        "presentable": false,
-        "required": true,
-        "system": false,
-        "type": "relation"
-      },
-      {
-        "cascadeDelete": false,
-        "collectionId": "pbc_7402169584",
-        "hidden": false,
-        "id": "relation_replacement_product",
-        "maxSelect": 1,
-        "minSelect": 0,
-        "name": "replacement_product",
-        "presentable": false,
-        "required": true,
-        "system": false,
-        "type": "relation"
-      },
-      {
-        "hidden": false,
-        "id": "number_mvo_quantity",
-        "max": null,
-        "min": null,
-        "name": "quantity",
-        "onlyInt": false,
-        "presentable": false,
-        "required": false,
-        "system": false,
-        "type": "number"
-      },
-      {
-        "hidden": false,
-        "id": "select_mvo_unit",
-        "maxSelect": 1,
-        "name": "unit",
-        "presentable": false,
-        "required": false,
-        "system": false,
-        "type": "select",
-        "values": [
-          "tsp",
-          "tbsp",
-          "fl_oz",
-          "cup",
-          "pint",
-          "qt",
-          "gal",
-          "ml",
-          "l",
-          "g",
-          "kg",
-          "oz",
-          "lb",
-          "each"
-        ]
-      }
-    ],
-    "indexes": [],
-    "created": "2026-01-25 17:13:22.311Z",
-    "updated": "2026-07-06 21:36:41.198Z",
-    "system": false
-  },
-  {
-    "id": "pbc_1047981946",
-    "listRule": "",
-    "viewRule": "",
-    "createRule": "",
-    "updateRule": "",
-    "deleteRule": "",
-    "name": "recipe_queue",
-    "type": "base",
-    "fields": [
-      {
-        "autogeneratePattern": "[a-z0-9]{15}",
-        "hidden": false,
-        "id": "text3208210256",
-        "max": 15,
-        "min": 15,
-        "name": "id",
-        "pattern": "^[a-z0-9]+$",
-        "presentable": false,
-        "primaryKey": true,
-        "required": true,
-        "system": true,
-        "type": "text"
-      },
-      {
-        "cascadeDelete": false,
-        "collectionId": "pbc_5183946072",
-        "hidden": false,
-        "id": "relation3666391351",
-        "maxSelect": 1,
-        "minSelect": 0,
-        "name": "recipe",
-        "presentable": false,
-        "required": false,
-        "system": false,
-        "type": "relation"
-      },
-      {
-        "hidden": false,
-        "id": "number1169138922",
-        "max": null,
-        "min": null,
-        "name": "sort_order",
-        "onlyInt": false,
-        "presentable": false,
-        "required": false,
-        "system": false,
-        "type": "number"
-      },
-      {
-        "hidden": false,
-        "id": "autodate2990389176",
-        "name": "created",
-        "onCreate": true,
-        "onUpdate": false,
-        "presentable": false,
-        "system": false,
-        "type": "autodate"
-      },
-      {
-        "hidden": false,
-        "id": "autodate3332085495",
-        "name": "updated",
-        "onCreate": true,
-        "onUpdate": true,
-        "presentable": false,
-        "system": false,
-        "type": "autodate"
-      }
-    ],
-    "indexes": [],
-    "created": "2026-04-18 20:13:25.984Z",
-    "updated": "2026-07-06 21:36:41.228Z",
-    "system": false
-  },
-  {
-    "id": "pbc_shopping_state",
-    "listRule": "",
-    "viewRule": "",
-    "createRule": "",
-    "updateRule": "",
-    "deleteRule": "",
-    "name": "shopping_state",
+    "name": "cook_progress",
     "type": "base",
     "fields": [
       {
@@ -2439,7 +2632,7 @@
         "cascadeDelete": true,
         "collectionId": "pbc_6291058473",
         "hidden": false,
-        "id": "relation_ss_weekly_plan",
+        "id": "relation_cp_weekly_plan",
         "maxSelect": 1,
         "minSelect": 0,
         "name": "weekly_plan",
@@ -2451,10 +2644,10 @@
       {
         "autogeneratePattern": "",
         "hidden": false,
-        "id": "text_ss_line_key",
+        "id": "text_cp_step_instance",
         "max": 0,
         "min": 0,
-        "name": "line_key",
+        "name": "step_instance",
         "pattern": "",
         "presentable": false,
         "primaryKey": false,
@@ -2464,7 +2657,7 @@
       },
       {
         "hidden": false,
-        "id": "bool_ss_checked",
+        "id": "bool_cp_checked",
         "name": "checked",
         "presentable": false,
         "required": false,
@@ -2473,11 +2666,54 @@
       },
       {
         "hidden": false,
-        "id": "number_ss_have_quantity",
+        "id": "date_cp_checked_at",
+        "max": "",
+        "min": "",
+        "name": "checked_at",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "date"
+      }
+    ],
+    "indexes": [
+      "CREATE UNIQUE INDEX `idx_cook_progress_plan_step` ON `cook_progress` (`weekly_plan`, `step_instance`)"
+    ],
+    "created": "2026-07-09 23:47:25.362Z",
+    "updated": "2026-07-09 23:47:25.362Z",
+    "system": false
+  },
+  {
+    "id": "pbc_3704565068",
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "",
+    "updateRule": "",
+    "deleteRule": "",
+    "name": "scheduler_config",
+    "type": "base",
+    "fields": [
+      {
+        "autogeneratePattern": "[a-z0-9]{15}",
+        "hidden": false,
+        "id": "text3208210256",
+        "max": 15,
+        "min": 15,
+        "name": "id",
+        "pattern": "^[a-z0-9]+$",
+        "presentable": false,
+        "primaryKey": true,
+        "required": true,
+        "system": true,
+        "type": "text"
+      },
+      {
+        "hidden": false,
+        "id": "number_sc_seed",
         "max": null,
         "min": null,
-        "name": "have_quantity",
-        "onlyInt": false,
+        "name": "seed",
+        "onlyInt": true,
         "presentable": false,
         "required": false,
         "system": false,
@@ -2485,25 +2721,52 @@
       },
       {
         "hidden": false,
-        "id": "select_ss_resolution",
-        "maxSelect": 1,
-        "name": "resolution",
+        "id": "json_sc_weights",
+        "maxSize": 0,
+        "name": "weights",
         "presentable": false,
         "required": false,
         "system": false,
-        "type": "select",
-        "values": [
-          "buy",
-          "make",
-          "skip"
-        ]
+        "type": "json"
+      },
+      {
+        "hidden": false,
+        "id": "number_sc_burner_count",
+        "max": null,
+        "min": null,
+        "name": "burner_count",
+        "onlyInt": true,
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "number"
+      },
+      {
+        "hidden": false,
+        "id": "number_sc_oven_rack_slots",
+        "max": null,
+        "min": null,
+        "name": "oven_rack_slots",
+        "onlyInt": true,
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "number"
+      },
+      {
+        "hidden": false,
+        "id": "json_sc_appliances",
+        "maxSize": 0,
+        "name": "appliances",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "json"
       }
     ],
-    "indexes": [
-      "CREATE UNIQUE INDEX `idx_shopping_state_plan_line` ON `shopping_state` (`weekly_plan`, `line_key`)"
-    ],
-    "created": "2026-07-06 21:36:41.062Z",
-    "updated": "2026-07-06 21:36:41.062Z",
+    "indexes": [],
+    "created": "2026-07-09 23:47:25.386Z",
+    "updated": "2026-07-09 23:47:25.386Z",
     "system": false
   }
 ]
