@@ -39,6 +39,7 @@ import {
   PlaylistAddCheck as QueuedIcon,
   Close as CloseIcon,
   AssignmentTurnedIn as AssignIcon,
+  AutoAwesome as FillWeekIcon,
 } from "@mui/icons-material";
 import { getAll, create, update, remove, collections } from "../lib/api";
 import type {
@@ -59,6 +60,7 @@ import type {
 import { DAYS, MEAL_SLOTS, SLOT_COLORS } from "../constants/mealPlanning";
 import { VariantsList } from "../components/VariantsList";
 import { VariantEditorDialog } from "../components/VariantEditorDialog";
+import WeekWizard from "../components/WeekWizard";
 import type { RecipeGraphData } from "../lib/aggregation";
 import { useRecipeQueue } from "../hooks/useRecipeQueue";
 import { formatWeekOf, getUpcomingMonday } from "../lib/planning/dates";
@@ -105,6 +107,9 @@ export default function WeeklyPlans() {
     number | ""
   >(1);
   const [savingPlan, setSavingPlan] = useState(false);
+
+  // Guided-fill wizard (WEEK-04)
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   // Add meal dialog
   const [mealDialogOpen, setMealDialogOpen] = useState(false);
@@ -426,6 +431,13 @@ export default function WeeklyPlans() {
     setMealQuantity(1);
     setAssigningFromQueue(null);
     setMealDialogOpen(true);
+  };
+
+  const handleCloseWizard = () => {
+    setWizardOpen(false);
+    // Refresh so wizard-created meals appear in the week view exactly like
+    // manual ones.
+    loadPlannedMeals();
   };
 
   const handleAssignFromQueue = (recipeId: string) => {
@@ -829,14 +841,24 @@ export default function WeeklyPlans() {
                     </Typography>
                   )}
                 </Box>
-                <Button
-                  variant="outlined"
-                  startIcon={<AddIcon />}
-                  onClick={handleOpenMealDialog}
-                  disabled={recipes.length === 0}
-                >
-                  Add Meal
-                </Button>
+                <Box display="flex" gap={1}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<FillWeekIcon />}
+                    onClick={() => setWizardOpen(true)}
+                  >
+                    Fill Week
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    startIcon={<AddIcon />}
+                    onClick={handleOpenMealDialog}
+                    disabled={recipes.length === 0}
+                  >
+                    Add Meal
+                  </Button>
+                </Box>
               </Box>
 
               {/* Week-spanning meals */}
@@ -1183,6 +1205,15 @@ export default function WeeklyPlans() {
         products={products}
         onSave={handleSaveVariants}
       />
+
+      {/* Guided-fill Wizard (WEEK-04) */}
+      {selectedPlan && (
+        <WeekWizard
+          open={wizardOpen}
+          plan={selectedPlan}
+          onClose={handleCloseWizard}
+        />
+      )}
     </Box>
   );
 }
