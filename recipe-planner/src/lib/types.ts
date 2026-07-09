@@ -112,6 +112,16 @@ export interface RecipeStep extends BaseRecord {
   timing?: Timing;
   position_x?: number;
   position_y?: number;
+  // Prep-day engine metadata (D-05 full resource model). All additive +
+  // nullable so the existing 185 steps validate unchanged; backfilled
+  // offline (PREP-02), editable in RecipeEditor thereafter.
+  active_minutes?: number;
+  passive_minutes?: number;
+  instructions?: string;
+  prep_action?: string;
+  resource?: "oven" | "stovetop" | "blender" | "food_processor" | "instant_pot" | "none";
+  oven_temp_f?: number;
+  rack_slots?: number;
 }
 
 // Recipe Graph Edges
@@ -247,5 +257,32 @@ export interface ShoppingState extends BaseRecord {
   checked: boolean;
   have_quantity: number | null;
   resolution: "buy" | "make" | "skip" | null;
+}
+
+// Cook-mode check-off progress (D-03). Mirrors ShoppingState's per-plan
+// persisted-state shape, keyed by (weekly_plan, step_instance) instead of
+// (weekly_plan, line_key) — cook_progress has no have-N/resolution concept.
+export interface CookProgress extends BaseRecord {
+  weekly_plan: string; // relation ID
+  step_instance: string;
+  checked: boolean;
+  checked_at: string | null;
+}
+
+// Scheduler configuration (D-04) — singleton record (no weekly_plan
+// relation), shared across devices. Read by both the weights panel and the
+// GA scheduler.
+export interface SchedulerConfig extends BaseRecord {
+  seed: number;
+  weights: {
+    active: number;
+    chopping: number;
+    grouping: number;
+    elapsed: number;
+    resource_pressure: number;
+  };
+  burner_count: number;
+  oven_rack_slots: number;
+  appliances: string[];
 }
 
