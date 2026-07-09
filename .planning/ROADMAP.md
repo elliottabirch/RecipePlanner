@@ -202,18 +202,36 @@ Plans:
 **Plans**: 12 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 05-01-PLAN.md — Schema, types & API foundation (7 recipe_steps fields + cook_progress + scheduler_config)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 05-02-PLAN.md — Scheduler types + prando + Wave-0 red test scaffolds
 - [ ] 05-03-PLAN.md — Step-metadata authoring UI (RecipeEditor + StepNode)
 - [ ] 05-04-PLAN.md — Offline backfill draft JSON for the 185 steps
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 05-05-PLAN.md — Week-graph builder (per-instance nodes, cross-recipe edges)
 - [ ] 05-06-PLAN.md — Resource feasibility model (cook/oven/stovetop/appliances)
 - [ ] 05-07-PLAN.md — Linter v2 rules (durations, prep_action, week-scoped pull-step)
 - [ ] 05-08-PLAN.md — Backfill review page + idempotent apply
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 05-09-PLAN.md — Seeded GA scheduler (SSGS decode + active-span fitness + determinism)
 - [ ] 05-10-PLAN.md — Order-preserving check-off retime
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
 - [ ] 05-11-PLAN.md — Cook mode + cook-progress hook + readiness
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
 - [ ] 05-12-PLAN.md — Weights panel + deterministic regenerate
+
 **UI hint**: yes
 
 ### Phase 6: Import Pipeline & Recipe Lifecycle
