@@ -25,7 +25,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Data Hygiene** - Unit-disciplined data layer: enum + canonical units, convert-or-split aggregation fix, dedup + unique index, linter v1 (completed 2026-07-06)
 - [x] **Phase 2: Shopping State & Live Substitution** - Persisted shopping state, have-N, mid-shop swap, make-at-home, quick-create, tablet touch pass (UAT approved, verified 7/7, completed 2026-07-06)
 - [x] **Phase 3: Product Registry Seeding** - external plain-name ingredient seed (USDA-linked via fdc_id), fuzzy search everywhere, "Search USDA" mode (completed 2026-07-07)
-- [ ] **Phase 4: Weekly Planning Memory** - Plan start dates, people-multiplier, tag-based slot templates, guided-fill wizard
+- [x] **Phase 4: Weekly Planning Memory** - Plan start dates, people-multiplier, tag-based slot templates, guided-fill wizard (completed 2026-07-09)
 - [ ] **Phase 5: Prep-Day Engine** - Step metadata + AI-assisted backfill, seeded GA scheduler, interactive cook mode, weights panel, linter v2
 - [ ] **Phase 6: Import Pipeline & Recipe Lifecycle** - Draft/published recipes, in-app JSON import, recipe-import skill rewrite, /suggest-recipes, evolution loop
 
@@ -160,7 +160,7 @@ Plans:
   3. User can define a reusable week template of tag-based slots, and tagging a recipe makes it eligible for the matching slot's pool with no other change (WEEK-03)
   4. The guided-fill wizard leads with a staples slot pre-filled from last week's picks, then walks remaining slots ordering each pool's options least-recently-planned-first (WEEK-04)
 
-**Plans**: 8/9 plans executed
+**Plans**: 9/9 plans complete
 
 Plans:
 **Wave 0** *(test scaffolds)*
@@ -182,7 +182,7 @@ Plans:
 
 **Wave 3** *(wizard)*
 
-- [ ] 04-09-PLAN.md — WeekWizard.tsx accordion (staples pre-fill, LRU pools, off-pool add, skippable) + Fill Week launch [WEEK-03, WEEK-04]
+- [x] 04-09-PLAN.md — WeekWizard.tsx accordion (staples pre-fill, LRU pools, off-pool add, skippable) + Fill Week launch [WEEK-03, WEEK-04]
 
 **UI hint**: yes
 
@@ -227,6 +227,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6. Phases 2 and 4
 | 1. Data Hygiene | 8/8 | Complete    | 2026-07-06 |
 | 2. Shopping State & Live Substitution | 10/10 | Complete    | 2026-07-07 |
 | 3. Product Registry Seeding | 6/6 | Complete   | 2026-07-07 |
-| 4. Weekly Planning Memory | 8/9 | In Progress|  |
+| 4. Weekly Planning Memory | 9/9 | Complete   | 2026-07-09 |
 | 5. Prep-Day Engine | 0/TBD | Not started | - |
 | 6. Import Pipeline & Recipe Lifecycle | 0/TBD | Not started | - |
