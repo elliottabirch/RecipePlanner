@@ -77,16 +77,16 @@ type scale, not overridden in `App.tsx`'s `createTheme`):
 | Body | 14px (MUI `body2`) | 400 (regular) | 1.43 (MUI default) |
 | Label | 12px (MUI `caption`) | 400 (regular) | 1.66 (MUI default) |
 | Heading | 16px (MUI `subtitle1`) | 700 (bold) | 1.5 |
-| Display | 20px (MUI `h6`) | 500 (medium, MUI `h6` default) | 1.2 |
+| Display | 20px (MUI `h6`) | 700 (bold, `fontWeight="bold"` override on `h6`) | 1.2 |
 
-**Declared limit compliance:** 4 sizes (14/12/16/20px), 2 weights (400 regular, 700 bold — MUI's
-own `fontWeight="bold"`/`"medium"` map onto these two buckets; treat `medium` (500) as belonging
-to the bold bucket for this phase's new surfaces, do not introduce a third weight).
+**Declared limit compliance:** 4 sizes (14/12/16/20px), 2 weights (400 regular, 700 bold). The
+Display role overrides MUI `h6`'s default 500 to 700 so only two real `font-weight` values exist
+across this phase's new surfaces — no third weight.
 
 **Phase-specific usage:**
 - Cook-mode now/next card step name → Heading (16px/700)
 - Cook-mode scaled quantity + instructions body → Body (14px/400)
-- Cook-mode countdown timer digits → Display (20px/500) — the one place a countdown needs to read
+- Cook-mode countdown timer digits → Display (20px/700) — the one place a countdown needs to read
   at a glance from arm's length
 - Readiness chip label ("waiting on: diced onion, cooked beans" / "Ready") → Label (12px/400)
 - Weights panel slider labels → Body (14px/400); slider value readout → Heading (16px/700)
@@ -189,7 +189,7 @@ interaction contract. These are binding on the planner/executor exactly like the
 - **Check-off control:** a single large (48×48px minimum) tap target per step, positioned at the
   card's leading edge (mirrors `CheckableListItem.tsx`'s existing `ListItemIcon` checkbox
   position/sizing exactly — reuse that component's checkbox styling, do not reinvent).
-- **Live countdown (passive steps only):** Display-size (20px/500) digit readout, `secondary.main`
+- **Live countdown (passive steps only):** Display-size (20px/700) digit readout, `secondary.main`
   (orange) color while counting, switches to accent green + "Ready" chip at zero. Countdown text
   format: `MM:SS` remaining, updates every second (no new spacing/color token needed beyond what's
   declared above).
