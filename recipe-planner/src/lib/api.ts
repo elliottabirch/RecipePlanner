@@ -68,4 +68,6 @@ export const collections = {
   shoppingState: "shopping_state",
   weekTemplates: "week_templates",
   templateSlots: "template_slots",
+  cookProgress: "cook_progress",
+  schedulerConfig: "scheduler_config",
 } as const;
