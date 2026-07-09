@@ -176,7 +176,7 @@ Plans:
 
 - [x] 04-04-PLAN.md — LRU history service: computeLastPlannedDates + orderPoolByLRU + poolForSlot (pure, tested) [WEEK-03, WEEK-04]
 - [x] 04-05-PLAN.md — start_date backfill script (pure resolver + dry-run/backup, both instances) + tighten to required [WEEK-01]
-- [ ] 04-06-PLAN.md — Seed one week_templates row + template_slots (Staples-first, tag pools) idempotent script, both instances [WEEK-03]
+- [x] 04-06-PLAN.md — Seed one week_templates row + template_slots (Staples-first, tag pools) idempotent script, both instances [WEEK-03]
 - [ ] 04-07-PLAN.md — Outputs.tsx: thread people_multiplier into both aggregation call sites + useMemo deps + ×N badge [WEEK-02]
 - [x] 04-08-PLAN.md — New Plan dialog start_date + people_multiplier + list/header date display + dates helper [WEEK-01, WEEK-02]
 

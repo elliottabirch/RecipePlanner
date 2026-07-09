@@ -5,15 +5,15 @@ milestone_name: Workflow Redesign
 current_phase: 04
 current_phase_name: weekly-planning-memory
 status: executing
-stopped_at: Paused at 04-05 Task 2/3 human-action checkpoint (Task 1 committed; dry-run reviewed, awaiting apply approval)
-last_updated: "2026-07-07T19:55:33.427Z"
+stopped_at: Completed 04-06-PLAN.md (seed-week-template.js applied to test+prod)
+last_updated: "2026-07-09T21:41:57.714Z"
 last_activity: 2026-07-07
-last_activity_desc: Phase 04 execution started
+last_activity_desc: 04-05 Task 1 (backfill-plan-dates.js resolver) committed; dry-run executed on both instances
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 33
-  completed_plans: 29
+  completed_plans: 31
   percent: 50
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 04 (weekly-planning-memory) — EXECUTING
-Plan: 6 of 9 (04-05)
+Plan: 7 of 9 (04-05)
 Status: PAUSED — human-action checkpoint (Task 2/3: backfill dry-run reviewed on prod+test, awaiting apply approval)
 Last activity: 2026-07-07 — 04-05 Task 1 (backfill-plan-dates.js resolver) committed; dry-run executed on both instances
 
@@ -85,6 +85,7 @@ Progress: [██████░░░░] 56%
 | Phase 04 P03 | 6min | 3 tasks | 7 files |
 | Phase 04-weekly-planning-memory P04 | 6min | 1 tasks | 1 files |
 | Phase 04 P08 | 12min | 2 tasks | 3 files |
+| Phase 04-weekly-planning-memory P06 | 12min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -154,6 +155,7 @@ Recent decisions affecting current work:
 - [Phase 04-08]: people_multiplier <= 0 is clamped to 0.1 (not reset to 1) at save time in the New Plan dialog — matches the PocketBase field's own Min 0.1 constraint, defense-in-depth for T-04-08a
 - [Phase 04-08]: formatWeekOf renders dates in UTC to avoid a local-timezone off-by-one-day shift on the date-only start_date value
 - [Phase 04-05]: backfill-plan-dates.js resolvePlanDate implements 'Week of <Month> <Day>, <Year>' regex parse (rounds back to that week's Monday) with a descending-Mondays-by-created-order fallback (id-asc tie-break) — Dry-run against both prod/test found exactly 1 undated plan on each instance, name '6/22', which does not match the Week-of pattern and falls back to this-week's Monday rather than a June 22 date the name implies -- flagged for human review before apply
+- [Phase 04-06]: Confirmed household week template slot set (Staples/Proteins/Starches/Vegetables/Greens-Salads/Micah meals) applied via idempotent seed-week-template.js to both prod and test -- pool_tags resolved to real tag ids, fails loudly on any missing tag
 
 ### Pending Todos
 
@@ -178,6 +180,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-07T19:55:33.421Z
-Stopped at: Paused at 04-05 Task 2/3 human-action checkpoint (Task 1 committed; dry-run reviewed, awaiting apply approval)
-Resume file: .planning/phases/04-weekly-planning-memory/04-05-PLAN.md
+Last session: 2026-07-09T21:41:57.708Z
+Stopped at: Completed 04-06-PLAN.md (seed-week-template.js applied to test+prod)
+Resume file: None
