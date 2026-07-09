@@ -86,6 +86,31 @@ in-app import, and publish-time lint gate remain Phase 6.
     (linter-enforced). This resolves §7's "infer vs. require" in favor of
     infer-during-backfill. Without populated tags AC4 is untestable.
 
+### GA objective + linter scope (confirmed post-research, 2026-07-09)
+- **D-06 (GA primary objective):** "minimize active/hands-on time" = **minimize the
+  active-session span** — `max(activeEnd) − min(activeStart)` across all scheduled
+  step instances. `sum(active_minutes)` is invariant under reordering, so it cannot
+  be the objective; the span reading compresses the cook's total tied-to-the-kitchen
+  stretch by overlapping active bursts into other steps' passive windows, and is
+  consistent with the record's separate (secondary) "elapsed time" weight. Resolves
+  RESEARCH A1 (was `[ASSUMED]`). The GA fitness function MUST implement this reading.
+- **D-07 (linter "missing pull/thaw/make" scope):** the PREP-06 rule (a) runs at
+  **whole-planned-week scope**, not single-recipe: a stored/inventory input is
+  satisfied if ANY recipe in the planned week produces it (reuse the week-graph
+  builder's cross-recipe producer→consumer edges). Handles the real cross-recipe
+  chicken-stock case (recipe A consumes stock recipe B makes) without false
+  positives. Resolves RESEARCH A6 (was `[ASSUMED]`). Implication: this linter rule
+  operates against a planned week, a larger surface than the Phase-1 per-recipe
+  linter — the planner must account for that (the other two v2 rules — missing
+  durations, missing prep vocab — stay per-recipe/per-step).
+- **Planner-locked research defaults (A2–A5, follow RESEARCH.md unless noted):**
+  implicit single-cook resource occupied only during `active_minutes` (never
+  `passive_minutes`); within a step, active-then-passive ordering (A2); "step
+  grouping" weight = shared recipe/meal adjacency, user-tunable so a wrong guess is
+  cheap (A3); fan-in defaults to AND-semantics — consumer waits on all matching
+  producers (A4); GA hyperparameters (pop/generations/rates) live OUTSIDE the weights
+  panel with RESEARCH.md's defaults as a starting point (A5, D-01a.2).
+
 ### Claude's Discretion
 - **Backfill delivery surface:** in-app review page (`recipe-planner/src/pages/StepBackfill.tsx`)
   that consumes offline-drafted JSON (the `recipe-import` skill pattern — no
