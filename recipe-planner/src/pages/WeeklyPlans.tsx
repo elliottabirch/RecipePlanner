@@ -363,7 +363,12 @@ export default function WeeklyPlans() {
       setPlanStartDate(
         plan.start_date ? plan.start_date.slice(0, 10) : getUpcomingMonday()
       );
-      setPlanPeopleMultiplier(plan.people_multiplier ?? 1);
+      // A stored 0/negative/absent multiplier is treated as unset ⇒ 1.
+      setPlanPeopleMultiplier(
+        typeof plan.people_multiplier === "number" && plan.people_multiplier > 0
+          ? plan.people_multiplier
+          : 1
+      );
     } else {
       setEditingPlan(null);
       setPlanName("");

@@ -401,7 +401,13 @@ export default function Outputs() {
     () => plans.find((p) => p.id === selectedPlanId),
     [plans, selectedPlanId]
   );
-  const peopleMultiplier = selectedPlan?.people_multiplier ?? 1;
+  // Treat a stored 0/negative/absent multiplier as unset ⇒ 1 (matches the
+  // "nullable/absent ⇒ 1" semantic; a stored 0 must not zero every output).
+  const rawPeopleMultiplier = selectedPlan?.people_multiplier;
+  const peopleMultiplier =
+    typeof rawPeopleMultiplier === "number" && rawPeopleMultiplier > 0
+      ? rawPeopleMultiplier
+      : 1;
 
   // Build the product flow graph as the single source of truth
   const productFlowGraph = useMemo(
