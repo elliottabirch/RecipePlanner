@@ -4,16 +4,16 @@ milestone: v1.1
 milestone_name: Workflow Redesign
 current_phase: 5
 current_phase_name: Prep-Day Engine
-status: verifying
-stopped_at: Phase 5 UI-SPEC approved
-last_updated: "2026-07-09T23:19:29.874Z"
+status: executing
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-07-09T23:52:54.914Z"
 last_activity: 2026-07-09
-last_activity_desc: Phase 04 complete, transitioned to Phase 5
+last_activity_desc: Phase 5 execution started
 progress:
   total_phases: 6
   completed_phases: 4
-  total_plans: 33
-  completed_plans: 33
+  total_plans: 45
+  completed_plans: 34
   percent: 67
 ---
 
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-06)
 
 **Core value:** The derived weekly outputs — shopping list and prep plan — must be trustworthy and low-friction for the real weekly shop-and-prep cycle.
-**Current focus:** Phase 04 — weekly-planning-memory
+**Current focus:** Phase 5 — Prep-Day Engine
 
 ## Current Position
 
-Phase: 5 — Prep-Day Engine
-Plan: Not started
-Status: 04-09 complete (guided-fill wizard + Fill Week button); Task 3 human-verify auto-approved, live UAT deferred to user — Phase 4 all plans done
-Last activity: 2026-07-09 — Phase 04 complete, transitioned to Phase 5
+Phase: 5 (Prep-Day Engine) — EXECUTING
+Plan: 2 of 12
+Status: Ready to execute
+Last activity: 2026-07-09 — Phase 5 execution started
 
 Progress: [██████████] 100%
 
@@ -89,6 +89,7 @@ Progress: [██████████] 100%
 | Phase 04-weekly-planning-memory P06 | 12min | 2 tasks | 1 files |
 | Phase 04-weekly-planning-memory P07 | 12min | 1 tasks | 1 files |
 | Phase 04-weekly-planning-memory P09 | 25min | 2 tasks | 2 files |
+| Phase 05 P01 | 25min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -162,6 +163,7 @@ Recent decisions affecting current work:
 - [Phase 04-07]: Live UAT for the multiplier badge/scaling checkpoint deferred to the user (AUTO_MODE auto-approved implementation, not the runtime claim) -- coverage D1 marked human_judgment:true pending an actual x2-plan exercise in the running app
 - [Phase 04-09]: Staples pre-fill writes planned_meals immediately on wizard open (guarded to only fire when the staples slot has zero existing picks), unifying the write path so Confirm Staples is a pure advance action
 - [Phase 04-09]: Staples slot exempted from auto-advance-on-count-reached (only advances via explicit Confirm Staples tap) so a fully-matching pre-fill doesn't silently skip past user review
+- [Phase 05-01]: pb_schema.json canonical mirror confirmed at repo root (not recipe-planner/); apply-phase5-schema.mjs script re-exports there; rack_slots default-1 enforced at application layer since PB schema has no field-level default
 
 ### Pending Todos
 
@@ -186,7 +188,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-09T23:19:29.868Z
-Stopped at: Phase 5 UI-SPEC approved
+Last session: 2026-07-09T23:52:54.907Z
+Stopped at: Completed 05-01-PLAN.md
 Resume file: 
-.planning/phases/05-prep-day-engine/05-UI-SPEC.md
+None
