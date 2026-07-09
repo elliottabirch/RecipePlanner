@@ -115,3 +115,10 @@ Per the orchestrator's AUTO_MODE directive, the `checkpoint:human-verify` gate (
 ---
 *Phase: 04-weekly-planning-memory*
 *Completed: 2026-07-09*
+
+## Self-Check: PASSED
+
+- FOUND: recipe-planner/src/pages/Outputs.tsx
+- FOUND: .planning/phases/04-weekly-planning-memory/04-07-SUMMARY.md
+- FOUND: commit 1a2b51b (feat(04-07): thread live people_multiplier into Outputs aggregation)
+- FOUND: commit 39c5590 (docs(04-07): complete live people_multiplier threading plan)
