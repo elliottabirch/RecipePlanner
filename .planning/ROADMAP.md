@@ -199,7 +199,21 @@ Plans:
   4. Cook mode's tablet view shows now/next cards with scaled quantities and instructions, recomputes the remaining timeline as steps are checked off, and shows live countdowns for passive steps (PREP-04)
   5. User can tune scheduler weights in-app and regenerate the plan; the linter, run on demand, flags step-metadata and pull-step violations (PREP-05, PREP-06)
 
-**Plans**: TBD
+**Plans**: 12 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Schema, types & API foundation (7 recipe_steps fields + cook_progress + scheduler_config)
+- [ ] 05-02-PLAN.md — Scheduler types + prando + Wave-0 red test scaffolds
+- [ ] 05-03-PLAN.md — Step-metadata authoring UI (RecipeEditor + StepNode)
+- [ ] 05-04-PLAN.md — Offline backfill draft JSON for the 185 steps
+- [ ] 05-05-PLAN.md — Week-graph builder (per-instance nodes, cross-recipe edges)
+- [ ] 05-06-PLAN.md — Resource feasibility model (cook/oven/stovetop/appliances)
+- [ ] 05-07-PLAN.md — Linter v2 rules (durations, prep_action, week-scoped pull-step)
+- [ ] 05-08-PLAN.md — Backfill review page + idempotent apply
+- [ ] 05-09-PLAN.md — Seeded GA scheduler (SSGS decode + active-span fitness + determinism)
+- [ ] 05-10-PLAN.md — Order-preserving check-off retime
+- [ ] 05-11-PLAN.md — Cook mode + cook-progress hook + readiness
+- [ ] 05-12-PLAN.md — Weights panel + deterministic regenerate
 **UI hint**: yes
 
 ### Phase 6: Import Pipeline & Recipe Lifecycle
