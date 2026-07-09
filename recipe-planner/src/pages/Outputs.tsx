@@ -17,6 +17,7 @@ import {
   DialogContent,
   DialogActions,
   Button,
+  Chip,
 } from "@mui/material";
 import {
   ShoppingCart as ShoppingIcon,
@@ -395,10 +396,17 @@ export default function Outputs() {
     loadPlanData();
   }, [selectedPlanId, refreshCounter]);
 
+  // Selected plan + its people-multiplier (absent => 1, per WEEK-02)
+  const selectedPlan = useMemo(
+    () => plans.find((p) => p.id === selectedPlanId),
+    [plans, selectedPlanId]
+  );
+  const peopleMultiplier = selectedPlan?.people_multiplier ?? 1;
+
   // Build the product flow graph as the single source of truth
   const productFlowGraph = useMemo(
-    () => buildProductFlowGraph(plannedMeals, recipeData),
-    [plannedMeals, recipeData]
+    () => buildProductFlowGraph(plannedMeals, recipeData, peopleMultiplier),
+    [plannedMeals, recipeData, peopleMultiplier]
   );
 
   // Derive all other aggregations from the flow graph
@@ -470,8 +478,8 @@ export default function Outputs() {
     [productFlowGraph]
   );
   const pullLists = useMemo(
-    () => buildPullLists(plannedMeals, recipeData),
-    [plannedMeals, recipeData]
+    () => buildPullLists(plannedMeals, recipeData, peopleMultiplier),
+    [plannedMeals, recipeData, peopleMultiplier]
   );
   const mealContainers = useMemo(
     () => buildMealContainersList(productFlowGraph),
@@ -835,6 +843,13 @@ export default function Outputs() {
 
           <Box display="flex" alignItems="center" gap={1}>
             <SyncIndicator pendingCount={pendingCount} failed={failed} />
+            {peopleMultiplier !== 1 && (
+              <Chip
+                size="small"
+                label={`×${peopleMultiplier} servings`}
+                sx={{ backgroundColor: "secondary.main", color: "white" }}
+              />
+            )}
             <FormControl sx={{ minWidth: 250 }}>
               <InputLabel>{UI_TEXT.weeklyPlanLabel}</InputLabel>
               <Select
