@@ -1094,7 +1094,7 @@
         "min": "",
         "name": "start_date",
         "presentable": false,
-        "required": false,
+        "required": true,
         "system": false,
         "type": "date"
       },
