@@ -74,6 +74,13 @@ export interface Recipe extends BaseRecord {
   name: string;
   notes?: string;
   recipe_type?: "meal" | "batch_prep";
+  // Lifecycle (D-03): un-set reads as "" on existing rows — backfilled to
+  // "published" by apply-phase6-schema.mjs. Planning surfaces filter
+  // `status != "draft"` (fail-open), never `status = "published"`.
+  status?: "draft" | "published";
+  // Evolution loop (D-10): a draft revision points at the published recipe it
+  // revises. Nullable — only draft revisions set it.
+  revision_of?: string; // relation ID to recipes
 }
 
 export interface RecipeTag extends BaseRecord {
@@ -93,6 +100,11 @@ export interface RecipeProductNode extends BaseRecord {
   meal_destination?: string;
   position_x?: number;
   position_y?: number;
+  // Evolution loop node correspondence (D-10, Open Q2 option A): a clone node
+  // in a draft revision points back at the original published node so the
+  // note→revision write-back can update in place (id-stable) rather than
+  // recreate. Nullable — only clone nodes set it.
+  source_node?: string; // relation ID to recipe_product_nodes
 }
 
 export enum StepType {
@@ -203,6 +215,23 @@ export interface RecipeQueueItem extends BaseRecord {
 }
 
 export interface RecipeQueueItemExpanded extends RecipeQueueItem {
+  expand?: {
+    recipe?: Recipe;
+  };
+}
+
+// Recipe Notes (D-09) — one-tap notes captured from cook mode / calendar /
+// recipe card. Pending queue = status="pending"; the agent pass drains these
+// into draft revisions and sets draft_revision to the produced draft (D-10).
+export interface RecipeNote extends BaseRecord {
+  recipe: string; // relation ID to recipes
+  text: string;
+  status?: "pending" | "applied" | "dismissed";
+  source_surface?: "cook_mode" | "calendar" | "recipe_card";
+  draft_revision?: string; // relation ID to recipes (the draft this note produced)
+}
+
+export interface RecipeNoteExpanded extends RecipeNote {
   expand?: {
     recipe?: Recipe;
   };
