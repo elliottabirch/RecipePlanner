@@ -5,16 +5,16 @@ milestone_name: Workflow Redesign
 current_phase: 5
 current_phase_name: Prep-Day Engine
 status: executing
-stopped_at: Completed 05-10-PLAN.md
-last_updated: "2026-07-10T05:17:00.432Z"
-last_activity: 2026-07-09
-last_activity_desc: Phase 5 execution started
+stopped_at: "Phase 5 prep-day engine delivered & deployed to NAS. Cook mode live: week-wide prep merge, clock-ordered schedule, just_in_time (day-of) filter. 05-11/05-12 completed ad-hoc (no formal SUMMARYs). Repo clean. Next: Phase 6 (import pipeline)."
+last_updated: "2026-07-10"
+last_activity: 2026-07-10
+last_activity_desc: Prep-day engine refinements built, deployed to NAS, repo cleaned
 progress:
   total_phases: 6
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 45
-  completed_plans: 43
-  percent: 67
+  completed_plans: 45
+  percent: 83
 ---
 
 # Project State
@@ -24,16 +24,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-06)
 
 **Core value:** The derived weekly outputs — shopping list and prep plan — must be trustworthy and low-friction for the real weekly shop-and-prep cycle.
-**Current focus:** Phase 5 — Prep-Day Engine
+**Current focus:** Phase 5 delivered & deployed — transitioning to Phase 6 (Import Pipeline & Recipe Lifecycle).
 
 ## Current Position
 
-Phase: 5 (Prep-Day Engine) — EXECUTING
-Plan: 11 of 12
-Status: Ready to execute
-Last activity: 2026-07-09 — Phase 5 execution started
+Phase: 5 (Prep-Day Engine) — DELIVERED & DEPLOYED
+Status: Cook mode is live on the NAS (`http://192.168.50.95:3000`). Prep-day
+scheduler ships with week-wide prep merge, clock-ordered Now/Next + full-schedule
+list, and a day-of (`just_in_time`) step filter. 05-11/05-12 were finished
+through ad-hoc iteration + deploy rather than formal GSD plan SUMMARYs.
+Last activity: 2026-07-10 — refinements built, deployed, repo cleaned.
 
-Progress: [██████████] 100%
+Next: Phase 6 — Import Pipeline & Recipe Lifecycle (recipe import is the near-term
+work; the connective-recipe modeling todo is scoped to it).
+
+Progress: [██████████] Phase 5 shipped
 
 ## Performance Metrics
 
@@ -188,10 +193,16 @@ Recent decisions affecting current work:
 - [Phase 05-08]: isStepUnbackfilled treats PocketBase un-set defaults (0/empty-string) as needing backfill, not just null - PB never stores null for un-set number/select fields
 - [Phase 05-09]: computeActiveSessionSpan uses each instance's Schedule.ends value (not a literal active-only recompute) - required by the fixed genetic.test.ts D-06 fixture, which explicitly asserts the span must not equal sum(active_minutes)
 - [Phase 05-09]: crossover/mutation offspring repaired to valid topological order via a deterministic priority-rank walk (no extra PRNG draws), not ad-hoc splice repair
+- [Phase 05-live 2026-07-10]: Week-wide prep merge in `buildWeekGraph` — every single-raw-ingredient, resource-none prep step across the plan collapses into one `merged-prep::<productId>` node (summed active, precedence fanned out so each recipe keeps its cut). A safe, deliberate merge distinct from the Pitfall-3 signature-merge (precedence preserved, no resource double-booking). Replaced an abandoned ingredient-dispersion GA fitness experiment (weight-based clustering couldn't beat the makespan objective on real instances).
+- [Phase 05-live 2026-07-10]: Cook Mode drives Now/Next AND the new collapsible full-schedule list by decoded start time (clock order), never the GA's internal topological activity list (which lists e.g. post-smoke bbq assembly early). `schedule.order` stays topological only for deterministic retiming (D-01a.3).
+- [Phase 05-live 2026-07-10]: `buildWeekGraph` excludes `timing=just_in_time` (day-of assembly/serving) steps and any edge touching them; keeps `batch` and blank-timing. Test fixture default flipped to `batch`.
+- [Phase 05-live 2026-07-10]: Steps have a real `instructions` text field separate from `name`; many `name`s duplicate the full instruction. Decision: keep `name` visible in cook mode, defer step-detail-on-click + name-shortening data cleanup to a later phase.
+- [Phase 05-live 2026-07-10]: "GA Gauntlet Week" stress-test plan created on PROD (`weekly_plans/q2h4t30cmh0cdm6`, 20 planned meals incl. salad-and-salmon) — 14 cross-recipe edges, veg-stock fan-out 6, chicken-broc-rice fan-in. App defaults to Test DB; switch to Production to view it. Shipped as commits 3b6504b, 36d0400, 1ffc947 on main.
 
 ### Pending Todos
 
 - `nas-pocketbase-tailnet` — NAS PocketBase instances join the tailnet; `db-config.ts` switches from LAN IPs to tailnet hostnames. Required before Phase 2 and Phase 6 store/phone use; does not block local development. See `.planning/todos/pending/nas-pocketbase-tailnet.md`.
+- `connective-recipe-batch-then-consume` — batch-produce one recipe then consume its output in another creates redundant/misnamed in-plan "pull from freezer" connector steps (e.g. meatballs). Elide/hide in-plan pull connectors + model batch→consume cleanly at import time. Scoped to Phase 6. See `.planning/todos/pending/connective-recipe-batch-then-consume.md`.
 
 ### Blockers/Concerns
 
@@ -212,7 +223,12 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-10T05:17:00.427Z
-Stopped at: Completed 05-10-PLAN.md
-Resume file: 
-None
+Last session: 2026-07-10 — Phase 5 prep-day refinements (prep merge, clock-order,
+day-of filter, lemon-label fix), all built, tested (177 passing), and deployed to
+the NAS. Working tree clean; main = `1ffc947`, pushed.
+Stopped at: Phase 5 delivered & deployed. Ready to start Phase 6 (Import Pipeline
+& Recipe Lifecycle) fresh.
+Note: 05-11/05-12 were closed through ad-hoc iteration, not formal GSD plan
+execution — no `05-11-SUMMARY.md` / `05-12-*` artifacts exist. If a clean GSD
+audit trail for Phase 5 matters, run a retroactive verify/summary before Phase 6.
+Resume file: None
