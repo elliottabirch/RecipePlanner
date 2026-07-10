@@ -52,3 +52,34 @@ export function searchProducts<T extends Product>(
   const fuse = new Fuse(indexed, FUSE_OPTIONS);
   return fuse.search(query).map((result) => result.item.__original);
 }
+
+/**
+ * Scored variant of {@link searchProducts} for the import D-02 confidence gate.
+ * `searchProducts` sets `includeScore: true` but DISCARDS the score (Pitfall 5);
+ * this keeps it so import product-matching can threshold on a number
+ * (lower = better; 0 = exact). Reuses the same FUSE_OPTIONS + toSortedTokens
+ * indexing so ranking is identical to app search — no near-dupe divergence.
+ * Returns [] for an empty/whitespace query (nothing to score).
+ */
+export function scoreProduct<T extends Product>(
+  query: string,
+  products: T[]
+): { product: T; score: number }[] {
+  if (!query.trim()) return [];
+
+  const indexed: (SearchableProduct & { __original: T })[] = products.map(
+    (p) => ({
+      ...p,
+      _sortedTokens: toSortedTokens(p.name),
+      __original: p,
+    })
+  );
+
+  const fuse = new Fuse(indexed, FUSE_OPTIONS);
+  return fuse
+    .search(query)
+    .map((result) => ({
+      product: result.item.__original,
+      score: result.score ?? 1,
+    }));
+}
