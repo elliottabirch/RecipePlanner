@@ -2,13 +2,11 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Workflow Redesign
-current_phase: 5
-current_phase_name: Prep-Day Engine
-status: phase_complete
-stopped_at: "Phase 5 (Prep-Day Engine) CLOSED. 05-12 Task 3 human-verify checkpoint approved (2026-07-10): weights tuning, twice-unchanged deterministic regenerate, checked-off confirmation dialog, and cross-device persistence all confirmed live on the NAS. 05-11-SUMMARY.md written retroactively and 05-12-SUMMARY.md written; ROADMAP.md updated (Phase 5 = 12/12 Complete). Deferred (carried to a later phase): step-detail-on-click surfacing real `instructions`, and swap-aware-prep-naming. Next: Phase 6 (Import Pipeline & Recipe Lifecycle)."
-last_updated: "2026-07-10"
-last_activity: 2026-07-10
-last_activity_desc: Quick task 260710-jpw — fixed cook-mode Full Schedule reshuffle (DAG-aware retime) + 0-elapsed check-off quirk
+current_phase: 6
+current_phase_name: Import Pipeline & Recipe Lifecycle
+status: ready_to_plan
+stopped_at: "Phase 5 (Prep-Day Engine) complete and verified (05-VERIFICATION.md, 5/5 criteria passed). Transitioned to Phase 6 (Import Pipeline & Recipe Lifecycle) — ready to discuss or plan."
+last_updated: "2026-07-10T21:58:38.523Z"
 progress:
   total_phases: 6
   completed_phases: 5
@@ -24,26 +22,30 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-06)
 
 **Core value:** The derived weekly outputs — shopping list and prep plan — must be trustworthy and low-friction for the real weekly shop-and-prep cycle.
-**Current focus:** Phase 5 CLOSED. Next up: Phase 6 (Import Pipeline & Recipe Lifecycle).
+**Current focus:** Phase 5 complete + verified (5/5). Now at Phase 6 (Import Pipeline & Recipe Lifecycle) — ready to discuss/plan.
 
 ## Current Position
 
-Phase: 5 (Prep-Day Engine) — COMPLETE (12/12 plans, closed 2026-07-10)
+Phase: 6 — Import Pipeline & Recipe Lifecycle
 Status: Cook mode is live on the NAS (`http://192.168.50.95:3000`). Prep-day
 scheduler ships with week-wide prep merge, clock-ordered Now/Next + full-schedule
 list, and a day-of (`just_in_time`) step filter. In-app weights panel +
 deterministic regenerate shipped and human-verified.
 
 Phase 5 close-out (2026-07-10):
+
 - **05-12 Task 3 human-verify checkpoint APPROVED** by the user: weights
   tuning, twice-unchanged deterministic regenerate, checked-off confirmation
   dialog (accent-green, cook_progress preserved), and cross-device weight
   persistence all confirmed live on the tablet.
+
 - `05-12-SUMMARY.md` written (Tasks 1-2 commits 2a524aa/15068c0 + approved
   checkpoint).
+
 - `05-11-SUMMARY.md` written **retroactively** — cook mode was built ad-hoc
   (commits cc86014/f5e0af4/dd62097 + live refinements) with no contemporaneous
   SUMMARY; reconciled now.
+
 - ROADMAP.md updated: Phase 5 = 12/12 Complete (2026-07-10).
 
 Post-close follow-on (2026-07-10, commit a7094ec) — **linter v2 on-demand
@@ -62,11 +64,21 @@ tests passing (23 files). No standalone `/gsd-verify-work` run — success
 criteria satisfied via the two blocking human-verify checkpoints (05-11 cook
 mode, 05-12 weights) + green suite + this linter-surface close-out.
 
-Deferred out of Phase 5 (carried to a later phase / Phase 6 step-metadata work):
-- Step-detail-on-click surfacing the real `instructions` field (PREP-04 partial,
-  by decision 2026-07-10); cook mode currently shows step `name`.
+Deferred out of Phase 5 (carried to Phase 6 step-metadata / data work):
+
+- **Step-instruction DATA cleanup** (PREP-04 partial). Correction per
+  05-VERIFICATION.md: the display *mechanism* already exists — `NowNextCard`
+  renders `instance.step.instructions` in the tap-to-expand Collapse. What's
+  deferred is the data: many step `name`s duplicate the full instruction text
+  and `instructions` is often empty. (Earlier notes wrongly said the mechanism
+  was missing.)
+
 - `swap-aware-prep-naming` — prep-step titles / prep-state output node names
   don't yet reflect ingredient swaps.
+
+- `connective-recipe-batch-then-consume` thread 3 (contextual naming) + thread 4
+  (model batch→consume at import time) — deferred to Phase 6 (elision + display
+  surfaces done this session; see todo).
 
 Next candidate: Phase 6 — Import Pipeline & Recipe Lifecycle (discuss or plan).
 
@@ -76,7 +88,7 @@ Progress: [██████████] Phase 5 complete — 5 of 6 phases do
 
 **Velocity:**
 
-- Total plans completed: 27
+- Total plans completed: 39
 - Average duration: —
 - Total execution time: 0 hours
 
@@ -87,6 +99,7 @@ Progress: [██████████] Phase 5 complete — 5 of 6 phases do
 | 1 | 8 | - | - |
 | 2 | 10 | - | - |
 | 04 | 9 | - | - |
+| 05-prep-day-engine | 12 | - | - |
 
 **Recent Trend:**
 
@@ -261,16 +274,17 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-10 — Phase 5 (Prep-Day Engine) CLOSED. User approved the
-05-12 Task 3 human-verify checkpoint (weights tuning, twice-unchanged
-deterministic regenerate, checked-off confirmation dialog, cross-device
-persistence — all confirmed live on the NAS). Wrote `05-12-SUMMARY.md` and a
-retroactive `05-11-SUMMARY.md`, updated ROADMAP.md (Phase 5 = 12/12 Complete),
-and advanced STATE.md (5 of 6 phases done). `npx tsc --noEmit` clean, 177/177
-tests passing.
-Stopped at: Phase 5 complete; ready to start Phase 6 (Import Pipeline & Recipe
-Lifecycle) — discuss or plan.
-Note: Deferred out of Phase 5 — step-detail-on-click surfacing the real
-`instructions` field, and `swap-aware-prep-naming` — both carried to Phase 6
-step-metadata work.
+Last session: 2026-07-10 — Phase 5 (Prep-Day Engine) verified and TRANSITIONED.
+gsd-verifier passed all 5 success criteria (`05-VERIFICATION.md`, status:
+passed); `phase.complete` advanced ROADMAP/STATE to Phase 6. PROJECT.md evolved
+(Phases 3/4/5 features → Validated; scheduler/registry/rotation decisions marked
+✓). Also this session (post-Phase-5 fixes, all committed to `main`, NOT yet
+pushed/deployed): linter v2 on-demand wiring (PREP-06 close), connective-recipe
+pull-connector elision across cook mode + display surfaces, meatballs recipe
+graph fixed on PROD (form→cook split), and the cook-mode retime reshuffle bug
+(quick task 260710-jpw). Suite green at 194 tests, tsc clean.
+Stopped at: Phase 6 (Import Pipeline & Recipe Lifecycle) — ready to discuss or
+plan. No CONTEXT.md yet, so /gsd-discuss-phase 6 is the recommended entry.
+⚠️ 15+ commits are unpushed (origin/main behind); the NAS deploys from GitHub,
+so none of this session's work is live on :3000 until pushed + rebuilt.
 Resume file: None

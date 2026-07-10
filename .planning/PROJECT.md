@@ -23,14 +23,14 @@ The derived weekly outputs — shopping list and prep plan — must be trustwort
 - ✓ Print stylesheets for outputs — v1.0 (kept for batch prep only going forward)
 - ✓ Unit-disciplined data layer: unit enum + `units.ts` conversion, canonical unit + dimension per product, convert-or-split aggregation with stable lineId, product dedup + case-insensitive `(name, type)` unique index, linter v1 — v1.1 Phase 1
 - ✓ Durable shopping state: per-plan persisted checkboxes across all six Outputs tabs (content-derived stable keys), have-N with remaining-to-buy, mid-shop swap (pre-filled qty/unit + inline quick-create) with full downstream re-derivation, confirm-first make-at-home (gated on source_recipe), buy/make/skip resolution, optimistic sync + pending indicator, tablet touch pass — v1.1 Phase 2
+- ✓ Product registry seeded from USDA Foundation Foods (~500-item curated catalog) with fuzzy search and "Search USDA" mode persisting fdc_id — v1.1 Phase 3
+- ✓ Weekly planning memory: plan start dates, people-multiplier scaling, tag-based slot templates, guided-fill wizard with staples-first pre-fill + LRU ordering — v1.1 Phase 4
+- ✓ Prep-day engine: step metadata + AI-assisted backfill (185 steps), seeded GA scheduler with resource model, interactive tablet cook mode (now/next, retime-on-check-off, readiness, countdowns), weights panel + deterministic regenerate, on-demand linter v2 — v1.1 Phase 5 (verified 5/5)
 
 ### Active
 
 <!-- Milestone v1.1 Workflow Redesign. Detail in REQUIREMENTS.md. -->
 
-- [ ] Product registry seeded from USDA Foundation Foods (~800 items) with fuzzy search and "Search USDA" mode
-- [ ] Weekly planning memory: plan start dates, people-multiplier, tag-based slot templates, guided-fill wizard with staples-first + LRU ordering
-- [ ] Prep-day engine: step metadata + AI-assisted backfill, seeded GA scheduler with resource model, interactive cook mode, weights panel, linter v2
 - [ ] Import pipeline & lifecycle: draft/published recipes, in-app JSON import, recipe-import skill rewrite, /suggest-recipes, recipe-evolution note loop
 
 ### Out of Scope
@@ -64,10 +64,10 @@ The derived weekly outputs — shopping list and prep plan — must be trustwort
 |----------|-----------|---------|
 | Convert-or-split by dimension in aggregation; no density model | Within-dimension conversion is safe; cross-dimension guesses are not — lint instead | ✓ Phase 1 (revisit pending: user wants single purchase-unit lines — deferred to Phase 3, see todo) |
 | Preparation states are transient nodes, not products | One raw product per ingredient; prep vocab lives on steps; enforced by lint | ✓ Phase 1 (linter rule live) |
-| Seed registry from USDA FDC Foundation Foods (~800 concept-level items) | Concept-level names without branded purveyor noise; FDC IDs enable nutrition later | — Pending |
+| Seed registry from USDA FDC Foundation Foods (~800 concept-level items) | Concept-level names without branded purveyor noise; FDC IDs enable nutrition later | ✓ Phase 3 (shipped as a ~500-item hand-curated catalog, 96% fdc_id join coverage) |
 | Tailnet connectivity, not local-first sync | NAS PB reachable from the store via phone hotspot; optimistic updates suffice for single user | — Pending |
-| Tag-based rotation pools + guided-fill wizard, staples as first slot | New recipes join pools by tagging; no separate staples machinery | — Pending |
-| Seeded genetic-algorithm scheduler, primary objective = minimize active time | Deterministic, tunable via weights panel; consolidation-friendly | — Pending |
+| Tag-based rotation pools + guided-fill wizard, staples as first slot | New recipes join pools by tagging; no separate staples machinery | ✓ Phase 4 |
+| Seeded genetic-algorithm scheduler, primary objective = minimize active time | Deterministic, tunable via weights panel; consolidation-friendly | ✓ Phase 5 (SSGS decode + active-session-span fitness; retime-on-check-off preserves parallelism) |
 | Imports land in prod as drafts; test DB for schema/code only | Kills the test→prod content-migration ritual and the PC requirement | — Pending |
 | Step aggregation merges by input/output product-ID signature (code behavior kept) | Reconcile docs to code rather than change working behavior | ✓ Phase 1 (decisions.md reconciled) |
 | Persist all six Outputs tabs via content-derived stable keys (not array-position keys) | Positional keys silently mis-attach checks when make-it reorders lists — a correctness hazard, not a benign reset | ✓ Phase 2 (four inline tab call sites reworked) |
@@ -106,4 +106,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-06 after Phase 2 (Shopping State & Live Substitution) completed — durable per-plan shopping state, have-N, live mid-shop swap with downstream re-derivation, make-it, quick-create, and tablet touch pass shipped and verified (UAT approved)*
+*Last updated: 2026-07-10 after Phase 5 (Prep-Day Engine) completed and verified (5/5 success criteria) — step metadata + backfill, seeded GA scheduler with resource model, interactive cook mode, weights panel + deterministic regenerate, and on-demand linter v2 shipped and live on the NAS. Phases 3 (registry seed) and 4 (planning memory) also reconciled to Validated. Next: Phase 6 (Import Pipeline & Recipe Lifecycle).*
