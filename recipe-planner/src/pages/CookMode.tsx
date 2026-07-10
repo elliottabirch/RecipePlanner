@@ -570,8 +570,18 @@ export default function CookMode() {
       setActualCompletions((prev) => {
         const next = new Map(prev);
         if (nextChecked) {
-          const anchor = nowStartRef.current.get(instance.id) ?? Date.now();
-          const elapsedMinutes = Math.max(0, (Date.now() - anchor) / 60000);
+          // A step checked off from the "Now" card has a real anchor -> use the
+          // measured elapsed time. A step checked off from the Full Schedule
+          // (never surfaced as "Now") has no anchor: fall back to its ESTIMATE
+          // (active + passive), not (Date.now() - Date.now()) ≈ 0, which would
+          // log a real task as instantaneous and mis-time everything downstream.
+          const anchor = nowStartRef.current.get(instance.id);
+          const estimate =
+            (instance.step.active_minutes ?? 0) +
+            (instance.step.passive_minutes ?? 0);
+          const elapsedMinutes = anchor
+            ? Math.max(0, (Date.now() - anchor) / 60000)
+            : estimate;
           next.set(instance.id, elapsedMinutes);
         } else {
           next.delete(instance.id);
@@ -580,13 +590,14 @@ export default function CookMode() {
           schedule.order,
           next,
           emptyResourceTimeline(),
-          schedulerConfig
+          schedulerConfig,
+          weekGraph.edges
         );
         setSchedule(retimed);
         return next;
       });
     },
-    [schedule, schedulerConfig, checkedIds, cookProgress]
+    [schedule, schedulerConfig, checkedIds, cookProgress, weekGraph]
   );
 
   if (!planId) {
