@@ -3,11 +3,30 @@
  * phase's one genuinely novel module — the user explicitly kept the full GA
  * over a simpler deterministic list-scheduler alternative (D-01), so the
  * three research-flagged risks (D-01a) are first-class, verifiable
- * requirements here, not incidental implementation detail. This file will
- * grow a full seeded evolutionary loop (Task 2); this pass (Task 1) lands
- * the SSGS decode and the D-06 fitness function it evaluates against, plus
- * a single-chromosome `scheduleWeek` so the module has one concrete,
- * already-feasible entry point to build the GA loop around.
+ * requirements here, not incidental implementation detail:
+ *
+ *  1. Cross-operator determinism (D-01a.1): exactly ONE seeded `prando`
+ *     instance is created per `scheduleWeek` call and threaded through every
+ *     stochastic operator (initial-population generation, tournament
+ *     selection, crossover cut-point choice, mutation swap-index choice).
+ *     The JS built-in unseeded random function is never used anywhere in
+ *     this module — grep-gated (T-05-09a) to guarantee zero uses across
+ *     this whole directory. No operation relies on `Array.prototype.sort`
+ *     tie-break stability — every sort in this file either sorts on a
+ *     naturally-unique key (a StepInstance id string) or an explicit
+ *     deterministic tie-break key (priority rank, then id) so ties can
+ *     never occur silently. Every shuffle-like pick (the randomized
+ *     topological sort below) uses a seeded Fisher–Yates-style "pick and
+ *     remove" over an explicitly re-sorted candidate array — never
+ *     `Array.prototype.sort(() => rng() - 0.5)`.
+ *  2. Hidden hyperparameters (D-01a.2): population size, generation count,
+ *     crossover/mutation rates, elitism count, and tournament size are code
+ *     constants below (RESEARCH A5 defaults), deliberately OUTSIDE
+ *     `SchedulerConfig` — tuning the user-facing weights panel can never
+ *     silently change them.
+ *  3. Instant recompute-on-check-off (D-01a.3): this module is the *only*
+ *     place the GA ever runs. `retime.ts` (Plan 10) re-times the fixed
+ *     `Schedule.order` this module returns; it never re-invokes the GA.
  *
  * SSGS decode (05-RESEARCH.md Pattern 4): the standard RCPSP decoding
  * procedure — walk a precedence-respecting activity list once; each
@@ -15,22 +34,20 @@
  * which the resource model (resources.ts) says it's feasible. `decodeSSGS`
  * below never produces a schedule that violates a DAG precedence edge or a
  * resource-feasibility constraint, regardless of which valid activity list
- * it is given.
+ * it is given — every GA-produced chromosome is precedence-valid by
+ * construction (randomized topological sort for the initial population,
+ * deterministic priority-based repair for crossover/mutation offspring), so
+ * this guarantee holds for every individual the GA ever evaluates.
  *
  * Fitness objective (D-06): the PRIMARY term minimizes the active-session
  * span — see `computeActiveSessionSpan` below — NOT `sum(active_minutes)`,
  * which is invariant under any reordering of a fixed step set and therefore
  * cannot be a meaningful optimization target (Pitfall 1). Four secondary
  * terms (chopping consolidation, step grouping, elapsed span, resource
- * pressure) are weighted by `SchedulerConfig.weights` and are user-tunable.
- *
- * Determinism (D-01a.1, threaded through even this single-chromosome pass):
- * the one stochastic operation this pass needs — picking a valid activity
- * list to decode — uses a seeded `prando` instance, never the JS built-in
- * unseeded random function, and never relies on `Array.prototype.sort`
- * tie-break stability (every sort here uses an explicit, naturally-unique
- * key). Task 2 threads this same seeded instance through every additional
- * GA operator (selection, crossover, mutation).
+ * pressure) are weighted by `SchedulerConfig.weights` and are user-tunable;
+ * the active-session-span term is the one the user cannot zero out via the
+ * weights panel in isolation (D-06 confirms it as the intended primary
+ * reading of "minimize active/hands-on time").
  */
 import Prando from "prando";
 import {
@@ -121,6 +138,154 @@ function randomizedTopologicalOrder(
     available.sort();
   }
   return result;
+}
+
+/**
+ * Deterministically repair an arbitrary permutation of the same id set into
+ * a valid topological order, treating the permutation as a priority list:
+ * repeatedly pick, among the currently-available nodes, whichever appears
+ * earliest in `priorityIds`. No PRNG draws — this is the trivial,
+ * fully-deterministic repair 05-RESEARCH.md's D-01a.1 recommendation (a)
+ * describes for crossover/mutation offspring, using an explicit rank key
+ * (never sort-stability) as the tie-break.
+ */
+function repairToTopologicalOrder(
+  priorityIds: string[],
+  weekGraph: WeekGraph,
+  graphIndex: GraphIndex
+): string[] {
+  const rank = new Map<string, number>();
+  priorityIds.forEach((id, i) => rank.set(id, i));
+
+  const remainingIndegree = new Map(graphIndex.indegree);
+  const available = weekGraph.nodes
+    .filter((node) => (remainingIndegree.get(node.id) ?? 0) === 0)
+    .map((node) => node.id);
+
+  const result: string[] = [];
+  while (available.length > 0) {
+    available.sort(
+      (a, b) => (rank.get(a) ?? 0) - (rank.get(b) ?? 0) || a.localeCompare(b)
+    );
+    const picked = available.shift() as string;
+    result.push(picked);
+
+    for (const successor of graphIndex.successors.get(picked) ?? []) {
+      const newIndegree = (remainingIndegree.get(successor) ?? 0) - 1;
+      remainingIndegree.set(successor, newIndegree);
+      if (newIndegree === 0) {
+        available.push(successor);
+      }
+    }
+  }
+  return result;
+}
+
+/** Explicit deterministic comparator for two chromosomes — used as a
+ * tie-break key everywhere fitness values are equal, never relying on
+ * `Array.prototype.sort` stability (D-01a.1). */
+function compareChromosomes(a: string[], b: string[]): number {
+  return a.join("").localeCompare(b.join(""));
+}
+
+// ---------------------------------------------------------------------------
+// GA operators — selection, crossover, mutation. All PRNG draws come from
+// the ONE `rng` instance threaded in from `scheduleWeek`.
+// ---------------------------------------------------------------------------
+
+interface EvaluatedIndividual {
+  chromosome: string[];
+  schedule: Schedule;
+  fit: number;
+}
+
+/** Tournament-selection sample size — not named in RESEARCH.md's A5 list, so
+ * chosen as a conventional small-instance default; a fixed code constant
+ * outside `SchedulerConfig`, per D-01a.2's intent. */
+const TOURNAMENT_SIZE = 3;
+
+function tournamentSelect(
+  evaluated: EvaluatedIndividual[],
+  rng: Prando
+): string[] {
+  let winner: EvaluatedIndividual | null = null;
+  for (let i = 0; i < TOURNAMENT_SIZE; i++) {
+    const idx = rng.nextInt(0, evaluated.length - 1);
+    const candidate = evaluated[idx];
+    if (
+      winner === null ||
+      candidate.fit < winner.fit ||
+      (candidate.fit === winner.fit &&
+        compareChromosomes(candidate.chromosome, winner.chromosome) < 0)
+    ) {
+      winner = candidate;
+    }
+  }
+  return (winner as EvaluatedIndividual).chromosome.slice();
+}
+
+/**
+ * Order crossover (OX1): copy a randomly-chosen contiguous segment from
+ * `parentA` verbatim, fill the remaining positions with `parentB`'s ids (in
+ * `parentB`'s relative order, skipping ids already placed), producing a
+ * full permutation of the same id set. This raw OX1 child generally is NOT
+ * a valid topological order, so it is immediately repaired (D-01a.1
+ * recommendation (a)) by treating it as a priority list.
+ */
+function orderCrossover(
+  parentA: string[],
+  parentB: string[],
+  rng: Prando,
+  weekGraph: WeekGraph,
+  graphIndex: GraphIndex
+): string[] {
+  const n = parentA.length;
+  if (n < 2) return parentA.slice();
+
+  const cut1 = rng.nextInt(0, n - 2);
+  const cut2 = rng.nextInt(cut1 + 1, n - 1);
+
+  const segment = parentA.slice(cut1, cut2 + 1);
+  const segmentSet = new Set(segment);
+  const remainder = parentB.filter((id) => !segmentSet.has(id));
+
+  const child = new Array<string>(n);
+  for (let i = cut1; i <= cut2; i++) {
+    child[i] = segment[i - cut1];
+  }
+  let ptr = 0;
+  for (let offset = 0; offset < n; offset++) {
+    const pos = (cut2 + 1 + offset) % n;
+    if (pos >= cut1 && pos <= cut2) continue;
+    child[pos] = remainder[ptr];
+    ptr++;
+  }
+
+  return repairToTopologicalOrder(child, weekGraph, graphIndex);
+}
+
+/**
+ * Swap mutation: swap two randomly-chosen positions (PRNG-drawn indices),
+ * then repair back to a valid topological order (the swap alone can easily
+ * violate precedence).
+ */
+function swapMutate(
+  chromosome: string[],
+  rng: Prando,
+  weekGraph: WeekGraph,
+  graphIndex: GraphIndex
+): string[] {
+  const n = chromosome.length;
+  if (n < 2) return chromosome;
+
+  const i = rng.nextInt(0, n - 1);
+  const j = rng.nextInt(0, n - 1);
+  const mutated = chromosome.slice();
+  const tmp = mutated[i];
+  mutated[i] = mutated[j];
+  mutated[j] = tmp;
+
+  return repairToTopologicalOrder(mutated, weekGraph, graphIndex);
 }
 
 // ---------------------------------------------------------------------------
@@ -288,16 +453,28 @@ export function fitness(schedule: Schedule, config: SchedulerConfig): number {
 }
 
 // ---------------------------------------------------------------------------
-// Entry point (single-chromosome pass — Task 2 replaces the body with a
-// full seeded evolutionary loop over this same decode/fitness pair).
+// GA hyperparameters (D-01a.2/A5) — fixed code constants, OUTSIDE
+// SchedulerConfig. These are RESEARCH.md's recommended small-RCPSP-instance
+// defaults; retune here (never via `scheduler_config`) if real-world
+// schedules look poor.
+// ---------------------------------------------------------------------------
+const POPULATION_SIZE = 60;
+const GENERATIONS = 150;
+const CROSSOVER_RATE = 0.85;
+const MUTATION_RATE = 0.15;
+const ELITISM = 2;
+
+// ---------------------------------------------------------------------------
+// The GA loop.
 // ---------------------------------------------------------------------------
 
 /**
- * Decode ONE seeded, precedence-valid activity list for `weekGraph` and
- * return its SSGS-decoded `Schedule`. Deterministic: identical
- * `(weekGraph, config.seed)` always produces the same activity list (one
- * seeded `Prando` instance, no other stochastic input), and `decodeSSGS`
- * is itself a pure function of that list plus the resource model.
+ * Run the seeded GA over `weekGraph` and return the best `Schedule` found.
+ * Deterministic: identical `(weekGraph, config)` — in particular identical
+ * `config.seed` and `config.weights` — always produces a byte-identical
+ * `Schedule` (D-01a.1), since exactly one `Prando` instance is created here
+ * and threaded through every stochastic operator above (initial population,
+ * tournament selection, crossover, mutation).
  */
 export function scheduleWeek(
   weekGraph: WeekGraph,
@@ -314,6 +491,58 @@ export function scheduleWeek(
     burnerCount: config.burner_count,
   };
 
-  const chromosome = randomizedTopologicalOrder(weekGraph, graphIndex, rng);
-  return decodeSSGS(chromosome, weekGraph, graphIndex, capacityConfig);
+  const decode = (chromosome: string[]): Schedule =>
+    decodeSSGS(chromosome, weekGraph, graphIndex, capacityConfig);
+
+  let population: string[][] = [];
+  for (let i = 0; i < POPULATION_SIZE; i++) {
+    population.push(randomizedTopologicalOrder(weekGraph, graphIndex, rng));
+  }
+
+  let bestSchedule = decode(population[0]);
+  let bestFitness = fitness(bestSchedule, config);
+
+  for (let generation = 0; generation < GENERATIONS; generation++) {
+    const evaluated: EvaluatedIndividual[] = population.map((chromosome) => {
+      const schedule = decode(chromosome);
+      return { chromosome, schedule, fit: fitness(schedule, config) };
+    });
+    evaluated.sort(
+      (a, b) => a.fit - b.fit || compareChromosomes(a.chromosome, b.chromosome)
+    );
+
+    if (evaluated[0].fit < bestFitness) {
+      bestFitness = evaluated[0].fit;
+      bestSchedule = evaluated[0].schedule;
+    }
+
+    const nextPopulation: string[][] = [];
+    for (let e = 0; e < ELITISM && e < evaluated.length; e++) {
+      nextPopulation.push(evaluated[e].chromosome);
+    }
+
+    while (nextPopulation.length < POPULATION_SIZE) {
+      const parentA = tournamentSelect(evaluated, rng);
+      const parentB = tournamentSelect(evaluated, rng);
+
+      let child =
+        rng.next() < CROSSOVER_RATE
+          ? orderCrossover(parentA, parentB, rng, weekGraph, graphIndex)
+          : parentA.slice();
+
+      if (rng.next() < MUTATION_RATE) {
+        child = swapMutate(child, rng, weekGraph, graphIndex);
+      }
+
+      nextPopulation.push(child);
+    }
+    population = nextPopulation;
+  }
+
+  return bestSchedule;
 }
+
+/** Alias matching 05-09-PLAN.md's `generateSchedule(weekGraph, config)`
+ * naming — `scheduleWeek` is the canonical export (matches genetic.test.ts's
+ * import contract); both names resolve to the identical function. */
+export const generateSchedule = scheduleWeek;
