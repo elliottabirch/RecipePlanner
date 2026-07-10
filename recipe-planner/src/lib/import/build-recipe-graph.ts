@@ -15,6 +15,7 @@
  * would crash the node-env Vitest suite. The executor `buildRecipeGraph`
  * therefore lazy-imports `../api` inside the async body only.
  */
+import type { RecordModel } from "pocketbase";
 import type { NormalizedGraph } from "./validate-import";
 
 export type { NormalizedGraph } from "./validate-import";
@@ -209,7 +210,6 @@ export async function buildRecipeGraph(
   const { create, update, getAll, remove, collections } = await import(
     "../api"
   );
-  type RecordLike = { id: string };
 
   const seed = { ...(opts?.remapSeed ?? {}) };
   const planSeed: Record<string, string> = { ...seed };
@@ -223,7 +223,7 @@ export async function buildRecipeGraph(
     await update(collections.recipes, plan.recipe.dbId!, plan.recipe.data);
     recipeId = plan.recipe.dbId!;
   } else {
-    const created = await create<RecordLike & Record<string, unknown>>(
+    const created = await create<RecordModel>(
       collections.recipes,
       plan.recipe.data
     );
@@ -238,7 +238,7 @@ export async function buildRecipeGraph(
       await update(nodeOp.collection, nodeOp.dbId!, data);
       nodeDbIds[nodeOp.ref] = nodeOp.dbId!;
     } else {
-      const created = await create<RecordLike & Record<string, unknown>>(
+      const created = await create<RecordModel>(
         nodeOp.collection,
         data
       );
@@ -249,10 +249,10 @@ export async function buildRecipeGraph(
   // 3. Edges — delete all existing (existing-recipe path only), then recreate.
   if (opts?.recipeId) {
     const [oldPts, oldStp] = await Promise.all([
-      getAll<RecordLike>(collections.productToStepEdges, {
+      getAll<RecordModel>(collections.productToStepEdges, {
         filter: `recipe="${recipeId}"`,
       }),
-      getAll<RecordLike>(collections.stepToProductEdges, {
+      getAll<RecordModel>(collections.stepToProductEdges, {
         filter: `recipe="${recipeId}"`,
       }),
     ]);
