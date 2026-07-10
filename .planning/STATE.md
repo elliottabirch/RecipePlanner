@@ -5,14 +5,14 @@ milestone_name: Workflow Redesign
 current_phase: 6
 current_phase_name: Import Pipeline & Recipe Lifecycle
 status: executing
-stopped_at: Completed 06-03-PLAN.md
-last_updated: "2026-07-10T23:41:21.427Z"
+stopped_at: Completed 06-04-PLAN.md
+last_updated: "2026-07-10T23:53:52.868Z"
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 56
-  completed_plans: 49
-  percent: 88
+  completed_plans: 50
+  percent: 83
 ---
 
 # Project State
@@ -151,6 +151,7 @@ Progress: [██████████] Phase 5 complete — 5 of 6 phases do
 | Phase 05 P10 | 15min | 1 tasks | 1 files |
 | Phase 06 P02 | 15min | 2 tasks | 4 files |
 | Phase 06 P03 | 10min | 2 tasks | 4 files |
+| Phase 06 P04 | 18min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -247,6 +248,9 @@ Recent decisions affecting current work:
 - [Phase 05-live 2026-07-10]: `buildWeekGraph` excludes `timing=just_in_time` (day-of assembly/serving) steps and any edge touching them; keeps `batch` and blank-timing. Test fixture default flipped to `batch`.
 - [Phase 05-live 2026-07-10]: Steps have a real `instructions` text field separate from `name`; many `name`s duplicate the full instruction. Decision: keep `name` visible in cook mode, defer step-detail-on-click + name-shortening data cleanup to a later phase.
 - [Phase 05-live 2026-07-10]: "GA Gauntlet Week" stress-test plan created on PROD (`weekly_plans/q2h4t30cmh0cdm6`, 20 planned meals incl. salad-and-salmon) — 14 cross-recipe edges, veg-stock fan-out 6, chicken-broc-rice fan-in. App defaults to Test DB; switch to Production to view it. Shipped as commits 3b6504b, 36d0400, 1ffc947 on main.
+- [Phase ?]: [Phase 06-04]: single graph-write path — pure planGraphWrites + buildRecipeGraph executor; RecipeEditor.handleSave delegates (D-01/D-05, IMP-02)
+- [Phase ?]: [Phase 06-04]: recipe create-vs-update carried via reserved remapSeed key __recipe__; node data omits recipe relation (executor injects) so planner stays pure/testable
+- [Phase ?]: [Phase 06-04]: New-Recipe create path sets status=published explicitly (Open Q1/Pitfall 3); executor generics use PocketBase RecordModel for tsc -b build
 
 ### Pending Todos
 
@@ -278,7 +282,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-10T23:38:35.106Z
+Last session: 2026-07-10T23:53:04.596Z
 gsd-verifier passed all 5 success criteria (`05-VERIFICATION.md`, status:
 passed); `phase.complete` advanced ROADMAP/STATE to Phase 6. PROJECT.md evolved
 (Phases 3/4/5 features → Validated; scheduler/registry/rotation decisions marked
