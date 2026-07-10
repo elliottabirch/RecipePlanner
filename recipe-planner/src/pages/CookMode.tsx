@@ -60,6 +60,12 @@ import { emptyResourceTimeline } from "../lib/scheduler/resources";
 import { loadSchedulerConfig } from "../lib/scheduler/scheduler-config";
 import type { Schedule, StepInstance, WeekGraph } from "../lib/scheduler/types";
 import { deriveReadiness } from "../lib/scheduler/readiness";
+import {
+  runStepLint,
+  runWeekLint,
+  collectStoredInputConsumptions,
+  type LintFinding,
+} from "../lib/linter";
 import { useCookProgress } from "../hooks/useCookProgress";
 import {
   NowNextCard,
@@ -131,6 +137,8 @@ export default function CookMode() {
   const [showAllSteps, setShowAllSteps] = useState(false);
   const [showWeightsPanel, setShowWeightsPanel] = useState(false);
   const [regenerateConfirmOpen, setRegenerateConfirmOpen] = useState(false);
+  // `null` = dialog closed; an array (possibly empty) = linter has run.
+  const [lintFindings, setLintFindings] = useState<LintFinding[] | null>(null);
 
   const cookProgress = useCookProgress(planId ?? "");
 
@@ -529,6 +537,30 @@ export default function CookMode() {
     performRegenerate();
   }, [performRegenerate]);
 
+  // On-demand linter v2 (PREP-06). Runs the two v2 aggregators against THIS
+  // planned week: `runStepLint` over every real authored step (deduped by id —
+  // the same recipe planned twice shares step records; synthetic merged-prep
+  // nodes are graph-only and never linted), and `runWeekLint` over the week
+  // graph plus its derived stored/inventory consumptions (the missing-pull-step
+  // rule's cross-recipe input). This is the "linter, run on demand, flags
+  // step-metadata and pull-step violations" surface (Phase 5 success criterion
+  // 5); the publish-gate wiring of the same rules stays a Phase 6 concern.
+  const handleRunLint = useCallback(() => {
+    const stepsById = new Map<string, RecipeStep>();
+    for (const recipeData of mealKeyedRecipeData.values()) {
+      for (const step of recipeData.steps) stepsById.set(step.id, step);
+    }
+    const includedIds = new Set(weekGraph.nodes.map((node) => node.id));
+    const consumptions = collectStoredInputConsumptions(
+      mealKeyedRecipeData,
+      includedIds
+    );
+    setLintFindings([
+      ...runStepLint([...stepsById.values()]),
+      ...runWeekLint(weekGraph, consumptions),
+    ]);
+  }, [mealKeyedRecipeData, weekGraph]);
+
   const handleToggleChecked = useCallback(
     (instance: StepInstance) => {
       if (!schedule || !schedulerConfig) return;
@@ -609,6 +641,9 @@ export default function CookMode() {
             onClick={() => setShowWeightsPanel((s) => !s)}
           >
             {showWeightsPanel ? "Hide Weights" : "Weights"}
+          </Button>
+          <Button variant="outlined" onClick={handleRunLint}>
+            Check plan
           </Button>
           <Button variant="outlined" onClick={() => navigate("/outputs")}>
             Back to Outputs
@@ -828,6 +863,46 @@ export default function CookMode() {
           >
             Regenerate
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* On-demand linter v2 results (PREP-06). `lintFindings === null` means
+          the linter hasn't been run; an empty array is the clean "no issues"
+          state. */}
+      <Dialog
+        open={lintFindings !== null}
+        onClose={() => setLintFindings(null)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Plan check</DialogTitle>
+        <DialogContent>
+          {lintFindings && lintFindings.length === 0 ? (
+            <Typography color="text.secondary">
+              No step-metadata or pull-step issues found for this week.
+            </Typography>
+          ) : (
+            <List dense disablePadding>
+              {lintFindings?.map((finding, i) => (
+                <ListItem key={i} disableGutters alignItems="flex-start">
+                  <Chip
+                    size="small"
+                    variant="outlined"
+                    color={finding.severity === "error" ? "error" : "warning"}
+                    label={finding.severity}
+                    sx={{ mr: 1, mt: 0.25 }}
+                  />
+                  <ListItemText
+                    primary={finding.message}
+                    secondary={finding.rule}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLintFindings(null)}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>

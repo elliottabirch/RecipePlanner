@@ -13,6 +13,8 @@
  */
 import type { LintFinding } from "../index";
 import type { WeekGraph } from "../../scheduler/types";
+import type { MealKeyedRecipeData } from "../../aggregation/types";
+import { ProductType } from "../../types";
 
 /** A single stored/inventory input consumed by an assembly step instance. */
 export interface StoredInputConsumption {
@@ -20,6 +22,54 @@ export interface StoredInputConsumption {
   consumerId: string;
   productId: string;
   productName: string;
+}
+
+/**
+ * Derive the `consumedStoredInputs` list `lintMissingPullStep`/`runWeekLint`
+ * expect, straight from the same `MealKeyedRecipeData` the week-graph is built
+ * from. Mirrors `week-graph.ts` section (3)'s consumer side: every input
+ * product node of type `stored`/`inventory` consumed by a step is a stored
+ * input that needs a producer somewhere in the planned week.
+ *
+ * `includedConsumerIds` is the week-graph's own node-id set — passing it drops
+ * consumers that the builder excluded (day-of `just_in_time` steps), so the
+ * linter never flags a stored input for a step that isn't in the prep-day
+ * schedule at all. The `${mealId}::${stepId}` key matches the builder's
+ * `instanceId`; a stored-input consumer is never a mergeable single-raw prep
+ * node, so its id is always present un-remapped in the graph's nodes.
+ */
+export function collectStoredInputConsumptions(
+  mealData: MealKeyedRecipeData,
+  includedConsumerIds: ReadonlySet<string>
+): StoredInputConsumption[] {
+  const seen = new Set<string>();
+  const consumptions: StoredInputConsumption[] = [];
+  for (const [consumerMealId, recipeData] of mealData) {
+    for (const consumeEdge of recipeData.productToStepEdges) {
+      const inputNode = recipeData.productNodes.find(
+        (node) => node.id === consumeEdge.source
+      );
+      const inputProduct = inputNode?.expand?.product;
+      if (!inputProduct) continue;
+      if (
+        inputProduct.type !== ProductType.Stored &&
+        inputProduct.type !== ProductType.Inventory
+      ) {
+        continue;
+      }
+      const consumerId = `${consumerMealId}::${consumeEdge.target}`;
+      if (!includedConsumerIds.has(consumerId)) continue;
+      const dedupeKey = `${consumerId}::${inputProduct.id}`;
+      if (seen.has(dedupeKey)) continue;
+      seen.add(dedupeKey);
+      consumptions.push({
+        consumerId,
+        productId: inputProduct.id,
+        productName: inputProduct.name,
+      });
+    }
+  }
+  return consumptions;
 }
 
 export function lintMissingPullStep(

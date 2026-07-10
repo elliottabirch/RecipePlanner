@@ -31,6 +31,8 @@ import {
   type StoredInputConsumption,
 } from "./rules/missing-pull-step";
 
+export { collectStoredInputConsumptions } from "./rules/missing-pull-step";
+
 export interface LintFinding {
   severity: "error" | "warning";
   rule: string;
