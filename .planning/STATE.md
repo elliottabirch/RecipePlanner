@@ -8,7 +8,7 @@ status: phase_complete
 stopped_at: "Phase 5 (Prep-Day Engine) CLOSED. 05-12 Task 3 human-verify checkpoint approved (2026-07-10): weights tuning, twice-unchanged deterministic regenerate, checked-off confirmation dialog, and cross-device persistence all confirmed live on the NAS. 05-11-SUMMARY.md written retroactively and 05-12-SUMMARY.md written; ROADMAP.md updated (Phase 5 = 12/12 Complete). Deferred (carried to a later phase): step-detail-on-click surfacing real `instructions`, and swap-aware-prep-naming. Next: Phase 6 (Import Pipeline & Recipe Lifecycle)."
 last_updated: "2026-07-10"
 last_activity: 2026-07-10
-last_activity_desc: Phase 5 closed — weights-panel checkpoint approved, both SUMMARYs written, ROADMAP updated
+last_activity_desc: Quick task 260710-jpw — fixed cook-mode Full Schedule reshuffle (DAG-aware retime) + 0-elapsed check-off quirk
 progress:
   total_phases: 6
   completed_phases: 5
@@ -242,6 +242,12 @@ Recent decisions affecting current work:
 - ℹ️ [Phase 5] `swap-aware-prep-naming` todo — prep-step titles + prep-state output node names don't reflect ingredient swaps yet (authored free text). Swap's input/quantity re-derivation IS correct (fixed 9cf9206). Belongs with Phase 5 step-metadata rework.
 
 *(All Phase 2 re-verification blockers resolved — UAT approved 2026-07-06, verification passed 7/7.)*
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260710-jpw | Fix cook-mode Full Schedule reshuffle on first check-off (retimeSchedule over-serialization) + 0-elapsed quirk | 2026-07-10 | b91ac19 | [260710-jpw-fix-cook-mode-full-schedule-reshuffle-on](./quick/260710-jpw-fix-cook-mode-full-schedule-reshuffle-on/) |
 
 ## Deferred Items
 
