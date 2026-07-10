@@ -1,0 +1,1667 @@
+{
+  "l5r22842tl3y0dl": {
+    "active_minutes": 2,
+    "passive_minutes": 0,
+    "instructions": "Transfer applesauce to a storage container and refrigerate.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "n62754bor0ypm84": {
+    "active_minutes": 5,
+    "passive_minutes": 0,
+    "instructions": "Halve the cucumber lengthwise, scrape out seeds, then slice.",
+    "prep_action": "sliced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "wjak92w9xw2uxuu": {
+    "active_minutes": 3,
+    "passive_minutes": 0,
+    "instructions": "Thinly slice the green onion.",
+    "prep_action": "sliced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "999g76v17087hfw": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Small-dice the tomato.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "322j35i8tjo24z9": {
+    "active_minutes": 3,
+    "passive_minutes": 0,
+    "instructions": "Chop the cilantro.",
+    "prep_action": "chopped",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "h10i3k78515h40p": {
+    "active_minutes": 3,
+    "passive_minutes": 0,
+    "instructions": "Stack mint leaves, roll, and chiffonade into thin ribbons.",
+    "prep_action": "shredded",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "y3dsy32v28953g9": {
+    "active_minutes": 3,
+    "passive_minutes": 8,
+    "instructions": "Spread peanuts on a sheet pan and roast until fragrant.",
+    "prep_action": null,
+    "resource": "oven",
+    "oven_temp_f": 350,
+    "rack_slots": 1
+  },
+  "nbr5bs73rn33g99": {
+    "active_minutes": 5,
+    "passive_minutes": 0,
+    "instructions": "Whisk together rice vinegar, sugar, minced ginger, coriander, fish sauce, and red pepper flakes.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "2h8sj22t8r446o2": {
+    "active_minutes": 5,
+    "passive_minutes": 0,
+    "instructions": "Toss pulled pork shoulder with BBQ sauce and pile onto hamburger buns.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "2a129pt14woo9bx": {
+    "active_minutes": 5,
+    "passive_minutes": 45,
+    "instructions": "Simmer dried black-eyed peas in vegetable stock until tender.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "3u1r7vbgi916a74": {
+    "active_minutes": 5,
+    "passive_minutes": 0,
+    "instructions": "Small-dice the carrot.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "79pc1g6vkxx2x0n": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Small-dice the cucumber.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "583c3p3n05ukm97": {
+    "active_minutes": 3,
+    "passive_minutes": 0,
+    "instructions": "Thinly slice the green onion.",
+    "prep_action": "sliced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "t70su03cj597fb1": {
+    "active_minutes": 3,
+    "passive_minutes": 0,
+    "instructions": "Small-dice the jalapeno, seeding if less heat is desired.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "441x007o278qc39": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Halve the cherry tomatoes.",
+    "prep_action": "sliced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "65r14271cc0w22j": {
+    "active_minutes": 3,
+    "passive_minutes": 0,
+    "instructions": "Chop the cilantro.",
+    "prep_action": "chopped",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "l73x6zr739y65s8": {
+    "active_minutes": 2,
+    "passive_minutes": 3,
+    "instructions": "Toast sesame seeds in a dry skillet until golden and fragrant.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "dtuxhkk2j9qf0ps": {
+    "active_minutes": 6,
+    "passive_minutes": 0,
+    "instructions": "Combine black-eyed peas with the prepped vegetables, cilantro, sesame seeds, vinegar, and olive oil.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "462p5q2xdv29z05": {
+    "active_minutes": 3,
+    "passive_minutes": 0,
+    "instructions": "Halve the baby bok choy lengthwise.",
+    "prep_action": "sliced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "453um4j76drj6h6": {
+    "active_minutes": 5,
+    "passive_minutes": 5,
+    "instructions": "Saute bok choy with pulled garlic cube until just tender.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "b9c81up8da1v23q": {
+    "active_minutes": 1,
+    "passive_minutes": 0,
+    "instructions": "Pull a frozen garlic cube from the freezer.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "z37z6o459t50602": {
+    "active_minutes": 2,
+    "passive_minutes": 0,
+    "instructions": "Spread peanut butter on sliced bread.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "3ah178d5p6l548x": {
+    "active_minutes": 6,
+    "passive_minutes": 0,
+    "instructions": "Large-dice the russet potatoes.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "i9t62fma7idcfmb": {
+    "active_minutes": 3,
+    "passive_minutes": 15,
+    "instructions": "Boil diced potatoes until fork-tender.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "r98dwe15yb38cq5": {
+    "active_minutes": 2,
+    "passive_minutes": 8,
+    "instructions": "Steam frozen broccoli until tender.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "9tj4l8je95y9op3": {
+    "active_minutes": 8,
+    "passive_minutes": 0,
+    "instructions": "Combine steamed broccoli, boiled potatoes, egg, shredded cheese, and flour.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "73n0u00vh64d494": {
+    "active_minutes": 8,
+    "passive_minutes": 0,
+    "instructions": "Form the mixture into patties.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "lax9zeah2733b70": {
+    "active_minutes": 3,
+    "passive_minutes": 15,
+    "instructions": "Par-bake the formed patties on a sheet pan.",
+    "prep_action": null,
+    "resource": "oven",
+    "oven_temp_f": 375,
+    "rack_slots": 1
+  },
+  "572jz1b257kx80h": {
+    "active_minutes": 5,
+    "passive_minutes": 0,
+    "instructions": "Cool and package patties for the freezer.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "12554k44lx086yc": {
+    "active_minutes": 1,
+    "passive_minutes": 0,
+    "instructions": "Pull frozen broccoli patties from the freezer.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "1j932w7nebm659w": {
+    "active_minutes": 6,
+    "passive_minutes": 0,
+    "instructions": "Large-dice the sweet potatoes.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "e3v71xinlufnjy4": {
+    "active_minutes": 3,
+    "passive_minutes": 25,
+    "instructions": "Toss sweet potato with oil and roast until caramelized.",
+    "prep_action": null,
+    "resource": "oven",
+    "oven_temp_f": 425,
+    "rack_slots": 1
+  },
+  "98688w1a6e0f5y2": {
+    "active_minutes": 6,
+    "passive_minutes": 0,
+    "instructions": "Assemble roasted sweet potato, avocado, black beans, spinach, rice, mushroom mixture, and tahini sauce into bowls.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "06ubx4tsmv058f1": {
+    "active_minutes": 3,
+    "passive_minutes": 18,
+    "instructions": "Cook rice according to package directions.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "y79wl600qoixmer": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Slice portobello mushrooms into ½-inch strips.",
+    "prep_action": "sliced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "h3562rj958c5912": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Large-dice the red onion.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "949pg4rvu7ok844": {
+    "active_minutes": 5,
+    "passive_minutes": 20,
+    "instructions": "Toss mushrooms and onion with olive oil, cumin, coriander, paprika, salt, and pepper; roast 20 minutes.",
+    "prep_action": null,
+    "resource": "oven",
+    "oven_temp_f": 425,
+    "rack_slots": 1
+  },
+  "ryi3xg4ye5d7kw6": {
+    "active_minutes": 2,
+    "passive_minutes": 0,
+    "instructions": "Juice the lemon.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "48v20ke49wyndyd": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Whisk tahini, lemon juice, and minced garlic until smooth, thinning with water as needed.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "215lr8m9ti02271": {
+    "active_minutes": 1,
+    "passive_minutes": 0,
+    "instructions": "Pull butternut squash soup from the freezer to thaw.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "vt83ji6p96psl85": {
+    "active_minutes": 6,
+    "passive_minutes": 25,
+    "instructions": "Combine vinegar, stock, oregano, thyme, cream cheese, onion, and roasted squash; simmer and blend until smooth, then cool for freezing.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "077xs41o7v52npa": {
+    "active_minutes": 8,
+    "passive_minutes": 0,
+    "instructions": "Large-dice the butternut squash.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "5i2579qgov0k1f4": {
+    "active_minutes": 3,
+    "passive_minutes": 30,
+    "instructions": "Roast diced butternut squash until tender and caramelized.",
+    "prep_action": null,
+    "resource": "oven",
+    "oven_temp_f": 400,
+    "rack_slots": 1
+  },
+  "n24im0579cdb992": {
+    "active_minutes": 5,
+    "passive_minutes": 0,
+    "instructions": "Large-dice the yellow onion.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "g4tr1u4xnau2w37": {
+    "active_minutes": 5,
+    "passive_minutes": 12,
+    "instructions": "Season and cook chicken breast until cooked through.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "jmk5w3s01cc51jr": {
+    "active_minutes": 3,
+    "passive_minutes": 18,
+    "instructions": "Cook rice in chicken stock.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "zqbr9203100qgvz": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Break broccoli down into florets.",
+    "prep_action": "chopped",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "67u158535an0k24": {
+    "active_minutes": 3,
+    "passive_minutes": 20,
+    "instructions": "Toss broccoli florets with olive oil and roast until tender.",
+    "prep_action": null,
+    "resource": "oven",
+    "oven_temp_f": 425,
+    "rack_slots": 1
+  },
+  "z0hu4jnesa3672b": {
+    "active_minutes": 6,
+    "passive_minutes": 0,
+    "instructions": "Portion roasted broccoli, rice, chicken breast, and gravy into containers.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "168n2zt62tw725s": {
+    "active_minutes": 1,
+    "passive_minutes": 0,
+    "instructions": "Pull chicken stock for the gravy.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "cez05p7686a770k": {
+    "active_minutes": 5,
+    "passive_minutes": 8,
+    "instructions": "Whisk flour and butter into chicken stock and simmer until thickened.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "2182417e3412o3o": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Large-dice the yellow onion.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "5nl46gi7kw96z67": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Large-dice the carrot.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "z23822a1s46yga6": {
+    "active_minutes": 5,
+    "passive_minutes": 60,
+    "instructions": "Simmer rotisserie chicken with onion and carrot to make stock.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "v773e99m94cd7u8": {
+    "active_minutes": 2,
+    "passive_minutes": 0,
+    "instructions": "Put away coffee, oat milk, and milk.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "3bp8uhokzv636s8": {
+    "active_minutes": 3,
+    "passive_minutes": 0,
+    "instructions": "Thinly slice the green onion.",
+    "prep_action": "sliced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "xq13l565pul98qw": {
+    "active_minutes": 3,
+    "passive_minutes": 0,
+    "instructions": "Stack, roll, and chiffonade the basil.",
+    "prep_action": "shredded",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "26cja05p44ll9k3": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Small-dice the tomato.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "27448c8821gbnm5": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Small-dice the bell pepper.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "l7p31szzu0z5t1c": {
+    "active_minutes": 6,
+    "passive_minutes": 0,
+    "instructions": "Combine corn, tomato, basil, olive oil, vinegar, green onion, feta, olives, bell pepper, and black beans.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "vjunn4zaupfiite": {
+    "active_minutes": 1,
+    "passive_minutes": 0,
+    "instructions": "Put away cottage cheese.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "z4nwilpcv949t7l": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Small-dice the yellow onion.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "ghi1324881b1cc9": {
+    "active_minutes": 1,
+    "passive_minutes": 0,
+    "instructions": "Pull frozen garlic cubes from the freezer.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "l28xkg4ma1466a4": {
+    "active_minutes": 11,
+    "passive_minutes": 0,
+    "instructions": "Melt butter, saute onion about 8 minutes, add garlic and spices for 1 minute, then sprinkle in flour and cook 2 minutes.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "3dua03w89jcdtdt": {
+    "active_minutes": 5,
+    "passive_minutes": 45,
+    "instructions": "Add crushed tomatoes, stock, thyme, sugar, and ancho chile; simmer covered 45 minutes on medium-low.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "47q2svl4o45t222": {
+    "active_minutes": 5,
+    "passive_minutes": 0,
+    "instructions": "Remove thyme sprigs and ancho chile, then blend the soup until creamy.",
+    "prep_action": null,
+    "resource": "blender",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "56g217ads3y50o6": {
+    "active_minutes": 3,
+    "passive_minutes": 0,
+    "instructions": "Top each bowl with a swirl of crema and a sprinkle of chives.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "oo2c32sf8zh5w1v": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Smash and slice the cucumbers.",
+    "prep_action": "sliced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "y5a805rc937053m": {
+    "active_minutes": 2,
+    "passive_minutes": 20,
+    "instructions": "Salt the cucumbers and let sit to draw out excess liquid.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "t9ypotf3m9sn208": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Toss drained cucumbers with rice vinegar, soy sauce, sesame oil, and minced garlic.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "p8p28059bs03gqn": {
+    "active_minutes": 2,
+    "passive_minutes": 0,
+    "instructions": "Pull veggie, spinach, and meat egg bites from storage.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "1q1bt8fpfbf24h7": {
+    "active_minutes": 1,
+    "passive_minutes": 0,
+    "instructions": "Put away eggs.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "fy0ky6if424ml57": {
+    "active_minutes": 2,
+    "passive_minutes": 0,
+    "instructions": "Put away bananas, berries, and oranges.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "5y2c3btkcr67ayr": {
+    "active_minutes": 2,
+    "passive_minutes": 20,
+    "instructions": "Reheat the pre-roasted garlic chicken in the oven until warmed through.",
+    "prep_action": null,
+    "resource": "oven",
+    "oven_temp_f": 350,
+    "rack_slots": 1
+  },
+  "3w9ko55fug3a3cm": {
+    "active_minutes": 6,
+    "passive_minutes": 10,
+    "instructions": "Cook hamburger and impossible patties on a griddle or pan, topping with cheese.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "kv1q6ymycstd65c": {
+    "active_minutes": 3,
+    "passive_minutes": 0,
+    "instructions": "Thinly slice the yellow onion.",
+    "prep_action": "sliced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "7k003a8tew28koi": {
+    "active_minutes": 2,
+    "passive_minutes": 22,
+    "instructions": "Bake frozen fries per package directions.",
+    "prep_action": null,
+    "resource": "oven",
+    "oven_temp_f": 425,
+    "rack_slots": 1
+  },
+  "27h1sdyq64yyj54": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Small-dice the yellow onion.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "uv34rn3f1zkq730": {
+    "active_minutes": 4,
+    "passive_minutes": 25,
+    "instructions": "Simmer urad dal until soft.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "3pvn6od4yupf1e1": {
+    "active_minutes": 8,
+    "passive_minutes": 20,
+    "instructions": "Combine butter, onion, garlic, spices, stewed tomatoes, cream, kasuri methi, and cooked dal; simmer to blend flavors.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "5tk73b1lm1gue96": {
+    "active_minutes": 5,
+    "passive_minutes": 0,
+    "instructions": "Portion indian meat and vegetable dishes over rice.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "7q6mkjo1gb3n747": {
+    "active_minutes": 3,
+    "passive_minutes": 18,
+    "instructions": "Cook rice in vegetable stock.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "o6239x9osg33t8z": {
+    "active_minutes": 2,
+    "passive_minutes": 45,
+    "instructions": "Bake the lasagna per package directions.",
+    "prep_action": null,
+    "resource": "oven",
+    "oven_temp_f": 375,
+    "rack_slots": 1
+  },
+  "18136kdi25f229l": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Small-dice the yellow onion.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "68z91n3ewx92mce": {
+    "active_minutes": 8,
+    "passive_minutes": 0,
+    "instructions": "Scramble eggs with lox and diced onion.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "4k4oxt8l96518xd": {
+    "active_minutes": 1,
+    "passive_minutes": 0,
+    "instructions": "Put away lox.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "j67y7y34y8pf498": {
+    "active_minutes": 1,
+    "passive_minutes": 0,
+    "instructions": "Store the diced onion.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "8dbjdf07vq96c2e": {
+    "active_minutes": 3,
+    "passive_minutes": 0,
+    "instructions": "Small-dice the shallot.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "vne10ulanc60e8g": {
+    "active_minutes": 3,
+    "passive_minutes": 0,
+    "instructions": "Dice the sun-dried tomato.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "6248my00q773095": {
+    "active_minutes": 2,
+    "passive_minutes": 0,
+    "instructions": "Juice the lemons.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "mr77h24533y299j": {
+    "active_minutes": 3,
+    "passive_minutes": 18,
+    "instructions": "Cook rice in vegetable stock.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "q1gmw60l21zm87k": {
+    "active_minutes": 5,
+    "passive_minutes": 5,
+    "instructions": "Sweat shallot and garlic until soft and fragrant.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "e7757od8x8oj2d4": {
+    "active_minutes": 6,
+    "passive_minutes": 20,
+    "instructions": "Simmer chickpeas with red pepper flakes, tomato paste, paprika, oregano, sweated vegetables, sun-dried tomato, lemon juice, and stock.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "2s1hqa5107k04xo": {
+    "active_minutes": 1,
+    "passive_minutes": 0,
+    "instructions": "Pull frozen ground beef from the freezer to thaw.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "fn45gc06h1lm61i": {
+    "active_minutes": 8,
+    "passive_minutes": 15,
+    "instructions": "Brown ground beef, combine with marinara, and simmer over cooked spaghetti; top with parmesan.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "y5i30r8wr0iq63r": {
+    "active_minutes": 1,
+    "passive_minutes": 0,
+    "instructions": "Pull frozen ground beef from the freezer to thaw.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "9b55jwq1j78v7pm": {
+    "active_minutes": 8,
+    "passive_minutes": 15,
+    "instructions": "Brown ground beef, combine with marinara, and simmer over cooked spaghetti; top with parmesan.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "vkkplvo74758jzm": {
+    "active_minutes": 1,
+    "passive_minutes": 0,
+    "instructions": "Pull frozen meatballs from the freezer.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "2mm4ee879l3mzu2": {
+    "active_minutes": 2,
+    "passive_minutes": 10,
+    "instructions": "Boil penne pasta until al dente.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "r553w3ub7j3vznp": {
+    "active_minutes": 2,
+    "passive_minutes": 18,
+    "instructions": "Cook rice according to package directions.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "22wyi96nyuo5prn": {
+    "active_minutes": 3,
+    "passive_minutes": 0,
+    "instructions": "Portion cooked rice into storage containers.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "xyzy1o21y50vxv0": {
+    "active_minutes": 1,
+    "passive_minutes": 0,
+    "instructions": "Put away plain greek yogurt.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "gct5o47322o6507": {
+    "active_minutes": 1,
+    "passive_minutes": 0,
+    "instructions": "Pull carnitas pork shoulder from storage.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "g82nknrgxukb4wc": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Break broccoli down into florets.",
+    "prep_action": "chopped",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "tk14d47p33z2295": {
+    "active_minutes": 3,
+    "passive_minutes": 18,
+    "instructions": "Toss broccoli florets with oil and roast until tender.",
+    "prep_action": null,
+    "resource": "oven",
+    "oven_temp_f": 425,
+    "rack_slots": 1
+  },
+  "7109dh74t88dqhd": {
+    "active_minutes": 3,
+    "passive_minutes": 0,
+    "instructions": "Portion roasted broccoli florets into storage containers.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "0lu1o84ab4919rk": {
+    "active_minutes": 5,
+    "passive_minutes": 0,
+    "instructions": "Large-dice the carrots.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "k0351a642dfrh32": {
+    "active_minutes": 3,
+    "passive_minutes": 25,
+    "instructions": "Toss carrots with oil and roast until caramelized.",
+    "prep_action": null,
+    "resource": "oven",
+    "oven_temp_f": 425,
+    "rack_slots": 1
+  },
+  "oechtn83xu66v36": {
+    "active_minutes": 6,
+    "passive_minutes": 0,
+    "instructions": "Large-dice the sweet potato.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "jf236dz54un51sc": {
+    "active_minutes": 3,
+    "passive_minutes": 25,
+    "instructions": "Toss sweet potato with oil and roast until caramelized.",
+    "prep_action": null,
+    "resource": "oven",
+    "oven_temp_f": 425,
+    "rack_slots": 1
+  },
+  "d3w7733u02t8e6s": {
+    "active_minutes": 3,
+    "passive_minutes": 25,
+    "instructions": "Roast the pre-mixed vegetables until tender.",
+    "prep_action": null,
+    "resource": "oven",
+    "oven_temp_f": 425,
+    "rack_slots": 1
+  },
+  "n1b30h5f2916zs3": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Large-dice the red onion.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "76vw9r812f1p0vb": {
+    "active_minutes": 6,
+    "passive_minutes": 0,
+    "instructions": "Large-dice the sweet potato.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "ofk5s22615r5wj8": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Break broccoli down into florets.",
+    "prep_action": "chopped",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "ab17g2c10bhcdjl": {
+    "active_minutes": 3,
+    "passive_minutes": 18,
+    "instructions": "Cook rice in vegetable stock.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "h83movo2nirb620": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Whisk tahini with lemon and minced garlic until smooth.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "n937juhzo05i1l5": {
+    "active_minutes": 5,
+    "passive_minutes": 6,
+    "instructions": "Saute shrimp until pink and cooked through.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "8rgkewlo319rc9j": {
+    "active_minutes": 4,
+    "passive_minutes": 25,
+    "instructions": "Toss onion, sweet potato, and broccoli florets with oil and roast until tender.",
+    "prep_action": null,
+    "resource": "oven",
+    "oven_temp_f": 425,
+    "rack_slots": 1
+  },
+  "d0357j1i17iq6sz": {
+    "active_minutes": 2,
+    "passive_minutes": 0,
+    "instructions": "Portion cooked rice into storage containers.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "ax8b82yy1za0f38": {
+    "active_minutes": 1,
+    "passive_minutes": 0,
+    "instructions": "Portion cooked shrimp into storage containers.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "62776i6hz7r9ijp": {
+    "active_minutes": 3,
+    "passive_minutes": 0,
+    "instructions": "Thinly slice the red onion.",
+    "prep_action": "sliced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "90jg47y2v22b3l0": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Slice the cucumber.",
+    "prep_action": "sliced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "4dsh6g12z6xa0z6": {
+    "active_minutes": 2,
+    "passive_minutes": 0,
+    "instructions": "Add sliced cucumber to the salad veggie aggregate.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "5864zo1i1zexe91": {
+    "active_minutes": 2,
+    "passive_minutes": 0,
+    "instructions": "Add sliced red onion to the salad veggie aggregate.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "49c337w7y50j000": {
+    "active_minutes": 5,
+    "passive_minutes": 0,
+    "instructions": "Toss salad veggie aggregate, dressing, prepared lettuce, and avocado.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "t2qcfp1c3f2w045": {
+    "active_minutes": 5,
+    "passive_minutes": 8,
+    "instructions": "Pan-sear the salmon until cooked through.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "9o2y677v8mfw2u8": {
+    "active_minutes": 2,
+    "passive_minutes": 0,
+    "instructions": "Whisk olive oil and vinegar together.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "kfpw2u4kc3m64gd": {
+    "active_minutes": 1,
+    "passive_minutes": 0,
+    "instructions": "Pull frozen salmon out to thaw.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "9o28t570htvf3fw": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Wash and shred the lettuce.",
+    "prep_action": "shredded",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "x3c7884ki8xw4yr": {
+    "active_minutes": 1,
+    "passive_minutes": 0,
+    "instructions": "Store the washed and shredded lettuce.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "ho3ad0mld2288yb": {
+    "active_minutes": 1,
+    "passive_minutes": 0,
+    "instructions": "Put away avocados.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "8dt8zqoa17p2263": {
+    "active_minutes": 1,
+    "passive_minutes": 0,
+    "instructions": "Pull frozen salmon out to thaw.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "rz8w8lnd3n3de5s": {
+    "active_minutes": 6,
+    "passive_minutes": 8,
+    "instructions": "Cook salmon and plate alongside the roasted vegetable aggregate.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "0inrelmflz0sx9w": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Large-dice the red onion.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "lfydvdh43ssrj2p": {
+    "active_minutes": 6,
+    "passive_minutes": 0,
+    "instructions": "Large-dice the sweet potato.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "k08812r5ahqbmy0": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Break broccoli down into florets.",
+    "prep_action": "chopped",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "nnv3j580k91v4sr": {
+    "active_minutes": 4,
+    "passive_minutes": 25,
+    "instructions": "Toss onion, sweet potato, and broccoli florets with oil and roast until tender.",
+    "prep_action": null,
+    "resource": "oven",
+    "oven_temp_f": 425,
+    "rack_slots": 1
+  },
+  "u63ve677g765853": {
+    "active_minutes": 2,
+    "passive_minutes": 30,
+    "instructions": "Pull frozen salmon and quick-thaw in cold water.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "8141k0qn83uuex4": {
+    "active_minutes": 4,
+    "passive_minutes": 12,
+    "instructions": "Cut salmon into bites, season, and bake until just cooked through.",
+    "prep_action": null,
+    "resource": "oven",
+    "oven_temp_f": 400,
+    "rack_slots": 1
+  },
+  "8kf0513w8a9s744": {
+    "active_minutes": 2,
+    "passive_minutes": 0,
+    "instructions": "Pull cooked chicken breast and shred with two forks.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "7ga2246fjbdo149": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Slice the cucumber.",
+    "prep_action": "sliced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "sle48xkl4w157cn": {
+    "active_minutes": 8,
+    "passive_minutes": 0,
+    "instructions": "Trim and score the pork shoulder roast.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "2n4515k9a95d0g1": {
+    "active_minutes": 15,
+    "passive_minutes": 480,
+    "instructions": "Season pork shoulder with salt, pepper, and mustard, wrap in parchment, and smoke/slow-roast low and slow.",
+    "prep_action": null,
+    "resource": "oven",
+    "oven_temp_f": 225,
+    "rack_slots": 1
+  },
+  "fa0xvy8oo7dy741": {
+    "active_minutes": 10,
+    "passive_minutes": 25,
+    "instructions": "Blend ricotta, spinach, egg, parmesan, and breadcrumbs; pour into a muffin tin and bake.",
+    "prep_action": null,
+    "resource": "oven",
+    "oven_temp_f": 350,
+    "rack_slots": 1
+  },
+  "835cpbt1194uxdk": {
+    "active_minutes": 10,
+    "passive_minutes": 0,
+    "instructions": "Combine breadcrumbs, ground beef, spinach, minced garlic, and egg; form into meatballs and freeze.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "00d4ew8l5394445": {
+    "active_minutes": 2,
+    "passive_minutes": 0,
+    "instructions": "Plate the steak bites.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "uc7330b3e880736": {
+    "active_minutes": 3,
+    "passive_minutes": 0,
+    "instructions": "Chop the cilantro.",
+    "prep_action": "chopped",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "e62i9ic3a5zrtal": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Small-dice the yellow onion.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "tka40xb2bw24cmt": {
+    "active_minutes": 1,
+    "passive_minutes": 0,
+    "instructions": "Combine and store the chopped cilantro and diced onion.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "5fcm752k65sjaht": {
+    "active_minutes": 1,
+    "passive_minutes": 0,
+    "instructions": "Pull carnitas pork shoulder from storage.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "57i6spdjc682kbg": {
+    "active_minutes": 1,
+    "passive_minutes": 0,
+    "instructions": "Pull frozen salmon out to thaw.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "9643e0z5f89cls9": {
+    "active_minutes": 6,
+    "passive_minutes": 0,
+    "instructions": "Warm tortillas and top with cilantro/onion, salmon or pork, and lime.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "20557h6by551c9b": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Stack, roll, and chiffonade the kale.",
+    "prep_action": "shredded",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "wn2009wvqp1u0lm": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Small-dice the yellow onion.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "yfm9y0h94fbmm10": {
+    "active_minutes": 3,
+    "passive_minutes": 0,
+    "instructions": "Mince the serrano chile.",
+    "prep_action": "minced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "9u896pmowvke818": {
+    "active_minutes": 6,
+    "passive_minutes": 20,
+    "instructions": "Simmer kale, onion, serrano, turmeric, coconut milk, garlic, chickpeas, lime, ginger, and stock.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "50v3cg57mibbzp5": {
+    "active_minutes": 5,
+    "passive_minutes": 0,
+    "instructions": "Finely mince the red onion (brunoise).",
+    "prep_action": "minced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "b92gz6ic79g9lnz": {
+    "active_minutes": 3,
+    "passive_minutes": 0,
+    "instructions": "Slice the tomato.",
+    "prep_action": "sliced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "09r97yg4x1cp469": {
+    "active_minutes": 3,
+    "passive_minutes": 0,
+    "instructions": "Chop the parsley.",
+    "prep_action": "chopped",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "a28bt66crxvoyl1": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Finely mince the celery (brunoise).",
+    "prep_action": "minced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "174g8u362ix1v6d": {
+    "active_minutes": 5,
+    "passive_minutes": 0,
+    "instructions": "Combine tuna, onion, parsley, celery, and mayonnaise.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "ud8n0mfy8n52f8r": {
+    "active_minutes": 5,
+    "passive_minutes": 5,
+    "instructions": "Butter bread and griddle with cheese and tuna salad until golden.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "uvwx0g1monraq2x": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Large-dice the yellow onion.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "36f249hzt2265h6": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Large-dice the celery.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "1212z5807u7o31k": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Large-dice the carrot.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "23l227h380r20oy": {
+    "active_minutes": 5,
+    "passive_minutes": 60,
+    "instructions": "Simmer bay leaf, onion, celery, carrot, and thyme in water to make stock.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "u216m223xf1lr46": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Slice portobello mushrooms into ½-inch strips.",
+    "prep_action": "sliced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "p7zn0809wqsz1nm": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Large-dice the red onion.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "sz5j9vvnn964l2y": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Thinly slice the red cabbage.",
+    "prep_action": "sliced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "hc55zj39rtd3878": {
+    "active_minutes": 5,
+    "passive_minutes": 20,
+    "instructions": "Toss mushrooms and onion with olive oil, cumin, coriander, paprika, salt, and pepper; roast 20 minutes.",
+    "prep_action": null,
+    "resource": "oven",
+    "oven_temp_f": 425,
+    "rack_slots": 1
+  },
+  "0r6r7l758xulu8r": {
+    "active_minutes": 2,
+    "passive_minutes": 0,
+    "instructions": "Stir turmeric, salt, and pepper into the yogurt.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "a3bu01467xr74q5": {
+    "active_minutes": 2,
+    "passive_minutes": 0,
+    "instructions": "Toss sliced cabbage with olive oil, salt, and pepper.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "8oo6y2440zmq06p": {
+    "active_minutes": 1,
+    "passive_minutes": 5,
+    "instructions": "Warm the pitas in the oven for 5 minutes.",
+    "prep_action": null,
+    "resource": "oven",
+    "oven_temp_f": 350,
+    "rack_slots": 1
+  },
+  "4aglu7a6g04h8j6": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Slather turmeric yogurt on warm pitas and top with dressed cabbage, roasted mushroom mixture, and cilantro.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "367h1xq86x675xf": {
+    "active_minutes": 3,
+    "passive_minutes": 0,
+    "instructions": "Chop the parsley.",
+    "prep_action": "chopped",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "9iey92r1q1m70o8": {
+    "active_minutes": 2,
+    "passive_minutes": 0,
+    "instructions": "Zest the lemon.",
+    "prep_action": "grated",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "5vf31xluah25s05": {
+    "active_minutes": 4,
+    "passive_minutes": 0,
+    "instructions": "Small-dice the yellow onion.",
+    "prep_action": "diced",
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "o39r4ce9ik30zy9": {
+    "active_minutes": 1,
+    "passive_minutes": 0,
+    "instructions": "Pull a frozen garlic cube from the freezer.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "45nl10nn7mx8f08": {
+    "active_minutes": 3,
+    "passive_minutes": 0,
+    "instructions": "Rinse the white beans.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "x22561k4glhtsij": {
+    "active_minutes": 2,
+    "passive_minutes": 0,
+    "instructions": "Combine chopped parsley and lemon zest.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "6g1aif114u54a5i": {
+    "active_minutes": 3,
+    "passive_minutes": 20,
+    "instructions": "Toss cherry tomatoes with olive oil and thyme; roast until blistered.",
+    "prep_action": null,
+    "resource": "oven",
+    "oven_temp_f": 400,
+    "rack_slots": 1
+  },
+  "063lcm1s0n9d0h7": {
+    "active_minutes": 5,
+    "passive_minutes": 5,
+    "instructions": "Saute onion, garlic, and red pepper flakes in olive oil until fragrant.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "8p340y2a822043l": {
+    "active_minutes": 3,
+    "passive_minutes": 25,
+    "instructions": "Simmer rinsed beans with sauteed aromatics and vegetable stock.",
+    "prep_action": null,
+    "resource": "stovetop",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "7gub09f9g3240v7": {
+    "active_minutes": 3,
+    "passive_minutes": 0,
+    "instructions": "Combine the bean mixture with roasted tomatoes.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  },
+  "n0cs8aj8k9872ke": {
+    "active_minutes": 2,
+    "passive_minutes": 0,
+    "instructions": "Top the stew with the lemon-parsley mixture to serve.",
+    "prep_action": null,
+    "resource": "none",
+    "oven_temp_f": null,
+    "rack_slots": 1
+  }
+}
