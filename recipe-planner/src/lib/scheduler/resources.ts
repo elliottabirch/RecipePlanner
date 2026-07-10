@@ -12,7 +12,7 @@
  *    by `rack_slots` vs. `scheduler_config.oven_rack_slots`.
  *  - stovetop: metered by `scheduler_config.burner_count` (default 2).
  *  - singleton appliances (blender/food_processor/instant_pot/microwave/
- *    sous_vide): capacity 1 each.
+ *    sous_vide/smoker): capacity 1 each.
  *
  * Within a single step, `active_minutes` occurs first, `passive_minutes`
  * second: `[start, start+active)` is cook-busy AND resource-busy;
@@ -36,6 +36,7 @@ export const SINGLETON_APPLIANCES: readonly SingletonAppliance[] = [
   "instant_pot",
   "microwave",
   "sous_vide",
+  "smoker",
 ];
 
 function isSingletonAppliance(resource: string): resource is SingletonAppliance {

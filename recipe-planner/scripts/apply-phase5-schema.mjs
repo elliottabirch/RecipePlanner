@@ -115,7 +115,7 @@ const RECIPE_STEPS_NEW_FIELDS = [
     presentable: false,
     system: false,
     maxSelect: 1,
-    values: ["oven", "stovetop", "blender", "food_processor", "instant_pot", "microwave", "sous_vide", "none"],
+    values: ["oven", "stovetop", "blender", "food_processor", "instant_pot", "microwave", "sous_vide", "smoker", "none"],
   },
   {
     id: "number_oven_temp_f",
@@ -424,7 +424,7 @@ async function seedSchedulerConfigSingleton() {
     weights: DEFAULT_WEIGHTS,
     burner_count: 2,
     oven_rack_slots: 2,
-    appliances: ["blender", "food_processor", "instant_pot", "microwave", "sous_vide"],
+    appliances: ["blender", "food_processor", "instant_pot", "microwave", "sous_vide", "smoker"],
   });
   console.log(`  Seeded scheduler_config singleton (id=${created.id}), weights=${JSON.stringify(DEFAULT_WEIGHTS)}`);
 }

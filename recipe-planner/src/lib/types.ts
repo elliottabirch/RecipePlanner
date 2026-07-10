@@ -119,7 +119,7 @@ export interface RecipeStep extends BaseRecord {
   passive_minutes?: number;
   instructions?: string;
   prep_action?: string;
-  resource?: "oven" | "stovetop" | "blender" | "food_processor" | "instant_pot" | "microwave" | "sous_vide" | "none";
+  resource?: "oven" | "stovetop" | "blender" | "food_processor" | "instant_pot" | "microwave" | "sous_vide" | "smoker" | "none";
   oven_temp_f?: number;
   rack_slots?: number;
 }

@@ -113,7 +113,8 @@ export type SingletonAppliance =
   | "food_processor"
   | "instant_pot"
   | "microwave"
-  | "sous_vide";
+  | "sous_vide"
+  | "smoker";
 
 /**
  * Re-exported so scheduler modules import the config/weights shape from a
