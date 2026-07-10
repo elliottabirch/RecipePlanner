@@ -45,7 +45,7 @@ import type {
   MealKeyedRecipeData,
   RecipeGraphData,
 } from "../aggregation/types";
-import { ProductType, StepType, type RecipeStep } from "../types";
+import { ProductType, StepType, Timing, type RecipeStep } from "../types";
 import type { StepInstance, WeekGraph, WeekGraphEdge } from "./types";
 
 /** `plannedMealId` sentinel for a week-wide merged prep node — it belongs to no
@@ -138,15 +138,21 @@ export function buildWeekGraph(mealData: MealKeyedRecipeData): WeekGraph {
   const nodes: StepInstance[] = [];
   const edges: WeekGraphEdge[] = [];
 
-  // (1) Per-instance step nodes — one per (plannedMealId, step.id) pair.
-  // Two planned instances of the same recipe's step always yield two
-  // distinct nodes; the underlying `RecipeStep` record may be identical.
-  // Alongside, note which nodes are single-raw-ingredient prep (the merge
-  // pass (4) below consumes this), keyed by node id -> raw product info.
+  // (1) Per-instance step nodes — one per (plannedMealId, step.id) pair, EXCEPT
+  // `just_in_time` steps: those are day-of assembly/serving (plate the bowls,
+  // build the sandwich) and have no place in a prep-day schedule (D-01a
+  // follow-on, user-directed 2026-07-10). `batch` and blank-timing steps are
+  // kept — blank is treated as prep-day, since some real batch steps predate
+  // the `timing` field. `includedIds` gates every edge below so nothing dangles
+  // into an excluded step. Alongside, note which nodes are single-raw-ingredient
+  // prep (the merge pass (4) below consumes this).
+  const includedIds = new Set<string>();
   const mergeableInfo = new Map<string, { productId: string; productName: string }>();
   for (const [plannedMealId, recipeData] of mealData) {
     for (const step of recipeData.steps) {
+      if (step.timing === Timing.JustInTime) continue;
       const id = instanceId(plannedMealId, step.id);
+      includedIds.add(id);
       nodes.push({
         id,
         plannedMealId,
@@ -172,10 +178,9 @@ export function buildWeekGraph(mealData: MealKeyedRecipeData): WeekGraph {
     for (const edge of recipeData.productToStepEdges) {
       const producerStepId = producerStepIdByNodeId.get(edge.source);
       if (producerStepId && producerStepId !== edge.target) {
-        edges.push({
-          from: instanceId(plannedMealId, producerStepId),
-          to: instanceId(plannedMealId, edge.target),
-        });
+        const from = instanceId(plannedMealId, producerStepId);
+        const to = instanceId(plannedMealId, edge.target);
+        if (includedIds.has(from) && includedIds.has(to)) edges.push({ from, to });
       }
     }
   }
@@ -203,10 +208,9 @@ export function buildWeekGraph(mealData: MealKeyedRecipeData): WeekGraph {
           const outputProductId = outputNode?.product;
           if (!outputProductId || outputProductId !== inputNode.product) continue;
 
-          edges.push({
-            from: instanceId(producerMealId, produceEdge.source),
-            to: instanceId(consumerMealId, consumeEdge.target),
-          });
+          const from = instanceId(producerMealId, produceEdge.source);
+          const to = instanceId(consumerMealId, consumeEdge.target);
+          if (includedIds.has(from) && includedIds.has(to)) edges.push({ from, to });
         }
       }
     }

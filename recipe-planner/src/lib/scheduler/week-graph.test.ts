@@ -69,7 +69,7 @@ function makeStep(id: string, overrides: Partial<RecipeStep> = {}): RecipeStep {
     recipe: "recipe-1",
     name: "Step",
     step_type: StepType.Assembly,
-    timing: Timing.JustInTime,
+    timing: Timing.Batch,
     ...overrides,
   };
 }
@@ -129,6 +129,42 @@ function makeRecipeData(
     ...overrides,
   };
 }
+
+describe("buildWeekGraph — timing filter", () => {
+  it("excludes just_in_time (day-of) steps and any edge touching them, keeps batch + blank", () => {
+    const stock = makeProduct({ id: "stock", name: "Stock", type: ProductType.Inventory });
+    const stockNode = makeProductNode(stock, { id: "stock-node" });
+    // A batch cook step (kept) whose stored output feeds a just_in_time
+    // assembly step (dropped) in the same meal.
+    const cookStep = makeStep("cook", { name: "cook", timing: Timing.Batch });
+    const plateStep = makeStep("plate", { name: "plate it", timing: Timing.JustInTime });
+    const blankStep = makeStep("blank", { name: "blank timing", timing: undefined });
+
+    const mealData: MealKeyedRecipeData = new Map([
+      [
+        "meal-a",
+        makeRecipeData(
+          {
+            steps: [cookStep, plateStep, blankStep],
+            productNodes: [stockNode],
+            stepToProductEdges: [makeStepToProductEdge("s2p", cookStep.id, stockNode.id)],
+            productToStepEdges: [makeProductToStepEdge("p2s", stockNode.id, plateStep.id)],
+          },
+          "recipe-a",
+          "Recipe A"
+        ),
+      ],
+    ]);
+
+    const graph = buildWeekGraph(mealData);
+    const ids = graph.nodes.map((n) => n.id);
+    expect(ids).toContain("meal-a::cook");
+    expect(ids).toContain("meal-a::blank"); // blank timing kept
+    expect(ids).not.toContain("meal-a::plate"); // just_in_time dropped
+    // The cook -> plate edge must not survive to a dropped node.
+    expect(graph.edges.some((e) => e.to === "meal-a::plate")).toBe(false);
+  });
+});
 
 describe("buildWeekGraph — week-wide prep merge", () => {
   it("collapses same-raw-ingredient prep across meals into one node (summed active) and fans its downstream edges out", () => {
