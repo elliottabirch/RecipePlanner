@@ -43,7 +43,9 @@ import {
   PlayArrow as StepIcon,
   Delete as DeleteIcon,
 } from "@mui/icons-material";
-import { getAll, getOne, create, remove, collections } from "../lib/api";
+import { getAll, getOne, create, update, remove, collections } from "../lib/api";
+import { runRecipeLint } from "../lib/linter/recipe-lint";
+import type { LintFinding } from "../lib/linter/index";
 import {
   buildRecipeGraph,
   type NormalizedGraph,
@@ -130,10 +132,16 @@ export default function RecipeEditor() {
   const navigate = useNavigate();
   const isNew = !id;
 
-  const [, setRecipe] = useState<Recipe | null>(null);
+  const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Publish gate (D-06, IMP-07): a draft-only Publish button runs runRecipeLint
+  // and flips status to published only on a clean (empty findings) pass.
+  const [findings, setFindings] = useState<LintFinding[]>([]);
+  const [lintDialogOpen, setLintDialogOpen] = useState(false);
+  const [publishing, setPublishing] = useState(false);
 
   // Form fields
   const [name, setName] = useState("");
@@ -748,6 +756,33 @@ export default function RecipeEditor() {
     }
   };
 
+  // Publish gate (D-06, IMP-07, threat T-06-06a): run runRecipeLint and flip
+  // status to published ONLY on a clean pass. If any findings exist, open the
+  // findings dialog and RETURN before any status write — importing stays
+  // unblocked, publishing is the one hard gate.
+  const handlePublish = async () => {
+    if (!id) return;
+    try {
+      setPublishing(true);
+      setError(null);
+      const lintFindings = await runRecipeLint(id);
+      if (lintFindings.length > 0) {
+        // Failure path: never write status.
+        setFindings(lintFindings);
+        setLintDialogOpen(true);
+        return;
+      }
+      await update<Recipe>(collections.recipes, id, { status: "published" });
+      // Refresh local recipe state so the Publish button hides.
+      setRecipe((prev) => (prev ? { ...prev, status: "published" } : prev));
+    } catch (err) {
+      setError("Failed to publish recipe");
+      console.error(err);
+    } finally {
+      setPublishing(false);
+    }
+  };
+
   if (loading) {
     return (
       <Box
@@ -869,6 +904,17 @@ export default function RecipeEditor() {
           >
             {saving ? "Saving..." : "Save"}
           </Button>
+
+          {recipe?.status === "draft" && (
+            <Button
+              variant="contained"
+              color="success"
+              onClick={handlePublish}
+              disabled={publishing}
+            >
+              {publishing ? "Publishing..." : "Publish"}
+            </Button>
+          )}
         </Box>
 
         {error && (
@@ -1507,6 +1553,32 @@ export default function RecipeEditor() {
           >
             Save
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Lint Findings Dialog (publish gate) — mirrors Products.tsx:522-561 */}
+      <Dialog
+        open={lintDialogOpen}
+        onClose={() => setLintDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          Fix {findings.length} issue(s) before publishing
+        </DialogTitle>
+        <DialogContent>
+          {findings.map((finding, index) => (
+            <Alert
+              key={`${finding.rule}-${finding.productId ?? finding.nodeId ?? index}`}
+              severity={finding.severity}
+              sx={{ mb: 1 }}
+            >
+              <strong>{finding.rule}</strong>: {finding.message}
+            </Alert>
+          ))}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLintDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>
