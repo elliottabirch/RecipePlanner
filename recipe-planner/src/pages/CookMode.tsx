@@ -28,6 +28,10 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import { getAll, getOne, collections } from "../lib/api";
 import { applyVariantOverrides, type VariantOverride } from "../lib/aggregation";
@@ -50,11 +54,13 @@ import { buildWeekGraph } from "../lib/scheduler/week-graph";
 import { generateSchedule } from "../lib/scheduler/genetic";
 import { retimeSchedule } from "../lib/scheduler/retime";
 import { emptyResourceTimeline } from "../lib/scheduler/resources";
+import { loadSchedulerConfig } from "../lib/scheduler/scheduler-config";
 import type { Schedule, StepInstance, WeekGraph } from "../lib/scheduler/types";
 import { deriveReadiness } from "../lib/scheduler/readiness";
 import { useCookProgress } from "../hooks/useCookProgress";
 import { NowNextCard } from "../components/cook-mode/NowNextCard";
 import type { ReadinessChipState } from "../components/cook-mode/ReadinessChip";
+import { WeightsPanel } from "../components/cook-mode/WeightsPanel";
 import { SyncIndicator } from "../components/outputs";
 
 /** Fallback used only if `scheduler_config`'s seeded singleton (05-01) is
@@ -117,6 +123,8 @@ export default function CookMode() {
   const nowStartRef = useRef<Map<string, number>>(new Map());
   const [, forceTick] = useState(0);
   const [showAllSteps, setShowAllSteps] = useState(false);
+  const [showWeightsPanel, setShowWeightsPanel] = useState(false);
+  const [regenerateConfirmOpen, setRegenerateConfirmOpen] = useState(false);
 
   const cookProgress = useCookProgress(planId ?? "");
 
@@ -394,6 +402,49 @@ export default function CookMode() {
     }
   }, [weekGraph, schedulerConfig]);
 
+  // WeightsPanel's "Regenerate Plan" action (PREP-05). Reloads scheduler_config
+  // (so a just-saved slider write is picked up even if the debounced write
+  // resolved after this tap) and re-invokes the GA with that config's
+  // persisted seed — generateSchedule is a pure function of
+  // (weekGraph, config), so an unchanged config/weekGraph reproduces a
+  // byte-identical schedule (deterministic, D-01a.1). Never touches
+  // cook_progress — checked-off steps stay checked through a regenerate,
+  // since checkedIds is derived from useCookProgress's own independent state.
+  const performRegenerate = useCallback(async () => {
+    try {
+      setScheduleError(null);
+      const freshConfig = await loadSchedulerConfig();
+      const configToUse = freshConfig ?? schedulerConfig;
+      if (!configToUse) return;
+      setSchedulerConfig(configToUse);
+      const generated = generateSchedule(weekGraph, configToUse);
+      setSchedule(generated);
+      setActualCompletions(new Map());
+      nowStartRef.current = new Map();
+    } catch (err) {
+      console.error("Failed to regenerate cook-mode schedule:", err);
+      setScheduleError(
+        "Couldn't build a schedule for this week. Check the linter for missing step metadata, then try again."
+      );
+    }
+  }, [weekGraph, schedulerConfig]);
+
+  const handleRegenerateClick = useCallback(() => {
+    // Destructive-adjacent confirmation only when regenerating would
+    // recalculate timing out from under already-checked-off steps
+    // (05-UI-SPEC.md copy contract); no checked-off steps -> no confirmation.
+    if (checkedIds.size > 0) {
+      setRegenerateConfirmOpen(true);
+      return;
+    }
+    performRegenerate();
+  }, [checkedIds, performRegenerate]);
+
+  const handleConfirmRegenerate = useCallback(() => {
+    setRegenerateConfirmOpen(false);
+    performRegenerate();
+  }, [performRegenerate]);
+
   const handleToggleChecked = useCallback(
     (instance: StepInstance) => {
       if (!schedule || !schedulerConfig) return;
@@ -469,11 +520,32 @@ export default function CookMode() {
             pendingCount={cookProgress.pendingCount}
             failed={cookProgress.failed}
           />
+          <Button
+            variant="outlined"
+            onClick={() => setShowWeightsPanel((s) => !s)}
+          >
+            {showWeightsPanel ? "Hide Weights" : "Weights"}
+          </Button>
           <Button variant="outlined" onClick={() => navigate("/outputs")}>
             Back to Outputs
           </Button>
         </Box>
       </Box>
+
+      {schedulerConfig && (
+        <Collapse in={showWeightsPanel} timeout="auto" unmountOnExit>
+          <Paper sx={{ p: { xs: 2, md: 3 }, mb: 3 }}>
+            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+              Scheduler Weights
+            </Typography>
+            <WeightsPanel
+              config={schedulerConfig}
+              onConfigSaved={setSchedulerConfig}
+              onRegenerate={handleRegenerateClick}
+            />
+          </Paper>
+        </Collapse>
+      )}
 
       {scheduleError && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -643,6 +715,35 @@ export default function CookMode() {
           </Collapse>
         </Paper>
       )}
+
+      {/* Regenerate confirmation — only shown when >=1 step is already
+          checked off (05-UI-SPEC.md destructive-adjacent confirmation
+          copy). Accent green (primary), not error red — nothing is deleted,
+          only recomputed; checked-off cook_progress is preserved through a
+          regenerate regardless of confirm/cancel. */}
+      <Dialog
+        open={regenerateConfirmOpen}
+        onClose={() => setRegenerateConfirmOpen(false)}
+      >
+        <DialogTitle>Regenerate Plan?</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Regenerating will keep your checked-off steps but recalculate remaining timing. Continue?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRegenerateConfirmOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmRegenerate}
+            color="primary"
+            variant="contained"
+          >
+            Regenerate
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
