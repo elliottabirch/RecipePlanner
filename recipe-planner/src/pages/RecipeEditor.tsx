@@ -84,6 +84,37 @@ const nodeTypes = {
   step: StepNode,
 };
 
+// Step-metadata authoring vocab (Phase 5 Plan 03, D-05). prep_action reuses
+// the Phase-1 controlled prep-verb list verbatim (lib/linter/rules/prep-words.ts).
+const PREP_ACTION_OPTIONS = [
+  "sliced",
+  "diced",
+  "minced",
+  "chopped",
+  "grated",
+  "shredded",
+] as const;
+
+type ResourceValue = NonNullable<RecipeStep["resource"]>;
+
+const RESOURCE_OPTIONS: ResourceValue[] = [
+  "oven",
+  "stovetop",
+  "blender",
+  "food_processor",
+  "instant_pot",
+  "none",
+];
+
+const RESOURCE_LABELS: Record<ResourceValue, string> = {
+  oven: "Oven",
+  stovetop: "Stovetop",
+  blender: "Blender",
+  food_processor: "Food Processor",
+  instant_pot: "Instant Pot",
+  none: "None",
+};
+
 type FlowNode = ProductNodeType | StepNodeType;
 type FlowEdge = Edge;
 
@@ -146,6 +177,20 @@ export default function RecipeEditor() {
 
   // Edit step dialog
   const [editStepDialogOpen, setEditStepDialogOpen] = useState(false);
+
+  // Step-metadata authoring fields (Phase 5 Plan 03, D-05). Shared by the
+  // Edit Step dialog; not used by the Add Step dialog (backfilled/authored
+  // via edit after creation).
+  const [stepActiveMinutes, setStepActiveMinutes] = useState<number | "">("");
+  const [stepPassiveMinutes, setStepPassiveMinutes] = useState<number | "">(
+    ""
+  );
+  const [stepInstructions, setStepInstructions] = useState("");
+  const [stepPrepAction, setStepPrepAction] = useState("");
+  const [stepResource, setStepResource] = useState<ResourceValue>("none");
+  const [stepOvenTempF, setStepOvenTempF] = useState<number | "">("");
+  const [stepRackSlots, setStepRackSlots] = useState<number | "">(1);
+  const [ovenTempError, setOvenTempError] = useState(false);
 
   // Track database IDs for nodes/edges
   const [nodeDbIds, setNodeDbIds] = useState<Record<string, string>>({});
@@ -381,6 +426,14 @@ export default function RecipeEditor() {
       setStepName(data.label);
       setStepType(data.stepType);
       setStepTiming(data.timing || Timing.Batch);
+      setStepActiveMinutes(data.active_minutes ?? "");
+      setStepPassiveMinutes(data.passive_minutes ?? "");
+      setStepInstructions(data.instructions ?? "");
+      setStepPrepAction(data.prep_action ?? "");
+      setStepResource(data.resource ?? "none");
+      setStepOvenTempF(data.oven_temp_f ?? "");
+      setStepRackSlots(data.rack_slots ?? 1);
+      setOvenTempError(false);
       setEditingNodeId(selectedNode.id);
       setEditStepDialogOpen(true);
     }
@@ -424,6 +477,15 @@ export default function RecipeEditor() {
   const handleSaveEditedStep = () => {
     if (!stepName.trim() || !editingNodeId) return;
 
+    // Oven temperature is required when resource === "oven" (D-05) — block
+    // save and surface the inline field error rather than silently dropping
+    // an incomplete oven step.
+    if (stepResource === "oven" && stepOvenTempF === "") {
+      setOvenTempError(true);
+      return;
+    }
+    setOvenTempError(false);
+
     setNodes((nds) =>
       nds.map((node) => {
         if (node.id === editingNodeId) {
@@ -434,6 +496,23 @@ export default function RecipeEditor() {
               label: stepName.trim(),
               stepType: stepType,
               timing: stepType === "assembly" ? stepTiming : undefined,
+              active_minutes:
+                stepActiveMinutes === "" ? undefined : stepActiveMinutes,
+              passive_minutes:
+                stepPassiveMinutes === "" ? undefined : stepPassiveMinutes,
+              instructions: stepInstructions.trim() || undefined,
+              prep_action:
+                stepType === StepType.Prep
+                  ? stepPrepAction || undefined
+                  : undefined,
+              resource: stepResource,
+              oven_temp_f:
+                stepResource === "oven"
+                  ? stepOvenTempF === ""
+                    ? undefined
+                    : stepOvenTempF
+                  : undefined,
+              rack_slots: stepRackSlots === "" ? undefined : stepRackSlots,
             },
           } as FlowNode;
         }
@@ -446,6 +525,14 @@ export default function RecipeEditor() {
     setStepName("");
     setStepType(StepType.Prep);
     setStepTiming(Timing.Batch);
+    setStepActiveMinutes("");
+    setStepPassiveMinutes("");
+    setStepInstructions("");
+    setStepPrepAction("");
+    setStepResource("none");
+    setStepOvenTempF("");
+    setStepRackSlots(1);
+    setOvenTempError(false);
     setSelectedNode(null);
   };
 
@@ -635,6 +722,13 @@ export default function RecipeEditor() {
             timing: data.timing,
             position_x: node.position.x,
             position_y: node.position.y,
+            active_minutes: data.active_minutes,
+            passive_minutes: data.passive_minutes,
+            instructions: data.instructions,
+            prep_action: data.prep_action,
+            resource: data.resource,
+            oven_temp_f: data.oven_temp_f,
+            rack_slots: data.rack_slots,
           };
 
           if (existingDbId) {
@@ -1285,6 +1379,14 @@ export default function RecipeEditor() {
           setStepName("");
           setStepType(StepType.Prep);
           setStepTiming(Timing.Batch);
+          setStepActiveMinutes("");
+          setStepPassiveMinutes("");
+          setStepInstructions("");
+          setStepPrepAction("");
+          setStepResource("none");
+          setStepOvenTempF("");
+          setStepRackSlots(1);
+          setOvenTempError(false);
         }}
         maxWidth="sm"
         fullWidth
@@ -1328,6 +1430,111 @@ export default function RecipeEditor() {
               </Select>
             </FormControl>
           )}
+
+          <TextField
+            label="Active minutes"
+            type="number"
+            value={stepActiveMinutes}
+            onChange={(e) =>
+              setStepActiveMinutes(
+                e.target.value ? Number(e.target.value) : ""
+              )
+            }
+            fullWidth
+            margin="dense"
+          />
+
+          <TextField
+            label="Passive minutes"
+            type="number"
+            value={stepPassiveMinutes}
+            onChange={(e) =>
+              setStepPassiveMinutes(
+                e.target.value ? Number(e.target.value) : ""
+              )
+            }
+            fullWidth
+            margin="dense"
+          />
+
+          <TextField
+            label="Instructions"
+            value={stepInstructions}
+            onChange={(e) => setStepInstructions(e.target.value)}
+            multiline
+            rows={3}
+            fullWidth
+            margin="dense"
+          />
+
+          {stepType === StepType.Prep && (
+            <FormControl fullWidth margin="dense">
+              <InputLabel>Prep action</InputLabel>
+              <Select
+                value={stepPrepAction}
+                label="Prep action"
+                onChange={(e) => setStepPrepAction(e.target.value)}
+              >
+                {PREP_ACTION_OPTIONS.map((verb) => (
+                  <MenuItem key={verb} value={verb}>
+                    {verb.charAt(0).toUpperCase() + verb.slice(1)}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+
+          <FormControl fullWidth margin="dense">
+            <InputLabel>Resource</InputLabel>
+            <Select
+              value={stepResource}
+              label="Resource"
+              onChange={(e) => {
+                const value = e.target.value as ResourceValue;
+                setStepResource(value);
+                if (value !== "oven") {
+                  setOvenTempError(false);
+                }
+              }}
+            >
+              {RESOURCE_OPTIONS.map((r) => (
+                <MenuItem key={r} value={r}>
+                  {RESOURCE_LABELS[r]}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {stepResource === "oven" && (
+            <TextField
+              label="Oven temperature (°F)"
+              type="number"
+              value={stepOvenTempF}
+              onChange={(e) => {
+                setStepOvenTempF(e.target.value ? Number(e.target.value) : "");
+                setOvenTempError(false);
+              }}
+              fullWidth
+              margin="dense"
+              error={ovenTempError}
+              helperText={
+                ovenTempError
+                  ? "Oven temperature is required for oven steps."
+                  : undefined
+              }
+            />
+          )}
+
+          <TextField
+            label="Rack slots"
+            type="number"
+            value={stepRackSlots}
+            onChange={(e) =>
+              setStepRackSlots(e.target.value ? Number(e.target.value) : "")
+            }
+            fullWidth
+            margin="dense"
+          />
         </DialogContent>
         <DialogActions>
           <Button
@@ -1337,6 +1544,14 @@ export default function RecipeEditor() {
               setStepName("");
               setStepType(StepType.Prep);
               setStepTiming(Timing.Batch);
+              setStepActiveMinutes("");
+              setStepPassiveMinutes("");
+              setStepInstructions("");
+              setStepPrepAction("");
+              setStepResource("none");
+              setStepOvenTempF("");
+              setStepRackSlots(1);
+              setOvenTempError(false);
             }}
           >
             Cancel
