@@ -25,6 +25,7 @@ import type {
   RecipeGraphData,
   MealKeyedRecipeData,
 } from "../aggregation/types";
+import type { WeekGraph } from "./types";
 
 function makeProduct(overrides: Partial<Product> = {}): Product {
   return {
@@ -162,7 +163,7 @@ describe("buildWeekGraph — cross-recipe edges", () => {
       ["meal-b", mealB],
     ]);
 
-    const graph = buildWeekGraph(mealData);
+    const graph: WeekGraph = buildWeekGraph(mealData);
 
     const producerId = "meal-a::make-stock";
     const consumerId = "meal-b::assemble-soup";
@@ -190,7 +191,7 @@ describe("buildWeekGraph — cross-recipe edges", () => {
 
     const mealData: MealKeyedRecipeData = new Map([["meal-b", mealB]]);
 
-    const graph = buildWeekGraph(mealData);
+    const graph: WeekGraph = buildWeekGraph(mealData);
 
     const consumerId = "meal-b::assemble-soup";
     expect(graph.nodes.map((n) => n.id)).toContain(consumerId);
@@ -242,7 +243,7 @@ describe("buildWeekGraph — cross-recipe edges", () => {
       ["meal-b", mealB],
     ]);
 
-    const graph = buildWeekGraph(mealData);
+    const graph: WeekGraph = buildWeekGraph(mealData);
 
     const consumerId = "meal-b::assemble-soup";
     const incoming = graph.edges.filter((e) => e.to === consumerId);
@@ -260,7 +261,7 @@ describe("buildWeekGraph — cross-recipe edges", () => {
       ["meal-b2", recipeData],
     ]);
 
-    const graph = buildWeekGraph(mealData);
+    const graph: WeekGraph = buildWeekGraph(mealData);
 
     const ids = graph.nodes.map((n) => n.id);
     expect(ids).toContain("meal-b1::chop-onion");

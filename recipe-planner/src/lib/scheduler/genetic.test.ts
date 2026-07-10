@@ -202,8 +202,8 @@ describe("scheduleWeek — weight-vector sensitivity (PREP-05)", () => {
       weights: { active: 0, chopping: 0, grouping: 0, elapsed: 0, resource_pressure: 1 },
     });
 
-    const scheduleA = scheduleWeek(graph, configActiveHeavy);
-    const scheduleB = scheduleWeek(graph, configResourceHeavy);
+    const scheduleA: Schedule = scheduleWeek(graph, configActiveHeavy);
+    const scheduleB: Schedule = scheduleWeek(graph, configResourceHeavy);
 
     const orderIdsA = scheduleA.order.map((i) => i.id);
     const orderIdsB = scheduleB.order.map((i) => i.id);

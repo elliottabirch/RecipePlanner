@@ -8,7 +8,7 @@
  */
 import { describe, it, expect } from "vitest";
 import { retimeSchedule } from "./retime";
-import type { ResourceTimeline, StepInstance, SchedulerConfig } from "./types";
+import type { ResourceTimeline, StepInstance, SchedulerConfig, Schedule } from "./types";
 import { StepType, type RecipeStep } from "../types";
 
 function emptyTimeline(): ResourceTimeline {
@@ -72,11 +72,11 @@ describe("retimeSchedule — order-preserving recompute (D-01a.3)", () => {
 
     // Baseline: no actual completions yet, everything uses estimates. The
     // single-cook resource forces these three active-only steps sequential.
-    const baseline = retimeSchedule(fixedOrder, new Map(), emptyTimeline(), config);
+    const baseline: Schedule = retimeSchedule(fixedOrder, new Map(), emptyTimeline(), config);
 
     // A actually took 20 minutes (estimate was 10) — a 10-minute delay.
     const actualCompletions = new Map<string, number>([[instanceA.id, 20]]);
-    const retimed = retimeSchedule(fixedOrder, actualCompletions, emptyTimeline(), config);
+    const retimed: Schedule = retimeSchedule(fixedOrder, actualCompletions, emptyTimeline(), config);
 
     // Order array is never permuted.
     expect(retimed.order.map((i) => i.id)).toEqual(fixedOrder.map((i) => i.id));
