@@ -48,6 +48,33 @@ function isMissing(value: unknown): boolean {
   return value === null || value === undefined;
 }
 
+function nonEmptyString(value: unknown): boolean {
+  return typeof value === "string" && value.trim() !== "";
+}
+
+/**
+ * A step is "unbackfilled" when it carries no real Phase-5 metadata yet.
+ *
+ * PocketBase stores un-set number fields as `0` and un-set text/select fields
+ * as `""` (NOT null), so a plain null check reports every freshly-migrated
+ * step as already-populated. This treats those defaults as empty: a step
+ * counts as backfilled once ANY of its duration/instruction/prep/resource
+ * fields holds a meaningful (non-default) value. Idempotent — once a batch is
+ * saved, its steps stop matching and drop out of the review list.
+ * (`rack_slots` is intentionally excluded: its backfilled default of 1 vs. the
+ * PB default of 0 makes it an unreliable "untouched" signal on its own.)
+ */
+export function isStepUnbackfilled(step: RecipeStep): boolean {
+  return (
+    !step.active_minutes &&
+    !step.passive_minutes &&
+    !step.oven_temp_f &&
+    !nonEmptyString(step.instructions) &&
+    !nonEmptyString(step.prep_action) &&
+    !nonEmptyString(step.resource)
+  );
+}
+
 /**
  * Compute the write-set for a reviewed batch. A step is included only if it
  * is still missing at least one field the draft supplies (idempotency --
@@ -68,15 +95,19 @@ export function computeBackfillWriteSet(
     const draft = draftEntries[step.id];
     if (!draft) continue;
 
+    // Idempotency at the step level: a step already carrying real metadata
+    // (any non-default field) is skipped entirely, so re-running backfill on
+    // an already-reviewed recipe yields an empty write-set. This replaces a
+    // per-field null check that mis-read PocketBase's 0/"" field defaults as
+    // "already populated" (which made every step look done).
+    if (!isStepUnbackfilled(step)) continue;
+
     const stepDecisions = decisions[step.id] ?? {};
     const fields: Record<string, unknown> = {};
 
     for (const field of BACKFILL_FIELDS) {
       const draftValue = draft[field];
       if (isMissing(draftValue)) continue; // draft doesn't supply this field
-
-      const currentValue = step[field];
-      if (!isMissing(currentValue)) continue; // already populated -- idempotency
 
       const decision = stepDecisions[field];
       if (!decision || decision.status === "reject") continue;

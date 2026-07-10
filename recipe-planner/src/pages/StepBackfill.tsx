@@ -26,6 +26,7 @@ import { getAll, update, collections } from "../lib/api";
 import type { Recipe, RecipeStep } from "../lib/types";
 import {
   computeBackfillWriteSet,
+  isStepUnbackfilled,
   BACKFILL_FIELDS,
   type BackfillDraftEntry,
   type BackfillFieldKey,
@@ -97,11 +98,13 @@ function missingFieldsFor(
   step: RecipeStep,
   entry: BackfillDraftEntry
 ): MissingField[] {
+  // A step already carrying real metadata is fully done — drop it (idempotent).
+  // PB stores un-set number fields as 0 and text/select as "", so this must be
+  // a step-level "has any meaningful value" check, not a per-field null check.
+  if (!isStepUnbackfilled(step)) return [];
   return BACKFILL_FIELDS.filter((field) => {
     const draftValue = entry[field];
-    if (draftValue === null || draftValue === undefined) return false; // draft has nothing to offer
-    const currentValue = step[field];
-    return currentValue === null || currentValue === undefined; // still missing
+    return draftValue !== null && draftValue !== undefined; // draft offers this field
   }).map((field) => ({ field, draftValue: entry[field] }));
 }
 
