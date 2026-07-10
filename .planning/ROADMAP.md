@@ -247,14 +247,14 @@ Plans:
   4. User can attach a one-tap note to a recipe from the calendar, cook mode, or recipe card, and later see an agent-produced draft revision surfaced for review in the week wizard (IMP-05, IMP-06)
   5. Publishing a draft recipe is blocked until it passes the recipe linter; importing itself is never blocked (IMP-07)
 
-**Plans**: 2/11 plans executed
+**Plans**: 3/11 plans executed
 
 Plans:
 **Wave 1** *(parallel — schema foundation + pure import/lifecycle logic)*
 
 - [x] 06-01-PLAN.md — Schema foundation: recipes.status + backfill, recipe_notes collection, revision_of/source_node relations, types + api map (both DBs, prod checkpoint) [IMP-01, IMP-05, IMP-06]
 - [x] 06-02-PLAN.md — Import validation (never-throw validateImportJson) + scored product matcher scoreProduct (pure) [IMP-02]
-- [ ] 06-03-PLAN.md — Fail-open draft-filter builder + runRecipeLint composition (pure) [IMP-01, IMP-07]
+- [x] 06-03-PLAN.md — Fail-open draft-filter builder + runRecipeLint composition (pure) [IMP-01, IMP-07]
 
 **Wave 2** *(blocked on Wave 1)*
 
@@ -282,4 +282,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6. Phases 2 and 4
 | 3. Product Registry Seeding | 6/6 | Complete   | 2026-07-07 |
 | 4. Weekly Planning Memory | 9/9 | Complete    | 2026-07-09 |
 | 5. Prep-Day Engine | 12/12 | Complete    | 2026-07-10 |
-| 6. Import Pipeline & Recipe Lifecycle | 2/11 | In Progress|  |
+| 6. Import Pipeline & Recipe Lifecycle | 3/11 | In Progress|  |

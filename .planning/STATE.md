@@ -5,14 +5,14 @@ milestone_name: Workflow Redesign
 current_phase: 6
 current_phase_name: Import Pipeline & Recipe Lifecycle
 status: executing
-stopped_at: Phase 6 UI-SPEC approved
-last_updated: "2026-07-10T23:33:47.079Z"
+stopped_at: Completed 06-03-PLAN.md
+last_updated: "2026-07-10T23:41:21.427Z"
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 56
-  completed_plans: 47
-  percent: 83
+  completed_plans: 49
+  percent: 88
 ---
 
 # Project State
@@ -150,6 +150,7 @@ Progress: [██████████] Phase 5 complete — 5 of 6 phases do
 | Phase 05-prep-day-engine P09 | 20min | 2 tasks | 2 files |
 | Phase 05 P10 | 15min | 1 tasks | 1 files |
 | Phase 06 P02 | 15min | 2 tasks | 4 files |
+| Phase 06 P03 | 10min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -165,6 +166,8 @@ Recent decisions affecting current work:
 - Tag-based rotation pools + guided-fill wizard, staples as first slot (Phase 4)
 - Seeded genetic-algorithm scheduler, primary objective = minimize active time (Phase 5)
 - Imports land in prod as drafts; test DB for schema/code only (Phase 6)
+- [Phase 06-03]: Draft filter emitted as fail-open `status != "draft"` (never equals-published) so unset-status recipes stay plannable (T-06-03a, Pitfall 1)
+- [Phase 06-03]: runRecipeLint lazy-imports ../api to keep the pure composeRecipeFindings core node-importable past the localStorage-reading pb client; runWeekLint/missing-pull-step deliberately excluded (Pitfall 4, T-06-03b)
 - [Phase 01]: vitest approved via package-legitimacy checkpoint (68M/wk downloads, canonical repo, ~4.5yr old) — SUS flag was a false positive from latest-version publish recency, not package age
 - [Phase 01]: UNIT_ALIASES seeded verbatim from the 445-record live disposition table in 01-RESEARCH.md — Real corpus is messier than the phase doc's grep sample; re-deriving from scratch risks missing container-type strings and junk values
 - [Phase 01]: promoteUnit/chooseDisplayUnit implement D-10 deterministic display-unit selection — canonical_unit wins when set; else largest unit keeping qty>=1 capped at cup/lb, no metric<->customary crossing
@@ -275,7 +278,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-10T23:32:52.958Z
+Last session: 2026-07-10T23:38:35.106Z
 gsd-verifier passed all 5 success criteria (`05-VERIFICATION.md`, status:
 passed); `phase.complete` advanced ROADMAP/STATE to Phase 6. PROJECT.md evolved
 (Phases 3/4/5 features → Validated; scheduler/registry/rotation decisions marked
