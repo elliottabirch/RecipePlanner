@@ -66,22 +66,22 @@ function cloneTimeline(timeline: ResourceTimeline): ResourceTimeline {
  * week-graph's `precedenceEdges` (producer -> consumer) so each step is
  * bounded by its REAL predecessors, not the previous activity-list step.
  *
- * Walks `fixedOrder` exactly once, in order, and never reorders it. Each
- * step's precedence bound = max end of its DAG predecessors (0 if none):
- *  - **Checked-off steps** (present in `actualCompletions`): the real
- *    elapsed time replaces the GA's estimate. Placed at the precedence bound,
- *    occupying the resource model for its actual duration — no feasibility
- *    search, since it already happened.
- *  - **Not-yet-started steps**: placed at the earliest feasible instant at
- *    or after the precedence bound, using the same
- *    `isFeasibleAt`/`occupyResources`/`nextCandidateTime` resource model the
- *    GA's SSGS decode uses (`resources.ts`) — no duplicate constraint logic.
+ * Walks `fixedOrder` exactly once, in order, and never reorders it. Each step
+ * is bounded by max end of its DAG predecessors (0 if none), then placed at
+ * the earliest feasible instant at or after that bound via the same
+ * `isFeasibleAt`/`occupyResources`/`nextCandidateTime` model the GA's SSGS
+ * decode uses (`resources.ts`) — checked-off and not-yet-started steps run the
+ * identical placement search, so a checked step lands exactly where the decode
+ * put it. The only difference is duration: a checked-off step's estimate is
+ * replaced by its real elapsed time, split so its passive tail (cook-free)
+ * absorbs any overrun — see the loop body — instead of collapsing to
+ * all-active (which busied the cook through passive windows and reshuffled).
  *
  * With empty `actualCompletions` this is byte-for-byte `decodeSSGS` over the
- * same order + DAG, so it reproduces `generateSchedule`'s starts. A late
- * actual completion pushes only its true downstream dependents later — the
- * "clock adapts" behavior D-01a.3 requires — instead of shoving every
- * later-listed step.
+ * same order + DAG, so it reproduces `generateSchedule`'s starts. An on-time
+ * completion reproduces that step's own footprint too, so nothing else moves;
+ * only a genuine overrun pushes its true downstream dependents later — the
+ * "clock adapts" behavior D-01a.3 requires, without shoving unrelated steps.
  *
  * `precedenceEdges` defaults to `[]`: with no edges every bound is 0 and the
  * resource model alone orders the steps (correct for a purely cook-bound
@@ -121,40 +121,44 @@ export function retimeSchedule(
     );
     const actualElapsed = actualCompletions.get(instance.id);
 
+    // Effective footprint. A checked-off step's real elapsed time replaces its
+    // estimate, but must NOT collapse to all-active: a step with a passive
+    // phase (bake, smoke) leaves the cook FREE during that phase, so other
+    // work still packs into it. Modeling a completed passive step as all-active
+    // busied the cook through its whole passive window and shoved every packed
+    // step later — the first-check-off reshuffle. So:
+    //   - a step with a passive phase keeps its (estimated) active window; any
+    //     overrun is absorbed by the passive tail (cook stays free there);
+    //   - a pure hands-on step (no passive phase) counts the whole elapsed as
+    //     active (the cook really was busy the entire time).
+    // On-time completions therefore reproduce the estimate's footprint exactly,
+    // so nothing else moves; only a genuine overrun shifts true dependents.
+    // The step still runs the same feasibility search as an unstarted one, so
+    // its placement matches the GA decode.
+    let effStep = instance.step;
     if (actualElapsed !== undefined) {
-      // Already checked off: the real elapsed time replaces the estimate.
-      // No feasibility search — it already happened in reality. Model the
-      // full real duration as the step's "active" occupancy so the
-      // implicit singleton cook is correctly marked busy for exactly as
-      // long as the cook actually spent on it.
-      const start = predecessorBound;
-      const end = start + actualElapsed;
-      const actualStep = {
-        active_minutes: actualElapsed,
-        passive_minutes: 0,
-        resource: instance.step.resource,
-        oven_temp_f: instance.step.oven_temp_f,
-        rack_slots: instance.step.rack_slots,
+      const estActive = instance.step.active_minutes ?? 0;
+      const estPassive = instance.step.passive_minutes ?? 0;
+      const activeOcc =
+        estPassive > 0 ? Math.min(estActive, actualElapsed) : actualElapsed;
+      effStep = {
+        ...instance.step,
+        active_minutes: activeOcc,
+        passive_minutes: Math.max(0, actualElapsed - activeOcc),
       };
-      starts.set(instance.id, start);
-      ends.set(instance.id, end);
-      occupyResources(timeline, actualStep, start, end);
-      continue;
     }
 
-    // Not yet started: use the estimate and the standard resource-feasibility
-    // search (same model the GA's SSGS decode uses).
     let candidate = predecessorBound;
-    while (!isFeasibleAt(candidate, instance.step, timeline, capacityConfig)) {
+    while (!isFeasibleAt(candidate, effStep, timeline, capacityConfig)) {
       candidate = nextCandidateTime(candidate, timeline);
     }
-    const active = instance.step.active_minutes ?? 0;
-    const passive = instance.step.passive_minutes ?? 0;
+    const active = effStep.active_minutes ?? 0;
+    const passive = effStep.passive_minutes ?? 0;
     const end = candidate + active + passive;
 
     starts.set(instance.id, candidate);
     ends.set(instance.id, end);
-    occupyResources(timeline, instance.step, candidate, end);
+    occupyResources(timeline, effStep, candidate, end);
   }
 
   return { order: fixedOrder, starts, ends };

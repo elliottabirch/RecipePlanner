@@ -143,6 +143,34 @@ describe("retimeSchedule — order-preserving recompute (D-01a.3)", () => {
     expect(schedule.starts.get(dep.id)).toBe(35);
   });
 
+  it("checking off a passive step on-time does NOT move a step packed into its passive window (the first-check-off reshuffle)", () => {
+    // Reproduces the user-reported bug: an oven bake (5 active / 30 passive)
+    // with an independent hands-on step packed into its passive window. The
+    // Full Schedule shows [bake@0, indep@5]. Checking off the bake with its
+    // estimated duration (what a full-list check-off records) must NOT shove
+    // indep to 35 — the cook is free during the bake's passive window.
+    const bake = makeInstance(
+      "meal-1",
+      makeRecipeStep("bake", { resource: "oven", oven_temp_f: 400, active_minutes: 5, passive_minutes: 30, rack_slots: 1 })
+    );
+    const indep = makeInstance(
+      "meal-1",
+      makeRecipeStep("indep", { resource: "none", active_minutes: 10, passive_minutes: 0 })
+    );
+    const fixedOrder = [bake, indep];
+    const config = baseConfig();
+
+    const before = retimeSchedule(fixedOrder, new Map(), emptyTimeline(), config, []);
+    expect(before.starts.get(indep.id)).toBe(5);
+
+    // Check off the bake with its full estimated duration (5 + 30 = 35).
+    const after = retimeSchedule(fixedOrder, new Map([[bake.id, 35]]), emptyTimeline(), config, []);
+    expect(after.starts.get(bake.id)).toBe(0);
+    // indep must stay at 5 — checking off a passive step does not busy the cook
+    // through its passive window.
+    expect(after.starts.get(indep.id)).toBe(5);
+  });
+
   it("reproduces generateSchedule's start times exactly with no completions — the no-first-check-off-reshuffle guarantee", () => {
     const bake = makeInstance(
       "meal-1",
