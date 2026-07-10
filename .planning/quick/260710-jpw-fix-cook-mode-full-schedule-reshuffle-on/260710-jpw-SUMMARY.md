@@ -10,15 +10,26 @@ files_modified:
 commits:
   - "fix(260710-jpw): DAG-aware retimeSchedule preserves GA parallelism"
   - "fix(260710-jpw): pass weekGraph edges to retime + fix 0-elapsed full-list check-off"
+  - "fix(260710-jpw): checked-off step keeps active/passive split — real reshuffle fix"
 ---
+
+> **Correction (2026-07-10, third commit).** The first two commits were verified
+> only against the *empty-completions* case — but the first check-off always
+> passes ONE completion (the clicked row), and that path still reshuffled.
+> Reproduced live on localhost. Root cause below (see "The real root cause").
+> Fixed and covered by a reproduction test that fails on the pre-fix code.
 
 # Quick Task 260710-jpw: Fix cook-mode Full Schedule reshuffle + 0-elapsed quirk
 
 **The Full Schedule list reshuffled on the first check-off because `retimeSchedule` over-serialized. Fixed by making it bound each step by its real DAG predecessors (the exact rule `decodeSSGS` uses), so retime reproduces the GA's timing. Also fixed a full-list check-off recording ~0 elapsed minutes.**
 
-## Root cause
+## The real root cause
 
-`retimeSchedule` advanced its precedence bound by each step's **full end** (`start + active + passive`) after every step. That serialized the whole timeline, collapsing the parallelism `generateSchedule` (SSGS decode) produces by packing active work into other steps' passive windows (the cook is free during passive time — `resources.ts`). Because CookMode's Full Schedule sorts by start time (`orderedByTime`), the first check-off swapped the GA's interleaved starts for retime's serialized ones and the list snapped from interleaved clock order to topological order. It only happened once because subsequent retimes reproduced the same serial timing.
+There were **two** defects; the reshuffle needed both fixed.
+
+1. **DAG bound (commits 1-2).** `retimeSchedule` advanced its precedence bound by each step's full end (`start + active + passive`), serializing the timeline and collapsing the passive-window packing the SSGS decode produces. Fixed by bounding each step by `max(predecessor ends)` from the passed DAG — the exact `decodeSSGS` rule.
+
+2. **Checked-off occupancy (commit 3 — the actual reshuffle).** A checked-off step was modeled as `active_minutes = elapsed, passive_minutes = 0` (all-active). The first check-off passes ONE completion (the clicked row, recording the step's estimate). Checking off a step **with a passive phase** (a bake 5a/30p, or the 20-hour smoke) then busied the implicit cook resource through its entire passive window, so every step packed into that window got shoved past it. Because the Full Schedule sorts by start time (`orderedByTime`), that swap of start times reshuffled the list. Commits 1-2 were verified only against the empty-completions case, which never exercised this branch — so the bug survived. Fixed by keeping the checked step's active/passive split (passive tail absorbs overruns; the cook stays free during passive), with a pure hands-on step still counting all elapsed as active. On-time completions now reproduce the decode footprint exactly, so nothing else moves.
 
 It was **not** React reactivity or the backing data — `cook_progress` writes don't touch the schedule; the reorder was purely the in-memory `setSchedule(retimed)` replacing the start map.
 
