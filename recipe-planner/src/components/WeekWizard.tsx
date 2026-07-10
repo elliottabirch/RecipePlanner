@@ -33,6 +33,7 @@ import type {
 } from "../lib/types";
 import { SLOT_COLORS } from "../constants/mealPlanning";
 import { formatWeekOf } from "../lib/planning/dates";
+import { buildDraftExcludingFilter } from "../lib/lifecycle/draft-filter";
 import {
   computeLastPlannedDates,
   orderPoolByLRU,
@@ -100,7 +101,10 @@ export default function WeekWizard({ open, plan, onClose }: WeekWizardProps) {
           allPlannedMeals,
         ] = await Promise.all([
           getAll<WeekTemplate>(collections.weekTemplates),
-          getAll<Recipe>(collections.recipes, { sort: "name" }),
+          getAll<Recipe>(collections.recipes, {
+            sort: "name",
+            filter: buildDraftExcludingFilter(),
+          }),
           getAll<RecipeTag>(collections.recipeTags),
           getAll<Tag>(collections.tags),
           getAll<WeeklyPlan>(collections.weeklyPlans),

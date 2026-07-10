@@ -64,6 +64,7 @@ import WeekWizard from "../components/WeekWizard";
 import type { RecipeGraphData } from "../lib/aggregation";
 import { useRecipeQueue } from "../hooks/useRecipeQueue";
 import { formatWeekOf, getUpcomingMonday } from "../lib/planning/dates";
+import { buildDraftExcludingFilter } from "../lib/lifecycle/draft-filter";
 
 // Client-side floor for people_multiplier (Security V5 / T-04-08a) — mirrors
 // the PocketBase field's own Min 0.1 constraint as defense in depth.
@@ -150,7 +151,10 @@ export default function WeeklyPlans() {
         productsData,
       ] = await Promise.all([
         getAll<WeeklyPlan>(collections.weeklyPlans),
-        getAll<Recipe>(collections.recipes, { sort: "name" }),
+        getAll<Recipe>(collections.recipes, {
+          sort: "name",
+          filter: buildDraftExcludingFilter(),
+        }),
         getAll<RecipeProductNode>(collections.recipeProductNodes, {
           expand: "product",
         }),
