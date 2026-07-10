@@ -1042,11 +1042,38 @@
           "meal",
           "batch_prep"
         ]
+      },
+      {
+        "hidden": false,
+        "id": "select_status",
+        "maxSelect": 1,
+        "name": "status",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "select",
+        "values": [
+          "draft",
+          "published"
+        ]
+      },
+      {
+        "cascadeDelete": false,
+        "collectionId": "pbc_5183946072",
+        "hidden": false,
+        "id": "relation_revision_of",
+        "maxSelect": 1,
+        "minSelect": 0,
+        "name": "revision_of",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "relation"
       }
     ],
     "indexes": [],
     "created": "2026-01-02 00:52:20.401Z",
-    "updated": "2026-07-09 22:17:21.768Z",
+    "updated": "2026-07-10 23:18:52.260Z",
     "system": false
   },
   {
@@ -1609,11 +1636,24 @@
         "required": false,
         "system": false,
         "type": "number"
+      },
+      {
+        "cascadeDelete": false,
+        "collectionId": "pbc_9624381706",
+        "hidden": false,
+        "id": "relation_source_node",
+        "maxSelect": 1,
+        "minSelect": 0,
+        "name": "source_node",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "relation"
       }
     ],
     "indexes": [],
     "created": "2026-01-02 00:55:42.530Z",
-    "updated": "2026-07-09 22:17:21.802Z",
+    "updated": "2026-07-10 23:18:53.077Z",
     "system": false
   },
   {
@@ -1823,7 +1863,7 @@
     ],
     "indexes": [],
     "created": "2026-01-02 00:55:42.538Z",
-    "updated": "2026-07-09 23:47:25.267Z",
+    "updated": "2026-07-10 06:04:15.019Z",
     "system": false
   },
   {
@@ -2770,6 +2810,126 @@
     "indexes": [],
     "created": "2026-07-09 23:47:25.386Z",
     "updated": "2026-07-09 23:47:25.386Z",
+    "system": false
+  },
+  {
+    "id": "pbc_1083192981",
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "",
+    "updateRule": "",
+    "deleteRule": "",
+    "name": "recipe_notes",
+    "type": "base",
+    "fields": [
+      {
+        "autogeneratePattern": "[a-z0-9]{15}",
+        "hidden": false,
+        "id": "text_note_id",
+        "max": 15,
+        "min": 15,
+        "name": "id",
+        "pattern": "^[a-z0-9]+$",
+        "presentable": false,
+        "primaryKey": true,
+        "required": true,
+        "system": true,
+        "type": "text"
+      },
+      {
+        "cascadeDelete": true,
+        "collectionId": "pbc_5183946072",
+        "hidden": false,
+        "id": "relation_note_recipe",
+        "maxSelect": 1,
+        "minSelect": 0,
+        "name": "recipe",
+        "presentable": false,
+        "required": true,
+        "system": false,
+        "type": "relation"
+      },
+      {
+        "autogeneratePattern": "",
+        "hidden": false,
+        "id": "text_note_text",
+        "max": 0,
+        "min": 0,
+        "name": "text",
+        "pattern": "",
+        "presentable": false,
+        "primaryKey": false,
+        "required": true,
+        "system": false,
+        "type": "text"
+      },
+      {
+        "hidden": false,
+        "id": "select_note_status",
+        "maxSelect": 1,
+        "name": "status",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "select",
+        "values": [
+          "pending",
+          "applied",
+          "dismissed"
+        ]
+      },
+      {
+        "hidden": false,
+        "id": "select_note_source",
+        "maxSelect": 1,
+        "name": "source_surface",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "select",
+        "values": [
+          "cook_mode",
+          "calendar",
+          "recipe_card"
+        ]
+      },
+      {
+        "cascadeDelete": false,
+        "collectionId": "pbc_5183946072",
+        "hidden": false,
+        "id": "relation_note_draft",
+        "maxSelect": 1,
+        "minSelect": 0,
+        "name": "draft_revision",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "relation"
+      },
+      {
+        "hidden": false,
+        "id": "autodate_note_created",
+        "name": "created",
+        "onCreate": true,
+        "onUpdate": false,
+        "presentable": false,
+        "system": false,
+        "type": "autodate"
+      },
+      {
+        "hidden": false,
+        "id": "autodate_note_updated",
+        "name": "updated",
+        "onCreate": true,
+        "onUpdate": true,
+        "presentable": false,
+        "system": false,
+        "type": "autodate"
+      }
+    ],
+    "indexes": [],
+    "created": "2026-07-10 23:18:52.962Z",
+    "updated": "2026-07-10 23:18:52.962Z",
     "system": false
   }
 ]
