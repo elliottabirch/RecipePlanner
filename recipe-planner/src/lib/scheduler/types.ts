@@ -9,8 +9,8 @@
  *
  * Determinism contract (D-01a): every stochastic GA operator (init,
  * selection, crossover, mutation) threads through exactly ONE seeded PRNG
- * (`prando`) — never `Math.random`, never engine-dependent `Array.sort`
- * stability. Shuffles use a seeded Fisher–Yates
+ * (`prando`) — never the JS built-in unseeded random function, never
+ * engine-dependent `Array.sort` stability. Shuffles use a seeded Fisher–Yates
  * (`prando.nextInt(0, i)` swap index), and every tie-break uses an explicit
  * deterministic key (never implicit sort stability). GA hyperparameters
  * (population, generations, crossover/mutation rates) are fixed code
