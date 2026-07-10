@@ -2,3 +2,6 @@
 node_modules/pocketbase/dist/**/*
 .claude/worktrees/
 .claude/settings.local.json
+
+# GSD research fetch cache (ephemeral, hash-named blobs)
+.planning/research/.cache/
