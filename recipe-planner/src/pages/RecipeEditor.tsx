@@ -43,14 +43,11 @@ import {
   PlayArrow as StepIcon,
   Delete as DeleteIcon,
 } from "@mui/icons-material";
+import { getAll, getOne, create, remove, collections } from "../lib/api";
 import {
-  getAll,
-  getOne,
-  create,
-  update,
-  remove,
-  collections,
-} from "../lib/api";
+  buildRecipeGraph,
+  type NormalizedGraph,
+} from "../lib/import/build-recipe-graph";
 import {
   StepType,
   Timing,
@@ -661,26 +658,66 @@ export default function RecipeEditor() {
       setSaving(true);
       setError(null);
 
-      let recipeId = id;
-
-      // Create or update recipe
-      if (isNew) {
-        const newRecipe = await create<Recipe>(collections.recipes, {
+      // Build a NormalizedGraph from the current ReactFlow state and delegate
+      // ALL recipe + node + step + edge writes to the shared buildRecipeGraph
+      // spine — the ONE graph-write path (Plan 06-04, D-01/D-05). node.id is
+      // the `product-*` / `step-*` ref; nodeDbIds is the remapSeed so existing
+      // nodes update in place. Open Q1: the hand-authored New-Recipe create
+      // path sets status="published" explicitly (only import/evolution set
+      // draft). unit coerces to "" (PocketBase's own empty default) to satisfy
+      // the required NormalizedProductNode.unit — round-trip identical.
+      const graph: NormalizedGraph = {
+        recipe: {
           name: name.trim(),
           notes: notes.trim() || undefined,
           recipe_type: recipeType,
-        });
-        recipeId = newRecipe.id;
-      } else {
-        await update(collections.recipes, id!, {
-          name: name.trim(),
-          notes: notes.trim() || undefined,
-          recipe_type: recipeType,
-        });
-      }
+          ...(isNew ? { status: "published" as const } : {}),
+        },
+        tagIds: selectedTags.map((t) => t.id),
+        productNodes: nodes
+          .filter((n): n is ProductNodeType => n.type === "product")
+          .map((n) => {
+            const data = n.data as ProductNodeData;
+            return {
+              ref: n.id,
+              name: data.label,
+              unit: data.unit ?? "",
+              quantity: data.quantity,
+              matchProductId: data.productId,
+              mealDestination: data.mealDestination,
+            };
+          }),
+        steps: nodes
+          .filter((n): n is StepNodeType => n.type === "step")
+          .map((n) => {
+            const data = n.data as StepNodeData;
+            return {
+              ref: n.id,
+              name: data.label,
+              step_type: data.stepType as "prep" | "assembly",
+              timing: data.timing as "batch" | "just_in_time" | undefined,
+              active_minutes: data.active_minutes,
+              passive_minutes: data.passive_minutes,
+              instructions: data.instructions,
+              prep_action: data.prep_action,
+              resource: data.resource,
+              oven_temp_f: data.oven_temp_f,
+              rack_slots: data.rack_slots,
+            };
+          }),
+        edges: edges.map((e) => ({ from: e.source, to: e.target })),
+      };
 
-      // Handle tags
-      // First, delete existing recipe tags
+      const { recipeId, nodeDbIds: newNodeDbIds } = await buildRecipeGraph(
+        graph,
+        {
+          recipeId: isNew ? undefined : id!,
+          remapSeed: nodeDbIds,
+        }
+      );
+
+      // Tags stay in the editor (not part of the node/edge spine): delete the
+      // existing recipe_tags then recreate from the current selection.
       if (!isNew) {
         const existingTags = await getAll<RecipeTag>(collections.recipeTags, {
           filter: `recipe="${recipeId}"`,
@@ -689,8 +726,6 @@ export default function RecipeEditor() {
           existingTags.map((rt) => remove(collections.recipeTags, rt.id))
         );
       }
-
-      // Create new recipe tags
       await Promise.all(
         selectedTags.map((tag) =>
           create(collections.recipeTags, {
@@ -700,118 +735,7 @@ export default function RecipeEditor() {
         )
       );
 
-      // Save nodes
-      const newNodeDbIds: Record<string, string> = { ...nodeDbIds };
-
-      for (const node of nodes) {
-        const existingDbId = nodeDbIds[node.id];
-
-        if (node.type === "product") {
-          const data = node.data as ProductNodeData;
-          const nodeData = {
-            recipe: recipeId,
-            product: data.productId,
-            quantity: data.quantity,
-            unit: data.unit,
-            meal_destination: data.mealDestination,
-            position_x: node.position.x,
-            position_y: node.position.y,
-          };
-
-          if (existingDbId) {
-            await update(
-              collections.recipeProductNodes,
-              existingDbId,
-              nodeData
-            );
-          } else {
-            const created = await create<RecipeProductNode>(
-              collections.recipeProductNodes,
-              nodeData
-            );
-            newNodeDbIds[node.id] = created.id;
-          }
-        } else if (node.type === "step") {
-          const data = node.data as StepNodeData;
-          const nodeData = {
-            recipe: recipeId,
-            name: data.label,
-            step_type: data.stepType,
-            timing: data.timing,
-            position_x: node.position.x,
-            position_y: node.position.y,
-            active_minutes: data.active_minutes,
-            passive_minutes: data.passive_minutes,
-            instructions: data.instructions,
-            prep_action: data.prep_action,
-            resource: data.resource,
-            oven_temp_f: data.oven_temp_f,
-            rack_slots: data.rack_slots,
-          };
-
-          if (existingDbId) {
-            await update(collections.recipeSteps, existingDbId, nodeData);
-          } else {
-            const created = await create<RecipeStep>(
-              collections.recipeSteps,
-              nodeData
-            );
-            newNodeDbIds[node.id] = created.id;
-          }
-        }
-      }
-
       setNodeDbIds(newNodeDbIds);
-
-      // Delete old edges and create new ones
-      if (!isNew) {
-        const [oldPtsEdges, oldStpEdges] = await Promise.all([
-          getAll<ProductToStepEdge>(collections.productToStepEdges, {
-            filter: `recipe="${recipeId}"`,
-          }),
-          getAll<StepToProductEdge>(collections.stepToProductEdges, {
-            filter: `recipe="${recipeId}"`,
-          }),
-        ]);
-
-        await Promise.all([
-          ...oldPtsEdges.map((e) =>
-            remove(collections.productToStepEdges, e.id)
-          ),
-          ...oldStpEdges.map((e) =>
-            remove(collections.stepToProductEdges, e.id)
-          ),
-        ]);
-      }
-
-      // Create edges
-      for (const edge of edges) {
-        const sourceType = edge.source.startsWith("product")
-          ? "product"
-          : "step";
-        const targetType = edge.target.startsWith("product")
-          ? "product"
-          : "step";
-
-        const sourceDbId = newNodeDbIds[edge.source];
-        const targetDbId = newNodeDbIds[edge.target];
-
-        if (!sourceDbId || !targetDbId) continue;
-
-        if (sourceType === "product" && targetType === "step") {
-          await create(collections.productToStepEdges, {
-            recipe: recipeId,
-            source: sourceDbId,
-            target: targetDbId,
-          });
-        } else if (sourceType === "step" && targetType === "product") {
-          await create(collections.stepToProductEdges, {
-            recipe: recipeId,
-            source: sourceDbId,
-            target: targetDbId,
-          });
-        }
-      }
 
       if (isNew) {
         navigate(`/recipes/${recipeId}`, { replace: true });
