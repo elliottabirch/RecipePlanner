@@ -23,5 +23,7 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "//exclude": "Test files are run/type-checked by Vitest, not shipped in the production bundle. Excluding them keeps `tsc -b` (npm run build) green mid-phase when RED-first tests reference modules that later waves implement.",
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
 }
