@@ -509,19 +509,21 @@ Manual-only (justified): the import **page** UI, RecipeEditor Publish button, no
 | A5 | Suggested confident-match fuse score gate ≈0.15 | /suggest, D-02 | Low — explicitly Claude's-discretion to tune during implementation |
 | A6 | Component-level UI remains manual-UAT-only (no jsdom this phase) | Validation Architecture | Low — matches the stated vitest.config posture; adding jsdom is a deliberate later choice |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Default `status` for hand-authored new recipes (RecipeEditor "New Recipe")?**
+> All three resolved during planning (plan-checker verified). Resolutions folded into the plans as noted.
+
+1. **Default `status` for hand-authored new recipes (RecipeEditor "New Recipe")?** — **RESOLVED → Plan 06-04:** the `isNew` create path sets `status:"published"` explicitly; only import/evolution set `"draft"`.
    - What we know: D-03 covers import (draft) + backfill (published); handleSave create currently sets no status.
    - What's unclear: whether a freshly hand-authored recipe should be a draft (consistent with "unpublished = draft") or published (old behavior).
    - Recommendation: set `status:"published"` explicitly in the manual create path to preserve behavior; only import/evolution set `"draft"`. Confirm in planning.
 
-2. **Node-correspondence linkage: schema field (A) vs JSON map (B)?**
+2. **Node-correspondence linkage: schema field (A) vs JSON map (B)?** — **RESOLVED → Plan 06-01:** adopted option (A) — `recipe_product_nodes.source_node` relation.
    - What we know: override integrity on write-back needs per-node correspondence (Pitfall 2).
    - What's unclear: whether to add `recipe_product_nodes.source_node` (A) or store the map off-schema (B).
    - Recommendation: (A) — explicit relation, session-durable, directly seeds the write-back remap. Small additive field, consistent with the app's schema-first style.
 
-3. **Does `runLint`'s `ProductExpanded` enrichment need store/section/container expand at publish time?**
+3. **Does `runLint`'s `ProductExpanded` enrichment need store/section/container expand at publish time?** — **RESOLVED → Plan 06-03:** `runRecipeLint` mirrors the `Products.tsx:150-166` enrichment (expand product on node fetch + a second `getAll(products, {expand:"store,section,container_type"})`).
    - What we know: `runLint` rules read store/section/container + node units (Products.tsx enriches before calling).
    - What's unclear: cheapest way to assemble that shape for just a recipe's referenced products inside `runRecipeLint`.
    - Recommendation: expand `product` on the node fetch, then a second `getAll(products, {expand:"store,section,container_type", filter: id-in-list})` — mirror Products.tsx:150-164. Confirm the multi-id filter form during implementation.
