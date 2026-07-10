@@ -378,6 +378,65 @@ describe("buildWeekGraph — cross-recipe edges", () => {
     );
   });
 
+  it("elides a spurious in-plan pull connector, wiring the producer straight to the pull's consumer", () => {
+    // Producer meal makes `meatballs frozen` [inventory]; consumer meal has a
+    // 0-time "pull out meatballs" connector (frozen -> stored) feeding a real
+    // assembly. Because the item is made in-plan, the pull is elided and the
+    // producer wires straight to the assembly.
+    const frozen = makeProduct({ id: "mb-frozen", name: "meatballs frozen", type: ProductType.Inventory });
+    const stored = makeProduct({ id: "mb-stored", name: "meatballs stored", type: ProductType.Stored });
+
+    const createStep = makeStep("create", { name: "Create meatballs", step_type: StepType.Prep, active_minutes: 20 });
+    const frozenOut = makeProductNode(frozen, { id: "frozen-out" });
+    const producer = makeRecipeData(
+      {
+        steps: [createStep],
+        productNodes: [frozenOut],
+        stepToProductEdges: [makeStepToProductEdge("s1", createStep.id, frozenOut.id)],
+      },
+      "r-make",
+      "Meatballs batch"
+    );
+
+    const pullStep = makeStep("pull", { name: "pull out meatballs", step_type: StepType.Assembly, active_minutes: 0, passive_minutes: 0 });
+    const assembleStep = makeStep("assemble", { name: "Assemble dish", active_minutes: 5 });
+    const frozenIn = makeProductNode(frozen, { id: "frozen-in" });
+    const storedNode = makeProductNode(stored, { id: "stored-node" });
+    const consumer = makeRecipeData(
+      {
+        steps: [pullStep, assembleStep],
+        productNodes: [frozenIn, storedNode],
+        productToStepEdges: [
+          makeProductToStepEdge("p1", frozenIn.id, pullStep.id),
+          makeProductToStepEdge("p2", storedNode.id, assembleStep.id),
+        ],
+        stepToProductEdges: [makeStepToProductEdge("s2", pullStep.id, storedNode.id)],
+      },
+      "r-use",
+      "Dish"
+    );
+
+    const mealData: MealKeyedRecipeData = new Map([
+      ["meal-make", producer],
+      ["meal-use", consumer],
+    ]);
+
+    const graph = buildWeekGraph(mealData);
+    const ids = graph.nodes.map((n) => n.id);
+
+    // The pull connector node is gone; producer + real assembly remain.
+    expect(ids).not.toContain("meal-use::pull");
+    expect(ids).toContain("meal-make::create");
+    expect(ids).toContain("meal-use::assemble");
+    // No edge touches the elided pull node.
+    expect(graph.edges.some((e) => e.from === "meal-use::pull" || e.to === "meal-use::pull")).toBe(false);
+    // Producer is bridged straight to the assembly (producer -> [pull] -> assembly
+    // collapsed to producer -> assembly).
+    expect(graph.edges).toEqual(
+      expect.arrayContaining([{ from: "meal-make::create", to: "meal-use::assemble" }])
+    );
+  });
+
   it("never merges two planned instances of the same recipe's step into one node (Pitfall 3)", () => {
     const step = makeStep("chop-onion", { name: "Chop onion", step_type: StepType.Prep });
     const recipeData = makeRecipeData({ steps: [step] }, "recipe-soup", "Soup");

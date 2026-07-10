@@ -194,13 +194,17 @@ export function processRecipeSteps(
   recipeData: RecipeGraphData,
   plannedMeal: PlannedMealWithRecipe,
   steps: Map<string, AggregatedFlowStep>,
-  peopleMultiplier: number = 1
+  peopleMultiplier: number = 1,
+  skipStepIds?: ReadonlySet<string>
 ): void {
   const recipeName = recipeData.recipe.name;
   const mealCount = (plannedMeal.quantity || 1) * peopleMultiplier;
 
   recipeData.steps.forEach((step) => {
     if (!shouldIncludeInBatchPrep(step)) return;
+    // Spurious in-plan pull connectors are dropped from batch prep / product
+    // flow (todo: connective-recipe-batch-then-consume).
+    if (skipStepIds?.has(step.id)) return;
 
     const inputs = extractStepInputs(step.id, recipeData, mealCount);
     const outputs = extractStepOutputs(step.id, recipeData, mealCount);

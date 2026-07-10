@@ -57,6 +57,10 @@ import {
   determineStorageLocation,
   extractMealDestination,
 } from "./aggregation/utils/product-utils";
+import {
+  collectProducedProductIds,
+  collectSpuriousPullStepIds,
+} from "./aggregation/utils/connective";
 
 // Import types we need for function signatures
 import type {
@@ -186,6 +190,12 @@ export function buildProductFlowGraph(
   const productToStepFlows: { productId: string; stepId: string }[] = [];
   const stepToProductFlows: { stepId: string; productId: string }[] = [];
 
+  // Spurious in-plan "pull from freezer" connector steps (a made-this-week
+  // inventory item's zero-time pull) are dropped from batch prep / product flow
+  // to match cook mode's graph elision (todo: connective-recipe-batch-then-consume).
+  const producedProductIds = collectProducedProductIds(recipeData);
+  const skipStepIds = collectSpuriousPullStepIds(recipeData, producedProductIds);
+
   // Process each planned meal
   plannedMeals.forEach((meal) => {
     const data = recipeData.get(meal.id);
@@ -197,7 +207,7 @@ export function buildProductFlowGraph(
     processRecipeProducts(data, meal, products, peopleMultiplier);
 
     // 2. Aggregate all steps
-    processRecipeSteps(data, meal, steps, peopleMultiplier);
+    processRecipeSteps(data, meal, steps, peopleMultiplier, skipStepIds);
 
     // 3. Build flow connections for all steps
     steps.forEach((step) => {

@@ -46,6 +46,10 @@ import type {
   RecipeGraphData,
 } from "../aggregation/types";
 import { ProductType, StepType, Timing, type RecipeStep } from "../types";
+import {
+  collectProducedProductIds,
+  collectSpuriousPullInstanceIds,
+} from "../aggregation/utils/connective";
 import type { StepInstance, WeekGraph, WeekGraphEdge } from "./types";
 
 /** `plannedMealId` sentinel for a week-wide merged prep node — it belongs to no
@@ -213,6 +217,54 @@ export function buildWeekGraph(mealData: MealKeyedRecipeData): WeekGraph {
           if (includedIds.has(from) && includedIds.has(to)) edges.push({ from, to });
         }
       }
+    }
+  }
+
+  // (3b) Elide spurious in-plan pull connectors. A zero-time Assembly step
+  // whose single input is an `inventory` product that ANOTHER recipe in the
+  // plan produces is a "pull from freezer" graph connector, not a real cook-day
+  // task (we made it fresh this week). Short-circuit producer -> [pull] ->
+  // consumer into producer -> consumer and drop the pull node, so cook mode
+  // never surfaces a spurious 0-time "pull out X" card (todo:
+  // connective-recipe-batch-then-consume). A pull is single-`inventory`-input,
+  // never a single-RAW-input node, so it is never a merge candidate below —
+  // this pass and the (4) merge are independent.
+  const producedProductIds = collectProducedProductIds(mealData);
+  const pullIds = collectSpuriousPullInstanceIds(mealData, producedProductIds);
+  const activePullIds = new Set([...pullIds].filter((id) => includedIds.has(id)));
+  if (activePullIds.size > 0) {
+    // Bridge each pull's non-pull predecessors to its non-pull successors
+    // (producer -> downstream), deduped, then drop every pull node + its edges.
+    const bridged = new Set<string>();
+    for (const pullId of activePullIds) {
+      const preds = edges
+        .filter((e) => e.to === pullId && !activePullIds.has(e.from))
+        .map((e) => e.from);
+      const succs = edges
+        .filter((e) => e.from === pullId && !activePullIds.has(e.to))
+        .map((e) => e.to);
+      for (const from of preds) {
+        for (const to of succs) {
+          if (from !== to) bridged.add(`${from} ${to}`);
+        }
+      }
+    }
+    const kept = edges.filter(
+      (e) => !activePullIds.has(e.from) && !activePullIds.has(e.to)
+    );
+    const keptKeys = new Set(kept.map((e) => `${e.from} ${e.to}`));
+    const bridgedEdges: WeekGraphEdge[] = [];
+    for (const key of bridged) {
+      if (keptKeys.has(key)) continue;
+      const [from, to] = key.split(" ");
+      bridgedEdges.push({ from, to });
+    }
+    edges.length = 0;
+    edges.push(...kept, ...bridgedEdges);
+    for (const pullId of activePullIds) {
+      includedIds.delete(pullId);
+      const idx = nodes.findIndex((node) => node.id === pullId);
+      if (idx >= 0) nodes.splice(idx, 1);
     }
   }
 
