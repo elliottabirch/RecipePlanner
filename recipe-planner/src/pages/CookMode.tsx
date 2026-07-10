@@ -35,7 +35,10 @@ import {
 } from "@mui/material";
 import { getAll, getOne, collections } from "../lib/api";
 import { applyVariantOverrides, type VariantOverride } from "../lib/aggregation";
-import { extractStepInputs } from "../lib/aggregation/builders/step-builder";
+import {
+  extractStepInputs,
+  extractStepOutputs,
+} from "../lib/aggregation/builders/step-builder";
 import type {
   WeeklyPlan,
   RecipeProductNode,
@@ -58,7 +61,10 @@ import { loadSchedulerConfig } from "../lib/scheduler/scheduler-config";
 import type { Schedule, StepInstance, WeekGraph } from "../lib/scheduler/types";
 import { deriveReadiness } from "../lib/scheduler/readiness";
 import { useCookProgress } from "../hooks/useCookProgress";
-import { NowNextCard } from "../components/cook-mode/NowNextCard";
+import {
+  NowNextCard,
+  type MergedCutGroup,
+} from "../components/cook-mode/NowNextCard";
 import type { ReadinessChipState } from "../components/cook-mode/ReadinessChip";
 import { WeightsPanel } from "../components/cook-mode/WeightsPanel";
 import { SyncIndicator } from "../components/outputs";
@@ -386,6 +392,84 @@ export default function CookMode() {
     [mealKeyedRecipeData, plannedMealQuantityById]
   );
 
+  // A week-wide merged prep node collapses several recipes' prep of one raw
+  // ingredient into a single work block, keyed on the RAW input — so different
+  // required cuts (small vs large dice, slices) hide behind one flat quantity.
+  // Recover the per-recipe attribution AND the distinct required outputs (the
+  // exact products to have ready) by grouping each member on its OUTPUT product
+  // (PREP-04 follow-on, user-directed 2026-07-10). Null for ordinary nodes.
+  const getMergedBreakdown = useCallback(
+    (instance: StepInstance): MergedCutGroup[] | null => {
+      if (!instance.mergedMembers) return null;
+      const groups = new Map<string, MergedCutGroup>();
+      for (const member of instance.mergedMembers) {
+        const memberData = mealKeyedRecipeData.get(member.plannedMealId);
+        if (!memberData) continue;
+        const cut = extractStepOutputs(
+          member.stepId,
+          memberData,
+          plannedMealQuantityById
+        )[0];
+        const raw = extractStepInputs(
+          member.stepId,
+          memberData,
+          plannedMealQuantityById
+        )[0];
+        const cutLabel = cut?.productName ?? instance.step.name;
+        const cutKey = cut?.productId ?? cutLabel;
+        const quantity = raw?.quantity ?? cut?.quantity ?? 0;
+        const unit = raw?.unit ?? cut?.unit ?? "";
+        let group = groups.get(cutKey);
+        if (!group) {
+          group = { cutLabel, cutKey, rows: [] };
+          groups.set(cutKey, group);
+        }
+        // Fold repeat (recipe, unit) uses of one cut into a single summed row.
+        const existing = group.rows.find(
+          (r) => r.recipeName === memberData.recipe.name && r.unit === unit
+        );
+        if (existing) existing.quantity += quantity;
+        else
+          group.rows.push({
+            recipeName: memberData.recipe.name,
+            quantity,
+            unit,
+          });
+      }
+      const result = [...groups.values()];
+      if (result.length === 0) return null;
+      result.forEach((g) =>
+        g.rows.sort(
+          (a, b) =>
+            a.recipeName.localeCompare(b.recipeName) ||
+            a.unit.localeCompare(b.unit)
+        )
+      );
+      result.sort((a, b) => a.cutLabel.localeCompare(b.cutLabel));
+      // Trim the shared raw-ingredient prefix ("onion (yellow) small-dice" ->
+      // "small-dice") so the Cut column stays compact — the card title already
+      // names the ingredient. Only when 2+ cuts share a word-boundary prefix,
+      // so a lone cut or unrelated names are left intact.
+      if (result.length >= 2) {
+        let prefix = result
+          .map((g) => g.cutLabel)
+          .reduce((p, l) => {
+            let i = 0;
+            while (i < p.length && i < l.length && p[i] === l[i]) i++;
+            return p.slice(0, i);
+          });
+        prefix = prefix.slice(0, prefix.lastIndexOf(" ") + 1);
+        if (prefix.length > 2) {
+          result.forEach((g) => {
+            g.cutLabel = g.cutLabel.slice(prefix.length).trim() || g.cutLabel;
+          });
+        }
+      }
+      return result;
+    },
+    [mealKeyedRecipeData, plannedMealQuantityById]
+  );
+
   const handleGenerateSchedule = useCallback(() => {
     if (!schedulerConfig) return;
     try {
@@ -603,6 +687,7 @@ export default function CookMode() {
                 instance={nowInstance}
                 variant="now"
                 scaledInputs={getScaledInputs(nowInstance)}
+                mergedBreakdown={getMergedBreakdown(nowInstance)}
                 checked={checkedIds.has(nowInstance.id)}
                 onToggleChecked={() => handleToggleChecked(nowInstance)}
                 statusChip={getStatusChip(nowInstance, true)}
@@ -619,6 +704,7 @@ export default function CookMode() {
                 instance={nextInstance}
                 variant="next"
                 scaledInputs={getScaledInputs(nextInstance)}
+                mergedBreakdown={getMergedBreakdown(nextInstance)}
                 checked={checkedIds.has(nextInstance.id)}
                 onToggleChecked={() => handleToggleChecked(nextInstance)}
                 statusChip={getStatusChip(nextInstance, false)}

@@ -15,6 +15,22 @@ export interface ScaledIngredient {
   unit: string;
 }
 
+/** One recipe's contribution to a required cut on a merged prep card. */
+export interface MergedCutRow {
+  recipeName: string;
+  quantity: number;
+  unit: string;
+}
+
+/** The per-recipe breakdown for ONE distinct required output (cut) of a
+ * week-wide merged prep node — e.g. all the recipes wanting "small dice" of
+ * the merged raw ingredient. `cutLabel` is the exact product to have ready. */
+export interface MergedCutGroup {
+  cutLabel: string;
+  cutKey: string;
+  rows: MergedCutRow[];
+}
+
 export interface NowNextCardStatusChip {
   state: ReadinessChipState;
   label: string;
@@ -24,6 +40,12 @@ export interface NowNextCardProps {
   instance: StepInstance;
   variant: "now" | "next";
   scaledInputs: ScaledIngredient[];
+  /** When this card is a week-wide merged prep node, the per-recipe cut
+   * breakdown grouped by required output product. Renders a compact table in
+   * place of the flat input list so the cook sees which recipe needs which cut
+   * and exactly which products to have ready (PREP-04 follow-on,
+   * user-directed 2026-07-10). Null/absent for ordinary per-recipe nodes. */
+  mergedBreakdown?: MergedCutGroup[] | null;
   checked: boolean;
   onToggleChecked: () => void;
   statusChip?: NowNextCardStatusChip | null;
@@ -42,6 +64,7 @@ export function NowNextCard({
   instance,
   variant,
   scaledInputs,
+  mergedBreakdown,
   checked,
   onToggleChecked,
   statusChip,
@@ -49,6 +72,13 @@ export function NowNextCard({
 }: NowNextCardProps) {
   const [expanded, setExpanded] = useState(false);
   const isNow = variant === "now";
+
+  // Merged prep summary for the caption + to switch the detail body to the
+  // grouped cut table. `recipeCount` de-dupes a recipe appearing under two cuts.
+  const cutCount = mergedBreakdown?.length ?? 0;
+  const recipeCount = mergedBreakdown
+    ? new Set(mergedBreakdown.flatMap((g) => g.rows.map((r) => r.recipeName))).size
+    : 0;
 
   return (
     <Box
@@ -88,7 +118,11 @@ export function NowNextCard({
             )}
           </Box>
           <Typography variant="caption" color="text.secondary">
-            {instance.recipeName}
+            {cutCount > 0
+              ? `${recipeCount} ${recipeCount === 1 ? "recipe" : "recipes"} · ${cutCount} ${
+                  cutCount === 1 ? "cut" : "cuts"
+                }`
+              : instance.recipeName}
           </Typography>
 
           {countdownText && (
@@ -103,22 +137,89 @@ export function NowNextCard({
 
           <Collapse in={expanded}>
             <Box mt={1}>
-              {scaledInputs.length > 0 && (
-                <Typography variant="body2" color="text.secondary">
-                  {scaledInputs
-                    .map(
-                      (i) =>
-                        `${i.productName}${
-                          i.quantity
-                            ? ` (${formatQuantity(i.quantity)} ${i.unit})`
-                            : ""
-                        }`
-                    )
-                    .join(", ")}
-                </Typography>
+              {cutCount > 0 ? (
+                // Compact table: required cut (the exact product to have ready)
+                // on the left, spanning its recipe rows; recipe + qty on the
+                // right. Answers "which recipe needs which cut" for a merged
+                // prep block that would otherwise show one flat quantity.
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: "minmax(56px, max-content) 1fr max-content",
+                    columnGap: 1.5,
+                    rowGap: 0.25,
+                    alignItems: "baseline",
+                  }}
+                >
+                  <Typography variant="caption" color="text.secondary" fontWeight="bold">
+                    Cut
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" fontWeight="bold">
+                    Recipe
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    fontWeight="bold"
+                    textAlign="right"
+                  >
+                    Qty
+                  </Typography>
+                  {mergedBreakdown!.flatMap((g, gi) =>
+                    g.rows.flatMap((r, ri) => {
+                      const groupStart = ri === 0;
+                      const sepSx =
+                        gi > 0 && groupStart
+                          ? { borderTop: "1px solid", borderColor: "divider", pt: 0.5 }
+                          : undefined;
+                      return [
+                        <Typography
+                          key={`${g.cutKey}-${ri}-cut`}
+                          variant="body2"
+                          fontWeight="bold"
+                          color="text.secondary"
+                          sx={sepSx}
+                        >
+                          {groupStart ? g.cutLabel : ""}
+                        </Typography>,
+                        <Typography
+                          key={`${g.cutKey}-${ri}-name`}
+                          variant="body2"
+                          sx={sepSx}
+                        >
+                          {r.recipeName}
+                        </Typography>,
+                        <Typography
+                          key={`${g.cutKey}-${ri}-qty`}
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ ...sepSx, textAlign: "right", whiteSpace: "nowrap" }}
+                        >
+                          {formatQuantity(r.quantity)}
+                          {r.unit && r.unit !== "each" ? ` ${r.unit}` : ""}
+                        </Typography>,
+                      ];
+                    })
+                  )}
+                </Box>
+              ) : (
+                scaledInputs.length > 0 && (
+                  <Typography variant="body2" color="text.secondary">
+                    {scaledInputs
+                      .map(
+                        (i) =>
+                          `${i.productName}${
+                            i.quantity
+                              ? ` (${formatQuantity(i.quantity)} ${i.unit})`
+                              : ""
+                          }`
+                      )
+                      .join(", ")}
+                  </Typography>
+                )
               )}
               {instance.step.instructions && (
-                <Typography variant="body2" sx={{ mt: 0.5 }}>
+                <Typography variant="body2" sx={{ mt: cutCount > 0 ? 1 : 0.5 }}>
                   {instance.step.instructions}
                 </Typography>
               )}
