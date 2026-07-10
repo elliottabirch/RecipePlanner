@@ -11,8 +11,8 @@
  *    regardless of rack capacity — RESEARCH Pitfall 2), metered above that
  *    by `rack_slots` vs. `scheduler_config.oven_rack_slots`.
  *  - stovetop: metered by `scheduler_config.burner_count` (default 4).
- *  - singleton appliances (blender/food_processor/instant_pot): capacity 1
- *    each.
+ *  - singleton appliances (blender/food_processor/instant_pot/microwave/
+ *    sous_vide): capacity 1 each.
  *
  * Within a single step, `active_minutes` occurs first, `passive_minutes`
  * second: `[start, start+active)` is cook-busy AND resource-busy;
@@ -20,12 +20,26 @@
  * busy when `resource === "none"`) — RESEARCH A2.
  */
 import type { RecipeStep } from "../types";
-import type { ResourceTimeline } from "./types";
+import type { ResourceTimeline, SingletonAppliance } from "./types";
 
 /** Capacity inputs `isFeasibleAt` needs from `scheduler_config`. */
 export interface ResourceCapacityConfig {
   ovenRackSlots: number;
   burnerCount: number;
+}
+
+/** Appliances modeled as capacity-1 singletons (D-05). Single source of the
+ * list so adding an appliance touches one place. */
+export const SINGLETON_APPLIANCES: readonly SingletonAppliance[] = [
+  "blender",
+  "food_processor",
+  "instant_pot",
+  "microwave",
+  "sous_vide",
+];
+
+function isSingletonAppliance(resource: string): resource is SingletonAppliance {
+  return (SINGLETON_APPLIANCES as readonly string[]).includes(resource);
 }
 
 /** `[aStart, aEnd)` vs `[bStart, bEnd)` half-open interval overlap. */
@@ -42,7 +56,9 @@ export function emptyResourceTimeline(): ResourceTimeline {
     cookBusy: [],
     ovenUsage: [],
     activeBurners: [],
-    singletonAppliances: { blender: [], food_processor: [], instant_pot: [] },
+    singletonAppliances: Object.fromEntries(
+      SINGLETON_APPLIANCES.map((name) => [name, []])
+    ) as unknown as ResourceTimeline["singletonAppliances"],
   };
 }
 
@@ -98,7 +114,7 @@ export function isFeasibleAt(
   }
 
   // (4) singleton appliances: capacity 1 each.
-  if (resource === "blender" || resource === "food_processor" || resource === "instant_pot") {
+  if (isSingletonAppliance(resource)) {
     const busy = timeline.singletonAppliances[resource];
     if (busy.some((w) => overlaps(candidateStart, resourceEnd, w.start, w.end))) {
       return false;
@@ -138,7 +154,7 @@ export function occupyResources(
     });
   } else if (resource === "stovetop") {
     timeline.activeBurners.push({ start, end });
-  } else if (resource === "blender" || resource === "food_processor" || resource === "instant_pot") {
+  } else if (isSingletonAppliance(resource)) {
     timeline.singletonAppliances[resource].push({ start, end });
   }
   // resource === "none": no appliance footprint beyond the cook-busy window.

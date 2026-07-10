@@ -1790,6 +1790,8 @@
           "blender",
           "food_processor",
           "instant_pot",
+          "microwave",
+          "sous_vide",
           "none"
         ]
       },

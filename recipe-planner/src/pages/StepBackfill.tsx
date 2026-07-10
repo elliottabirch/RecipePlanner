@@ -57,6 +57,8 @@ const RESOURCE_OPTIONS: ResourceValue[] = [
   "blender",
   "food_processor",
   "instant_pot",
+  "microwave",
+  "sous_vide",
   "none",
 ];
 
@@ -66,6 +68,8 @@ const RESOURCE_LABELS: Record<ResourceValue, string> = {
   blender: "Blender",
   food_processor: "Food Processor",
   instant_pot: "Instant Pot",
+  microwave: "Microwave",
+  sous_vide: "Sous Vide",
   none: "None",
 };
 

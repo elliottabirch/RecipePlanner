@@ -74,7 +74,10 @@ in-app import, and publish-time lint gate remain Phase 6.
 ### Resource model
 - **D-05:** **Full resource model.** `recipe_steps` gains the Proposed §3.1 fields:
   - `resource` select enum: `oven` / `stovetop` / `blender` / `food_processor` /
-    `instant_pot` / `none`
+    `instant_pot` / `microwave` / `sous_vide` / `none` (microwave + sous_vide
+    added mid-execution 2026-07-10 at user request — both modeled as capacity-1
+    singleton appliances; live-applied additively to both PB instances +
+    `scheduler_config.appliances`)
   - `oven_temp_f` (number, required when `resource = oven`) → drives the
     temperature-conflict rule (two different-temp oven steps cannot overlap)
   - `rack_slots` (number, default 1)

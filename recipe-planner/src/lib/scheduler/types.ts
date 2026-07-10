@@ -102,10 +102,18 @@ export interface ResourceTimeline {
   activeBurners: Array<{ start: number; end: number }>;
   /** Singleton appliances (capacity 1 each). */
   singletonAppliances: Record<
-    "blender" | "food_processor" | "instant_pot",
+    SingletonAppliance,
     Array<{ start: number; end: number }>
   >;
 }
+
+/** Kitchen appliances modeled as capacity-1 singletons (D-05). */
+export type SingletonAppliance =
+  | "blender"
+  | "food_processor"
+  | "instant_pot"
+  | "microwave"
+  | "sous_vide";
 
 /**
  * Re-exported so scheduler modules import the config/weights shape from a

@@ -7,17 +7,14 @@
  * suite is EXPECTED to fail on import until a later wave implements it.
  */
 import { describe, it, expect } from "vitest";
-import { isFeasibleAt } from "./resources";
+import { isFeasibleAt, emptyResourceTimeline } from "./resources";
 import type { ResourceTimeline } from "./types";
 import { StepType, type RecipeStep } from "../types";
 
+// Reuse the production factory so new singleton appliances (microwave,
+// sous_vide) stay in sync automatically instead of a drifting hardcoded literal.
 function emptyTimeline(): ResourceTimeline {
-  return {
-    cookBusy: [],
-    ovenUsage: [],
-    activeBurners: [],
-    singletonAppliances: { blender: [], food_processor: [], instant_pot: [] },
-  };
+  return emptyResourceTimeline();
 }
 
 function makeStep(overrides: Partial<RecipeStep> = {}): RecipeStep {
@@ -118,5 +115,17 @@ describe("isFeasibleAt — singleton appliance capacity 1", () => {
     expect(isFeasibleAt(3, step, timeline, { ovenRackSlots: 2, burnerCount: 4 })).toBe(false);
     // starts exactly when the busy window ends -> no overlap -> feasible
     expect(isFeasibleAt(10, step, timeline, { ovenRackSlots: 2, burnerCount: 4 })).toBe(true);
+  });
+
+  it("models microwave and sous_vide as capacity-1 singletons (across their full resource window)", () => {
+    for (const appliance of ["microwave", "sous_vide"] as const) {
+      const timeline = emptyTimeline();
+      // sous_vide is long-passive: window is active+passive; a second step of
+      // the same appliance may not overlap that window.
+      timeline.singletonAppliances[appliance].push({ start: 0, end: 60 });
+      const step = makeStep({ active_minutes: 5, passive_minutes: 30, resource: appliance });
+      expect(isFeasibleAt(20, step, timeline, { ovenRackSlots: 2, burnerCount: 4 })).toBe(false);
+      expect(isFeasibleAt(60, step, timeline, { ovenRackSlots: 2, burnerCount: 4 })).toBe(true);
+    }
   });
 });
