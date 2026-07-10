@@ -30,6 +30,7 @@ import {
   Egg as ProductIcon,
   Settings as RegistryIcon,
   Inventory2 as InventoryIcon,
+  FactCheck as BackfillIcon,
 } from "@mui/icons-material";
 import DatabaseSwitcher from "./DatabaseSwitcher";
 import { useRecipeQueue } from "../hooks/useRecipeQueue";
@@ -133,6 +134,17 @@ export default function Layout() {
           <ListItemText primary="Inventory" />
         </ListItemButton>
 
+        {/* Step Backfill Review */}
+        <ListItemButton
+          selected={isActive("/step-backfill")}
+          onClick={() => handleNavClick("/step-backfill")}
+        >
+          <ListItemIcon>
+            <BackfillIcon />
+          </ListItemIcon>
+          <ListItemText primary="Step Backfill" />
+        </ListItemButton>
+
         {/* Registries (collapsible) */}
         <ListItemButton onClick={() => setRegistriesOpen(!registriesOpen)}>
           <ListItemIcon>
@@ -189,6 +201,8 @@ export default function Layout() {
               ? "Inventory"
               : location.pathname.includes("/outputs")
               ? "Outputs"
+              : location.pathname.includes("/step-backfill")
+              ? "Step Backfill"
               : "Meal Planner"}
           </Typography>
           <Box sx={{ flexGrow: 1 }} />

@@ -13,6 +13,7 @@ import RecipeEditor from "./pages/RecipeEditor";
 import WeeklyPlans from "./pages/WeeklyPlans";
 import Outputs from "./pages/Outputs";
 import Inventory from "./pages/Inventory";
+import StepBackfill from "./pages/StepBackfill";
 
 const theme = createTheme({
   palette: {
@@ -61,6 +62,9 @@ function App() {
 
             {/* Outputs */}
             <Route path="outputs" element={<Outputs />} />
+
+            {/* Step Backfill Review (PREP-02) */}
+            <Route path="step-backfill" element={<StepBackfill />} />
           </Route>
         </Routes>
       </BrowserRouter>
