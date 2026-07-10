@@ -5,15 +5,15 @@ milestone_name: Workflow Redesign
 current_phase: 5
 current_phase_name: Prep-Day Engine
 status: executing
-stopped_at: Completed 05-08-PLAN.md
-last_updated: "2026-07-10T04:51:32.687Z"
+stopped_at: Completed 05-09-PLAN.md
+last_updated: "2026-07-10T05:09:31.308Z"
 last_activity: 2026-07-09
 last_activity_desc: Phase 5 execution started
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 45
-  completed_plans: 41
+  completed_plans: 42
   percent: 67
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 5 (Prep-Day Engine) — EXECUTING
-Plan: 9 of 12
+Plan: 10 of 12
 Status: Ready to execute
 Last activity: 2026-07-09 — Phase 5 execution started
 
@@ -97,6 +97,7 @@ Progress: [██████████] 100%
 | Phase 05-prep-day-engine P06 | 20min | 1 tasks | 1 files |
 | Phase 05-prep-day-engine P07 | 20min | 3 tasks | 4 files |
 | Phase 05-prep-day-engine P08 | 20min | 3 tasks | 5 files |
+| Phase 05-prep-day-engine P09 | 20min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -184,6 +185,8 @@ Recent decisions affecting current work:
 - [Phase ?]: missing-pull-step takes (weekGraph, consumedStoredInputs) and is aggregated via a standalone runWeekLint, kept out of runLint's per-recipe signature (D-07)
 - [Phase 05-08]: StepBackfill review UI defaults every field to Accept; Save is never blocked by pending decisions - Edit/Reject are explicit reviewer overrides (user-approved at checkpoint)
 - [Phase 05-08]: isStepUnbackfilled treats PocketBase un-set defaults (0/empty-string) as needing backfill, not just null - PB never stores null for un-set number/select fields
+- [Phase 05-09]: computeActiveSessionSpan uses each instance's Schedule.ends value (not a literal active-only recompute) - required by the fixed genetic.test.ts D-06 fixture, which explicitly asserts the span must not equal sum(active_minutes)
+- [Phase 05-09]: crossover/mutation offspring repaired to valid topological order via a deterministic priority-rank walk (no extra PRNG draws), not ad-hoc splice repair
 
 ### Pending Todos
 
@@ -208,7 +211,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-10T04:51:32.682Z
-Stopped at: Completed 05-08-PLAN.md
+Last session: 2026-07-10T05:09:31.302Z
+Stopped at: Completed 05-09-PLAN.md
 Resume file: 
 None
