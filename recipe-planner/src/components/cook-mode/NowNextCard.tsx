@@ -138,69 +138,51 @@ export function NowNextCard({
           <Collapse in={expanded}>
             <Box mt={1}>
               {cutCount > 0 ? (
-                // Compact table: required cut (the exact product to have ready)
-                // on the left, spanning its recipe rows; recipe + qty on the
-                // right. Answers "which recipe needs which cut" for a merged
-                // prep block that would otherwise show one flat quantity.
-                <Box
-                  sx={{
-                    display: "grid",
-                    gridTemplateColumns: "minmax(56px, max-content) 1fr max-content",
-                    columnGap: 1.5,
-                    rowGap: 0.25,
-                    alignItems: "baseline",
-                  }}
-                >
-                  <Typography variant="caption" color="text.secondary" fontWeight="bold">
-                    Cut
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" fontWeight="bold">
-                    Recipe
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    fontWeight="bold"
-                    textAlign="right"
-                  >
-                    Qty
-                  </Typography>
-                  {mergedBreakdown!.flatMap((g, gi) =>
-                    g.rows.flatMap((r, ri) => {
-                      const groupStart = ri === 0;
-                      const sepSx =
-                        gi > 0 && groupStart
-                          ? { borderTop: "1px solid", borderColor: "divider", pt: 0.5 }
-                          : undefined;
-                      return [
-                        <Typography
-                          key={`${g.cutKey}-${ri}-cut`}
-                          variant="body2"
-                          fontWeight="bold"
-                          color="text.secondary"
-                          sx={sepSx}
+                // Grouped by required cut: the cut (the exact product to have
+                // ready) is a full-width section header, so each recipe below
+                // it gets the whole card width and reads on one line, with a
+                // small right-aligned qty. Answers "which recipe needs which
+                // cut" for a merged prep block that would otherwise show one
+                // flat quantity.
+                <Box>
+                  {mergedBreakdown!.map((g) => (
+                    <Box key={g.cutKey} sx={{ mb: 1 }}>
+                      <Typography
+                        variant="subtitle2"
+                        fontWeight="bold"
+                        sx={{
+                          borderBottom: "1px solid",
+                          borderColor: "divider",
+                          pb: 0.25,
+                          mb: 0.25,
+                        }}
+                      >
+                        {g.cutLabel.charAt(0).toUpperCase() + g.cutLabel.slice(1)}
+                      </Typography>
+                      {g.rows.map((r, ri) => (
+                        <Box
+                          key={`${g.cutKey}-${ri}`}
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "baseline",
+                            gap: 1.5,
+                            py: 0.1,
+                          }}
                         >
-                          {groupStart ? g.cutLabel : ""}
-                        </Typography>,
-                        <Typography
-                          key={`${g.cutKey}-${ri}-name`}
-                          variant="body2"
-                          sx={sepSx}
-                        >
-                          {r.recipeName}
-                        </Typography>,
-                        <Typography
-                          key={`${g.cutKey}-${ri}-qty`}
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{ ...sepSx, textAlign: "right", whiteSpace: "nowrap" }}
-                        >
-                          {formatQuantity(r.quantity)}
-                          {r.unit && r.unit !== "each" ? ` ${r.unit}` : ""}
-                        </Typography>,
-                      ];
-                    })
-                  )}
+                          <Typography variant="body2">{r.recipeName}</Typography>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ whiteSpace: "nowrap", flexShrink: 0 }}
+                          >
+                            {formatQuantity(r.quantity)}
+                            {r.unit && r.unit !== "each" ? ` ${r.unit}` : ""}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  ))}
                 </Box>
               ) : (
                 scaledInputs.length > 0 && (
