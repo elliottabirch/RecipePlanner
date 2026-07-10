@@ -14,6 +14,7 @@ import WeeklyPlans from "./pages/WeeklyPlans";
 import Outputs from "./pages/Outputs";
 import Inventory from "./pages/Inventory";
 import StepBackfill from "./pages/StepBackfill";
+import CookMode from "./pages/CookMode";
 
 const theme = createTheme({
   palette: {
@@ -65,6 +66,9 @@ function App() {
 
             {/* Step Backfill Review (PREP-02) */}
             <Route path="step-backfill" element={<StepBackfill />} />
+
+            {/* Interactive Cook Mode (PREP-04) */}
+            <Route path="cook-mode/:planId" element={<CookMode />} />
           </Route>
         </Routes>
       </BrowserRouter>

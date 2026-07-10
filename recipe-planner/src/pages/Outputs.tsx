@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -99,6 +100,7 @@ import {
 } from "../constants/outputs";
 
 export default function Outputs() {
+  const navigate = useNavigate();
   const [plans, setPlans] = useState<WeeklyPlan[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string>("");
   const [loading, setLoading] = useState(true);
@@ -849,6 +851,16 @@ export default function Outputs() {
 
           <Box display="flex" alignItems="center" gap={1}>
             <SyncIndicator pendingCount={pendingCount} failed={failed} />
+            {selectedPlanId && (
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => navigate(`/cook-mode/${selectedPlanId}`)}
+                sx={{ minHeight: 48 }}
+              >
+                Start Cook Mode
+              </Button>
+            )}
             {peopleMultiplier !== 1 && (
               <Chip
                 size="small"
