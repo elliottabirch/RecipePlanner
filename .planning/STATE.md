@@ -46,9 +46,21 @@ Phase 5 close-out (2026-07-10):
   SUMMARY; reconciled now.
 - ROADMAP.md updated: Phase 5 = 12/12 Complete (2026-07-10).
 
-Verification state: `npx tsc --noEmit` clean, 177/177 tests passing (22 files).
-No standalone `/gsd-verify-work` run — success criteria satisfied via the two
-blocking human-verify checkpoints (05-11 cook mode, 05-12 weights) + green suite.
+Post-close follow-on (2026-07-10, commit a7094ec) — **linter v2 on-demand
+surface wired** (PREP-06): the 05-07 rule modules + `runStepLint`/`runWeekLint`
+aggregators had shipped but `runWeekLint` had zero UI callers, so success
+criterion #5's "linter, run on demand, flags step-metadata and pull-step
+violations" was unmet at the user-facing level. Added
+`collectStoredInputConsumptions` (derives the missing-pull-step input from
+`MealKeyedRecipeData`, excludes just_in_time consumers, deduped, unit-tested)
+and a "Check plan" button + results dialog in CookMode that runs BOTH v2
+aggregators against the loaded week. Criterion #5 now genuinely satisfied.
+(Publish-gate wiring of the same rules — IMP-07 — remains a Phase 6 concern.)
+
+Verification state: `npx tsc --noEmit` clean, production build green, 180/180
+tests passing (23 files). No standalone `/gsd-verify-work` run — success
+criteria satisfied via the two blocking human-verify checkpoints (05-11 cook
+mode, 05-12 weights) + green suite + this linter-surface close-out.
 
 Deferred out of Phase 5 (carried to a later phase / Phase 6 step-metadata work):
 - Step-detail-on-click surfacing the real `instructions` field (PREP-04 partial,
