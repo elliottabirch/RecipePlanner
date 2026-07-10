@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
@@ -12,6 +12,7 @@ import {
   ListItemText,
   Collapse,
   IconButton,
+  Tooltip,
   useMediaQuery,
   useTheme,
   Badge,
@@ -36,6 +37,10 @@ import DatabaseSwitcher from "./DatabaseSwitcher";
 import { useRecipeQueue } from "../hooks/useRecipeQueue";
 
 const DRAWER_WIDTH = 260;
+// Icon-only rail width when the desktop drawer is collapsed — wide enough for a
+// centered 24px icon + touch padding.
+const COLLAPSED_WIDTH = 72;
+const NAV_COLLAPSED_KEY = "nav.collapsed";
 
 const registryItems = [
   { label: "Products", path: "/registries/products", icon: <ProductIcon /> },
@@ -54,12 +59,32 @@ export default function Layout() {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [registriesOpen, setRegistriesOpen] = useState(true);
+  // Desktop icon-rail collapse — persisted so the choice survives a tablet
+  // refresh (mirrors how the rest of prep-day state persists).
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(NAV_COLLAPSED_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
   const navigate = useNavigate();
   const location = useLocation();
   const { queueItems } = useRecipeQueue();
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
+  useEffect(() => {
+    try {
+      localStorage.setItem(NAV_COLLAPSED_KEY, collapsed ? "1" : "0");
+    } catch {
+      /* ignore storage failures (private mode) */
+    }
+  }, [collapsed]);
+
+  // The one menu button drives both drawers: it toggles the overlay on mobile
+  // and the icon-rail collapse on desktop.
+  const handleMenuButton = () => {
+    if (isMobile) setMobileOpen((o) => !o);
+    else setCollapsed((c) => !c);
   };
 
   const handleNavClick = (path: string) => {
@@ -71,89 +96,88 @@ export default function Layout() {
 
   const isActive = (path: string) => location.pathname === path;
 
-  const drawerContent = (
+  const desktopWidth = collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH;
+  const widthTransition = theme.transitions.create(["width", "margin"], {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.enteringScreen,
+  });
+
+  // `mini` = icon-only rail: hide labels, center icons, show a hover tooltip so
+  // each destination is still discoverable.
+  const renderNav = (
+    label: string,
+    path: string,
+    icon: ReactNode,
+    mini: boolean
+  ) => (
+    <Tooltip title={mini ? label : ""} placement="right" arrow>
+      <ListItemButton
+        selected={isActive(path)}
+        onClick={() => handleNavClick(path)}
+        sx={{ justifyContent: mini ? "center" : "flex-start", px: mini ? 2.5 : 2 }}
+      >
+        <ListItemIcon sx={{ minWidth: mini ? 0 : 40, justifyContent: "center" }}>
+          {icon}
+        </ListItemIcon>
+        {!mini && <ListItemText primary={label} />}
+      </ListItemButton>
+    </Tooltip>
+  );
+
+  const renderDrawer = (mini: boolean) => (
     <Box>
-      <Toolbar>
+      <Toolbar sx={{ justifyContent: mini ? "center" : "flex-start", px: mini ? 1 : 2 }}>
         <Typography
           variant="h6"
           noWrap
           component="div"
           sx={{ fontWeight: "bold" }}
         >
-          🍽️ Meal Planner
+          {mini ? "🍽️" : "🍽️ Meal Planner"}
         </Typography>
       </Toolbar>
       <List>
-        {/* Recipes */}
-        <ListItemButton
-          selected={isActive("/recipes")}
-          onClick={() => handleNavClick("/recipes")}
-        >
-          <ListItemIcon>
-            <Badge
-              badgeContent={queueItems.length}
-              color="primary"
-              max={99}
+        {renderNav(
+          "Recipes",
+          "/recipes",
+          <Badge badgeContent={queueItems.length} color="primary" max={99}>
+            <RecipeIcon />
+          </Badge>,
+          mini
+        )}
+        {renderNav("Weekly Plans", "/plans", <PlanIcon />, mini)}
+        {renderNav("Outputs", "/outputs", <OutputIcon />, mini)}
+        {renderNav("Inventory", "/inventory", <InventoryIcon />, mini)}
+        {renderNav("Step Backfill", "/step-backfill", <BackfillIcon />, mini)}
+
+        {/* Registries (collapsible submenu; in the rail its icon expands the
+            drawer so the sub-items become reachable) */}
+        <Tooltip title={mini ? "Registries" : ""} placement="right" arrow>
+          <ListItemButton
+            onClick={() => {
+              if (mini) {
+                setCollapsed(false);
+                setRegistriesOpen(true);
+              } else {
+                setRegistriesOpen(!registriesOpen);
+              }
+            }}
+            sx={{ justifyContent: mini ? "center" : "flex-start", px: mini ? 2.5 : 2 }}
+          >
+            <ListItemIcon
+              sx={{ minWidth: mini ? 0 : 40, justifyContent: "center" }}
             >
-              <RecipeIcon />
-            </Badge>
-          </ListItemIcon>
-          <ListItemText primary="Recipes" />
-        </ListItemButton>
-
-        {/* Weekly Plans */}
-        <ListItemButton
-          selected={isActive("/plans")}
-          onClick={() => handleNavClick("/plans")}
-        >
-          <ListItemIcon>
-            <PlanIcon />
-          </ListItemIcon>
-          <ListItemText primary="Weekly Plans" />
-        </ListItemButton>
-
-        {/* Outputs */}
-        <ListItemButton
-          selected={isActive("/outputs")}
-          onClick={() => handleNavClick("/outputs")}
-        >
-          <ListItemIcon>
-            <OutputIcon />
-          </ListItemIcon>
-          <ListItemText primary="Outputs" />
-        </ListItemButton>
-
-        {/* Inventory */}
-        <ListItemButton
-          selected={isActive("/inventory")}
-          onClick={() => handleNavClick("/inventory")}
-        >
-          <ListItemIcon>
-            <InventoryIcon />
-          </ListItemIcon>
-          <ListItemText primary="Inventory" />
-        </ListItemButton>
-
-        {/* Step Backfill Review */}
-        <ListItemButton
-          selected={isActive("/step-backfill")}
-          onClick={() => handleNavClick("/step-backfill")}
-        >
-          <ListItemIcon>
-            <BackfillIcon />
-          </ListItemIcon>
-          <ListItemText primary="Step Backfill" />
-        </ListItemButton>
-
-        {/* Registries (collapsible) */}
-        <ListItemButton onClick={() => setRegistriesOpen(!registriesOpen)}>
-          <ListItemIcon>
-            <RegistryIcon />
-          </ListItemIcon>
-          <ListItemText primary="Registries" />
-          {registriesOpen ? <ExpandLess /> : <ExpandMore />}
-        </ListItemButton>
-        <Collapse in={registriesOpen} timeout="auto" unmountOnExit>
+              <RegistryIcon />
+            </ListItemIcon>
+            {!mini && (
+              <>
+                <ListItemText primary="Registries" />
+                {registriesOpen ? <ExpandLess /> : <ExpandMore />}
+              </>
+            )}
+          </ListItemButton>
+        </Tooltip>
+        <Collapse in={registriesOpen && !mini} timeout="auto" unmountOnExit>
           <List component="div" disablePadding>
             {registryItems.map((item) => (
               <ListItemButton
@@ -177,19 +201,26 @@ export default function Layout() {
       <AppBar
         position="fixed"
         sx={{
-          width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
-          ml: { md: `${DRAWER_WIDTH}px` },
+          width: { md: `calc(100% - ${desktopWidth}px)` },
+          ml: { md: `${desktopWidth}px` },
+          transition: widthTransition,
         }}
       >
         <Toolbar>
-          <IconButton
-            color="inherit"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { md: "none" } }}
+          <Tooltip
+            title={
+              isMobile ? "Menu" : collapsed ? "Expand menu" : "Collapse menu"
+            }
           >
-            <MenuIcon />
-          </IconButton>
+            <IconButton
+              color="inherit"
+              edge="start"
+              onClick={handleMenuButton}
+              sx={{ mr: 2 }}
+            >
+              <MenuIcon />
+            </IconButton>
+          </Tooltip>
           <Typography variant="h6" noWrap component="div">
             {location.pathname.includes("/registries")
               ? "Registries"
@@ -210,11 +241,11 @@ export default function Layout() {
         </Toolbar>
       </AppBar>
 
-      {/* Mobile drawer */}
+      {/* Mobile drawer — always the full-width overlay (rail is desktop-only) */}
       <Drawer
         variant="temporary"
         open={mobileOpen}
-        onClose={handleDrawerToggle}
+        onClose={handleMenuButton}
         ModalProps={{ keepMounted: true }}
         sx={{
           display: { xs: "block", md: "none" },
@@ -224,41 +255,47 @@ export default function Layout() {
           },
         }}
       >
-        {drawerContent}
+        {renderDrawer(false)}
       </Drawer>
 
-      {/* Desktop drawer */}
+      {/* Desktop drawer — collapses to an icon rail */}
       <Drawer
         variant="permanent"
         sx={{
           display: { xs: "none", md: "block" },
           "& .MuiDrawer-paper": {
             boxSizing: "border-box",
-            width: DRAWER_WIDTH,
+            width: desktopWidth,
+            overflowX: "hidden",
+            transition: theme.transitions.create("width", {
+              easing: theme.transitions.easing.sharp,
+              duration: theme.transitions.duration.enteringScreen,
+            }),
           },
         }}
         open
       >
-        {drawerContent}
+        {renderDrawer(collapsed)}
       </Drawer>
 
       {/* Main content */}
       <Box
-  component="main"
-  sx={{
-    flexGrow: 1,
-    p: 3,
-    width: { xs: "100vw", md: `calc(100vw - ${DRAWER_WIDTH}px)` },
-    maxWidth: { xs: "100vw", md: `calc(100vw - ${DRAWER_WIDTH}px)` },
-    ml: { xs: 0, md: `${DRAWER_WIDTH}px` },
-    mt: "64px",
-    height: "calc(100vh - 64px)",  // Add this - constrains to viewport minus AppBar
-    overflow: "auto",
-    boxSizing: "border-box",
-  }}
->
-  <Outlet />
-</Box>
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: 3,
+          width: { xs: "100vw", md: `calc(100vw - ${desktopWidth}px)` },
+          maxWidth: { xs: "100vw", md: `calc(100vw - ${desktopWidth}px)` },
+          ml: { xs: 0, md: `${desktopWidth}px` },
+          mt: "64px",
+          height: "calc(100vh - 64px)", // constrains to viewport minus AppBar
+          overflow: "auto",
+          boxSizing: "border-box",
+          transition: widthTransition,
+        }}
+      >
+        <Outlet />
+      </Box>
     </Box>
   );
 }
