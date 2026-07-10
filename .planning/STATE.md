@@ -4,15 +4,15 @@ milestone: v1.1
 milestone_name: Workflow Redesign
 current_phase: 6
 current_phase_name: Import Pipeline & Recipe Lifecycle
-status: ready_to_plan
+status: executing
 stopped_at: Phase 6 UI-SPEC approved
-last_updated: "2026-07-10T22:41:52.917Z"
+last_updated: "2026-07-10T23:13:46.801Z"
 progress:
   total_phases: 6
   completed_phases: 5
-  total_plans: 45
+  total_plans: 56
   completed_plans: 45
-  percent: 83
+  percent: 80
 ---
 
 # Project State
@@ -22,12 +22,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-06)
 
 **Core value:** The derived weekly outputs — shopping list and prep plan — must be trustworthy and low-friction for the real weekly shop-and-prep cycle.
-**Current focus:** Phase 5 complete + verified (5/5). Now at Phase 6 (Import Pipeline & Recipe Lifecycle) — ready to discuss/plan.
+**Current focus:** Phase 6 — Import Pipeline & Recipe Lifecycle
 
 ## Current Position
 
-Phase: 6 — Import Pipeline & Recipe Lifecycle
-Status: Cook mode is live on the NAS (`http://192.168.50.95:3000`). Prep-day
+Phase: 6 (Import Pipeline & Recipe Lifecycle) — EXECUTING
+Status: Executing Phase 6
 scheduler ships with week-wide prep merge, clock-ordered Now/Next + full-schedule
 list, and a day-of (`just_in_time`) step filter. In-app weights panel +
 deterministic regenerate shipped and human-verified.
