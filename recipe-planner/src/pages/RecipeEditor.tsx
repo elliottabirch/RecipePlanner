@@ -345,6 +345,18 @@ export default function RecipeEditor() {
             label: step.name,
             stepType: step.step_type,
             timing: step.timing,
+            // Load the Phase-5 step-metadata fields (Plan 03/05) so the Edit
+            // Step dialog shows saved/backfilled values AND handleSave writes
+            // them back instead of clobbering the DB with undefined. Empty
+            // strings (PocketBase's default for un-set text/select) normalize
+            // to undefined so the dialog's `?? "none"` fallbacks work.
+            active_minutes: step.active_minutes,
+            passive_minutes: step.passive_minutes,
+            instructions: step.instructions || undefined,
+            prep_action: step.prep_action || undefined,
+            resource: step.resource || undefined,
+            oven_temp_f: step.oven_temp_f,
+            rack_slots: step.rack_slots,
           },
         } as StepNodeType);
       });
