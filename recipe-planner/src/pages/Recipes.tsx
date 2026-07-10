@@ -428,6 +428,19 @@ export default function Recipes() {
                         }}
                       />
                     )}
+                    {item.status === "draft" && (
+                      <Chip
+                        label="Draft"
+                        size="small"
+                        sx={{
+                          backgroundColor: "#757575",
+                          color: "white",
+                          fontWeight: 600,
+                          fontSize: "0.7rem",
+                          height: 22,
+                        }}
+                      />
+                    )}
                   </Box>
                   {item.notes && (
                     <Typography
