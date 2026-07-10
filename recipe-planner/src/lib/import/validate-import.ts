@@ -38,6 +38,13 @@ export interface NormalizedProductNode {
   fdcId?: number;
   store?: string;
   section?: string;
+  // Write-path fields (Plan 06-04). Carried by the RecipeEditor→NormalizedGraph
+  // build so buildRecipeGraph preserves handleSave behavior exactly; the
+  // import validator does not populate these yet.
+  mealDestination?: string;
+  // Evolution write-back correspondence (D-10): a clone node points back at the
+  // original published node's dbId so the write-back updates in place.
+  sourceNode?: string;
 }
 
 /** A step after normalization — full Phase-5 metadata (D-05). */
@@ -53,6 +60,8 @@ export interface NormalizedStep {
   resource?: string;
   oven_temp_f?: number;
   rack_slots?: number;
+  // Evolution write-back correspondence (D-10), mirrors NormalizedProductNode.
+  sourceNode?: string;
 }
 
 export interface NormalizedGraph {
