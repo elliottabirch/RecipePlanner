@@ -5,16 +5,16 @@ milestone_name: Workflow Redesign
 current_phase: 5
 current_phase_name: Prep-Day Engine
 status: executing
-stopped_at: "Phase 5 prep-day engine delivered & deployed to NAS. Cook mode live: week-wide prep merge, clock-ordered schedule, just_in_time (day-of) filter. 05-11/05-12 completed ad-hoc (no formal SUMMARYs). Repo clean. Next: Phase 6 (import pipeline)."
+stopped_at: "Phase 5 core delivered & deployed to NAS (cook mode: week-wide prep merge, clock-ordered schedule, just_in_time filter). GAPS: 05-11 cook mode done ad-hoc but no SUMMARY and does not surface step instructions (deferred, PREP-04 partial); 05-12 in-app weights panel (PREP-05) NOT built — GA weights only editable via DB. Phase 5 is ~11/12, not closed."
 last_updated: "2026-07-10"
 last_activity: 2026-07-10
 last_activity_desc: Prep-day engine refinements built, deployed to NAS, repo cleaned
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 4
   total_plans: 45
-  completed_plans: 45
-  percent: 83
+  completed_plans: 44
+  percent: 67
 ---
 
 # Project State
@@ -24,21 +24,28 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-06)
 
 **Core value:** The derived weekly outputs — shopping list and prep plan — must be trustworthy and low-friction for the real weekly shop-and-prep cycle.
-**Current focus:** Phase 5 delivered & deployed — transitioning to Phase 6 (Import Pipeline & Recipe Lifecycle).
+**Current focus:** Phase 5 core is live; one deliverable (in-app weights panel) still outstanding before Phase 5 can close.
 
 ## Current Position
 
-Phase: 5 (Prep-Day Engine) — DELIVERED & DEPLOYED
+Phase: 5 (Prep-Day Engine) — ~11 of 12, core delivered & deployed, NOT closed
 Status: Cook mode is live on the NAS (`http://192.168.50.95:3000`). Prep-day
 scheduler ships with week-wide prep merge, clock-ordered Now/Next + full-schedule
-list, and a day-of (`just_in_time`) step filter. 05-11/05-12 were finished
-through ad-hoc iteration + deploy rather than formal GSD plan SUMMARYs.
+list, and a day-of (`just_in_time`) step filter.
 Last activity: 2026-07-10 — refinements built, deployed, repo cleaned.
 
-Next: Phase 6 — Import Pipeline & Recipe Lifecycle (recipe import is the near-term
-work; the connective-recipe modeling todo is scoped to it).
+Outstanding for Phase 5:
+- **05-12 — in-app weights panel (PREP-05):** not built. GA weights (active,
+  chopping, grouping, elapsed, resource_pressure) are only editable directly in
+  the `scheduler_config` PocketBase record; no UI to tune + regenerate.
+- **05-11 cook mode:** no formal SUMMARY, and now/next cards don't surface step
+  `instructions` (PREP-04 partial — deferred by decision 2026-07-10).
+- No formal phase verification run (`/gsd-verify-work`).
 
-Progress: [██████████] Phase 5 shipped
+Next candidate: Phase 6 — Import Pipeline & Recipe Lifecycle (the connective-recipe
+todo is scoped to it) — but decide first whether to finish 05-12 to close Phase 5.
+
+Progress: [█████████░] Phase 5 core shipped, weights panel outstanding
 
 ## Performance Metrics
 
@@ -225,10 +232,12 @@ Items acknowledged and carried forward from previous milestone close:
 
 Last session: 2026-07-10 — Phase 5 prep-day refinements (prep merge, clock-order,
 day-of filter, lemon-label fix), all built, tested (177 passing), and deployed to
-the NAS. Working tree clean; main = `1ffc947`, pushed.
-Stopped at: Phase 5 delivered & deployed. Ready to start Phase 6 (Import Pipeline
-& Recipe Lifecycle) fresh.
-Note: 05-11/05-12 were closed through ad-hoc iteration, not formal GSD plan
-execution — no `05-11-SUMMARY.md` / `05-12-*` artifacts exist. If a clean GSD
-audit trail for Phase 5 matters, run a retroactive verify/summary before Phase 6.
+the NAS. Working tree clean, pushed.
+Stopped at: Phase 5 CORE delivered & deployed, but NOT closed. Open decision:
+finish 05-12 (in-app weights panel, PREP-05) to close Phase 5, or consciously
+defer it and move to Phase 6.
+Note: 05-11 (cook mode) was built ad-hoc — no `05-11-SUMMARY.md`, and it omits
+step-instruction display (deferred). 05-12 (weights panel) was never started.
+No `/gsd-verify-work` run for Phase 5. If a clean GSD audit trail matters, run a
+retroactive verify/summary + build 05-12 before declaring Phase 5 done.
 Resume file: None
