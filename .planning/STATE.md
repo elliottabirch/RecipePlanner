@@ -234,7 +234,7 @@ Recent decisions affecting current work:
 ### Pending Todos
 
 - `nas-pocketbase-tailnet` — NAS PocketBase instances join the tailnet; `db-config.ts` switches from LAN IPs to tailnet hostnames. Required before Phase 2 and Phase 6 store/phone use; does not block local development. See `.planning/todos/pending/nas-pocketbase-tailnet.md`.
-- `connective-recipe-batch-then-consume` — batch-produce one recipe then consume its output in another creates redundant/misnamed in-plan "pull from freezer" connector steps (e.g. meatballs). Elide/hide in-plan pull connectors + model batch→consume cleanly at import time. Scoped to Phase 6. See `.planning/todos/pending/connective-recipe-batch-then-consume.md`.
+- `connective-recipe-batch-then-consume` — **PARTIALLY RESOLVED 2026-07-10 (commit 0574b5c):** spurious in-plan pull connectors are now elided in cook mode (`buildWeekGraph`) and skipped in batch prep / product flow (`buildProductFlowGraph`), via a shared detector `aggregation/utils/connective.ts` (inverse of the missing-pull-step linter). STILL OPEN (deferred to Phase 6): contextual naming (producer output hard-codes "…frozen"; belongs with `swap-aware-prep-naming`) and import-time modeling of the batch→consume link (blocked on the unbuilt import pipeline). See `.planning/todos/pending/connective-recipe-batch-then-consume.md`.
 
 ### Blockers/Concerns
 
