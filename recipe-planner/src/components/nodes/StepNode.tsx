@@ -8,6 +8,21 @@ export interface StepNodeData extends Record<string, unknown> {
   label: string;
   stepType: StepType;
   timing?: Timing;
+  // Prep-day engine authoring metadata (D-05, Phase 5 Plan 03). Additive +
+  // optional so existing nodes without this data still render unchanged.
+  active_minutes?: number;
+  passive_minutes?: number;
+  instructions?: string;
+  prep_action?: string;
+  resource?:
+    | "oven"
+    | "stovetop"
+    | "blender"
+    | "food_processor"
+    | "instant_pot"
+    | "none";
+  oven_temp_f?: number;
+  rack_slots?: number;
 }
 
 export type StepNodeType = Node<StepNodeData, "step">;
@@ -23,6 +38,15 @@ const TIMING_LABELS: Record<Timing, string> = {
 };
 
 function StepNode({ data, selected }: NodeProps<StepNodeType>) {
+  // Duration metadata chip label (Phase 5 Plan 03) — omits a side that is
+  // null/0 gracefully; renders nothing if neither duration is populated.
+  const durationLabel = [
+    data.active_minutes ? `${data.active_minutes}m active` : null,
+    data.passive_minutes ? `${data.passive_minutes}m passive` : null,
+  ]
+    .filter(Boolean)
+    .join(" / ");
+
   return (
     <Box
       sx={{
@@ -60,6 +84,18 @@ function StepNode({ data, selected }: NodeProps<StepNodeType>) {
         {data.stepType === StepType.Assembly && data.timing && (
           <Chip
             label={TIMING_LABELS[data.timing]}
+            size="small"
+            variant="outlined"
+            sx={{
+              fontSize: "0.7rem",
+              height: 20,
+            }}
+          />
+        )}
+
+        {durationLabel && (
+          <Chip
+            label={durationLabel}
             size="small"
             variant="outlined"
             sx={{
