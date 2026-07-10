@@ -12,15 +12,19 @@
  * around mid-cook, breaking the tablet's calm now/next sequence. This
  * function is an O(n) forward sweep, not a re-evolution.
  *
- * Because `retimeSchedule` has no access to the week-graph's precedence
- * edges (by design — it only ever sees the flat, already-precedence-valid
- * `fixedOrder`), precedence is modeled as a simple running clock: each
- * step's earliest candidate start is bounded by the previous step's own
- * computed end. Combined with the implicit singleton "cook" resource (which
- * serializes every step's active window regardless of precedence — see
- * `resources.ts`), this reproduces the same forward-sweep timing an SSGS
- * decode would produce for a linear activity list, without re-deriving the
- * DAG.
+ * `retimeSchedule` bounds each step by the maximum end of its real
+ * precedence predecessors (`precedenceEdges`) — the exact `max(predecessor
+ * ends)` rule `decodeSSGS` uses (`genetic.ts`). This is what preserves the
+ * GA's parallelism: an independent step packs into another step's passive
+ * window (the cook is free during passive time — `resources.ts`) instead of
+ * waiting for its full end. With no actual completions, walking the GA's
+ * `schedule.order` under this rule reproduces `generateSchedule`'s start
+ * times exactly, so a check-off never reshuffles the clock-ordered view.
+ *
+ * A PRIOR version bounded each step by the *previous activity-list step's*
+ * end instead of its DAG predecessors' — which serialized everything
+ * (collapsing the passive-window packing) and made the first check-off snap
+ * the schedule from interleaved clock order to topological order.
  */
 import {
   emptyResourceTimeline,
@@ -34,6 +38,7 @@ import type {
   Schedule,
   SchedulerConfig,
   StepInstance,
+  WeekGraphEdge,
 } from "./types";
 
 /** Shallow-clone a `ResourceTimeline` so `retimeSchedule` never mutates the
@@ -55,29 +60,39 @@ function cloneTimeline(timeline: ResourceTimeline): ResourceTimeline {
 
 /**
  * Re-time `fixedOrder` given `actualCompletions` (StepInstance.id -> actual
- * elapsed minutes for steps the cook has already checked off) and a starting
+ * elapsed minutes for steps the cook has already checked off), a starting
  * `resourceModel` timeline (the occupancy already committed before this
- * recompute — an empty timeline for a from-scratch schedule).
+ * recompute — an empty timeline for a from-scratch schedule), and the
+ * week-graph's `precedenceEdges` (producer -> consumer) so each step is
+ * bounded by its REAL predecessors, not the previous activity-list step.
  *
- * Walks `fixedOrder` exactly once, in order, and never reorders it:
+ * Walks `fixedOrder` exactly once, in order, and never reorders it. Each
+ * step's precedence bound = max end of its DAG predecessors (0 if none):
  *  - **Checked-off steps** (present in `actualCompletions`): the real
- *    elapsed time replaces the GA's estimate. The step is placed at the
- *    running precedence bound and occupies the resource model for its
- *    actual duration — no feasibility search, since it already happened.
+ *    elapsed time replaces the GA's estimate. Placed at the precedence bound,
+ *    occupying the resource model for its actual duration — no feasibility
+ *    search, since it already happened.
  *  - **Not-yet-started steps**: placed at the earliest feasible instant at
- *    or after the running precedence bound, using the same
+ *    or after the precedence bound, using the same
  *    `isFeasibleAt`/`occupyResources`/`nextCandidateTime` resource model the
  *    GA's SSGS decode uses (`resources.ts`) — no duplicate constraint logic.
  *
- * A late actual completion (real time > estimate) pushes the running
- * precedence bound later, which shifts every downstream step's start/end by
- * that same delta — exactly the "clock adapts" behavior D-01a.3 requires.
+ * With empty `actualCompletions` this is byte-for-byte `decodeSSGS` over the
+ * same order + DAG, so it reproduces `generateSchedule`'s starts. A late
+ * actual completion pushes only its true downstream dependents later — the
+ * "clock adapts" behavior D-01a.3 requires — instead of shoving every
+ * later-listed step.
+ *
+ * `precedenceEdges` defaults to `[]`: with no edges every bound is 0 and the
+ * resource model alone orders the steps (correct for a purely cook-bound
+ * chain), preserving the original 4-arg call sites/tests.
  */
 export function retimeSchedule(
   fixedOrder: StepInstance[],
   actualCompletions: Map<string, number>,
   resourceModel: ResourceTimeline,
-  config: SchedulerConfig
+  config: SchedulerConfig,
+  precedenceEdges: readonly WeekGraphEdge[] = []
 ): Schedule {
   const timeline = cloneTimeline(resourceModel);
   const capacityConfig: ResourceCapacityConfig = {
@@ -85,11 +100,25 @@ export function retimeSchedule(
     burnerCount: config.burner_count,
   };
 
+  // Predecessors by consumer id: edge.to depends on edge.from (same shape as
+  // decodeSSGS's graphIndex.predecessors).
+  const predecessorsById = new Map<string, string[]>();
+  for (const edge of precedenceEdges) {
+    const list = predecessorsById.get(edge.to) ?? [];
+    list.push(edge.from);
+    predecessorsById.set(edge.to, list);
+  }
+
   const starts = new Map<string, number>();
   const ends = new Map<string, number>();
-  let precedenceBound = 0;
 
   for (const instance of fixedOrder) {
+    // Bound = latest end among this step's DAG predecessors (all placed
+    // earlier, since fixedOrder is topological), 0 if it has none.
+    const predecessorBound = (predecessorsById.get(instance.id) ?? []).reduce(
+      (bound, predId) => Math.max(bound, ends.get(predId) ?? 0),
+      0
+    );
     const actualElapsed = actualCompletions.get(instance.id);
 
     if (actualElapsed !== undefined) {
@@ -98,7 +127,7 @@ export function retimeSchedule(
       // full real duration as the step's "active" occupancy so the
       // implicit singleton cook is correctly marked busy for exactly as
       // long as the cook actually spent on it.
-      const start = precedenceBound;
+      const start = predecessorBound;
       const end = start + actualElapsed;
       const actualStep = {
         active_minutes: actualElapsed,
@@ -110,13 +139,12 @@ export function retimeSchedule(
       starts.set(instance.id, start);
       ends.set(instance.id, end);
       occupyResources(timeline, actualStep, start, end);
-      precedenceBound = end;
       continue;
     }
 
     // Not yet started: use the estimate and the standard resource-feasibility
     // search (same model the GA's SSGS decode uses).
-    let candidate = precedenceBound;
+    let candidate = predecessorBound;
     while (!isFeasibleAt(candidate, instance.step, timeline, capacityConfig)) {
       candidate = nextCandidateTime(candidate, timeline);
     }
@@ -127,7 +155,6 @@ export function retimeSchedule(
     starts.set(instance.id, candidate);
     ends.set(instance.id, end);
     occupyResources(timeline, instance.step, candidate, end);
-    precedenceBound = end;
   }
 
   return { order: fixedOrder, starts, ends };

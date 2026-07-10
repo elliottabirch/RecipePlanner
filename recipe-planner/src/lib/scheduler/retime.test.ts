@@ -8,7 +8,14 @@
  */
 import { describe, it, expect } from "vitest";
 import { retimeSchedule } from "./retime";
-import type { ResourceTimeline, StepInstance, SchedulerConfig, Schedule } from "./types";
+import { generateSchedule } from "./genetic";
+import type {
+  ResourceTimeline,
+  StepInstance,
+  SchedulerConfig,
+  Schedule,
+  WeekGraph,
+} from "./types";
 import { StepType, type RecipeStep } from "../types";
 
 function emptyTimeline(): ResourceTimeline {
@@ -94,5 +101,76 @@ describe("retimeSchedule — order-preserving recompute (D-01a.3)", () => {
     expect(retimed.ends.get(instanceC.id)!).toBe(
       baseline.ends.get(instanceC.id)! + delta
     );
+  });
+
+  it("preserves parallelism — an independent step packs into another step's passive window instead of waiting for its full end", () => {
+    // A 5-active/30-passive oven bake, then an independent hands-on step with
+    // NO precedence edge between them.
+    const bake = makeInstance(
+      "meal-1",
+      makeRecipeStep("bake", { resource: "oven", oven_temp_f: 400, active_minutes: 5, passive_minutes: 30, rack_slots: 1 })
+    );
+    const indep = makeInstance(
+      "meal-1",
+      makeRecipeStep("indep", { resource: "none", active_minutes: 10, passive_minutes: 0 })
+    );
+    const schedule = retimeSchedule([bake, indep], new Map(), emptyTimeline(), baseConfig(), []);
+
+    // Bake occupies the cook only during its 5-min active window; its 30-min
+    // passive [5,35) leaves the cook free. The independent step must start at 5
+    // (right after the bake's active window), DEEP inside the passive window —
+    // not at 35 (which the old serial retime produced by waiting the full end).
+    expect(schedule.starts.get(bake.id)).toBe(0);
+    expect(schedule.starts.get(indep.id)).toBe(5);
+    expect(schedule.starts.get(indep.id)!).toBeLessThan(schedule.ends.get(bake.id)!);
+  });
+
+  it("respects precedence — a dependent step waits for its predecessor's FULL end (active + passive)", () => {
+    const bake = makeInstance(
+      "meal-1",
+      makeRecipeStep("bake", { resource: "oven", oven_temp_f: 400, active_minutes: 5, passive_minutes: 30, rack_slots: 1 })
+    );
+    const dep = makeInstance(
+      "meal-1",
+      makeRecipeStep("dep", { resource: "none", active_minutes: 5, passive_minutes: 0 })
+    );
+    // dep consumes bake's output — a real precedence edge.
+    const edges = [{ from: bake.id, to: dep.id }];
+    const schedule = retimeSchedule([bake, dep], new Map(), emptyTimeline(), baseConfig(), edges);
+
+    // With the edge, dep cannot pack into the passive window — it waits for the
+    // bake's full end (5 active + 30 passive = 35).
+    expect(schedule.starts.get(dep.id)).toBe(35);
+  });
+
+  it("reproduces generateSchedule's start times exactly with no completions — the no-first-check-off-reshuffle guarantee", () => {
+    const bake = makeInstance(
+      "meal-1",
+      makeRecipeStep("bake", { resource: "oven", oven_temp_f: 400, active_minutes: 5, passive_minutes: 30, rack_slots: 1 })
+    );
+    const indep = makeInstance(
+      "meal-1",
+      makeRecipeStep("indep", { resource: "none", active_minutes: 10, passive_minutes: 0 })
+    );
+    const dep = makeInstance(
+      "meal-1",
+      makeRecipeStep("dep", { resource: "none", active_minutes: 5, passive_minutes: 0 })
+    );
+    const weekGraph: WeekGraph = {
+      nodes: [bake, indep, dep],
+      edges: [{ from: bake.id, to: dep.id }],
+    };
+    const config = baseConfig();
+
+    const generated = generateSchedule(weekGraph, config);
+    // First check-off (before any real completion) recomputes via retime over
+    // the GA's own order + edges. If retime's timing diverges from the decode,
+    // the clock-ordered list reshuffles. It must be identical.
+    const retimed = retimeSchedule(generated.order, new Map(), emptyTimeline(), config, weekGraph.edges);
+
+    for (const instance of generated.order) {
+      expect(retimed.starts.get(instance.id)).toBe(generated.starts.get(instance.id));
+      expect(retimed.ends.get(instance.id)).toBe(generated.ends.get(instance.id));
+    }
   });
 });
