@@ -21,6 +21,13 @@ import {
   Paper,
   CircularProgress,
   Alert,
+  Chip,
+  Checkbox,
+  Collapse,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
 } from "@mui/material";
 import { getAll, getOne, collections } from "../lib/api";
 import { applyVariantOverrides, type VariantOverride } from "../lib/aggregation";
@@ -73,6 +80,13 @@ interface StatusChip {
   label: string;
 }
 
+/** `minutes-from-t0` -> `H:MM` clock-style offset for the full-schedule list. */
+function formatOffset(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = Math.round(minutes % 60);
+  return `${h}:${String(m).padStart(2, "0")}`;
+}
+
 export default function CookMode() {
   const { planId } = useParams<{ planId: string }>();
   const navigate = useNavigate();
@@ -102,6 +116,7 @@ export default function CookMode() {
   // cook_progress via useCookProgress, independent of these anchors).
   const nowStartRef = useRef<Map<string, number>>(new Map());
   const [, forceTick] = useState(0);
+  const [showAllSteps, setShowAllSteps] = useState(false);
 
   const cookProgress = useCookProgress(planId ?? "");
 
@@ -250,9 +265,32 @@ export default function CookMode() {
     return set;
   }, [cookProgress.state]);
 
+  // Clock-ordered schedule: the decoded start times ARE the plan — the cook
+  // follows the clock, NOT the GA's internal topological activity list
+  // (`schedule.order`). That list exists only so a step running long can be
+  // re-timed without re-solving (D-01a.3); because it's topological, a step
+  // like the post-smoke bbq assembly is listed early even though its clock time
+  // is 20h out. Sorting by start time (tie-broken by activity-list position for
+  // stable, deterministic display) restores the real interleaved timeline —
+  // active prep packed into the smoke's passive window, bbq assembly last.
+  const orderedByTime = useMemo(() => {
+    if (!schedule) return [];
+    const orderIndex = new Map(
+      schedule.order.map((inst, i) => [inst.id, i] as const)
+    );
+    return [...schedule.order].sort((a, b) => {
+      const sa = schedule.starts.get(a.id) ?? 0;
+      const sb = schedule.starts.get(b.id) ?? 0;
+      return sa - sb || (orderIndex.get(a.id) ?? 0) - (orderIndex.get(b.id) ?? 0);
+    });
+  }, [schedule]);
+
+  // Now/Next walk that same clock order, skipping checked-off steps — so after
+  // you load the smoker you move straight to the next timed task rather than
+  // waiting out its 20h passive window.
   const visibleOrder = useMemo(
-    () => (schedule ? schedule.order.filter((inst) => !checkedIds.has(inst.id)) : []),
-    [schedule, checkedIds]
+    () => orderedByTime.filter((inst) => !checkedIds.has(inst.id)),
+    [orderedByTime, checkedIds]
   );
   const nowInstance = visibleOrder[0];
   const nextInstance = visibleOrder[1];
@@ -314,6 +352,16 @@ export default function CookMode() {
 
   const getScaledInputs = useCallback(
     (instance: StepInstance) => {
+      // A week-wide merged prep node spans several meals — gather and combine
+      // each original member's scaled inputs (all the onions to dice, etc.).
+      if (instance.mergedMembers) {
+        return instance.mergedMembers.flatMap((member) => {
+          const memberData = mealKeyedRecipeData.get(member.plannedMealId);
+          return memberData
+            ? extractStepInputs(member.stepId, memberData, plannedMealQuantityById)
+            : [];
+        });
+      }
       const recipeData = mealKeyedRecipeData.get(instance.plannedMealId);
       if (!recipeData) return [];
       // Meal-instance-scoped scaling (never the batch signature-merge path,
@@ -506,6 +554,94 @@ export default function CookMode() {
             </Box>
           )}
         </Box>
+      )}
+
+      {schedule && (
+        <Paper sx={{ mt: 4, p: { xs: 1, md: 2 } }}>
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+            px={1}
+          >
+            <Typography variant="subtitle1" fontWeight="bold">
+              Full schedule
+              <Typography component="span" color="text.secondary">
+                {" "}
+                — {orderedByTime.length} steps in order
+              </Typography>
+            </Typography>
+            <Button size="small" onClick={() => setShowAllSteps((s) => !s)}>
+              {showAllSteps ? "Hide" : "Show all"}
+            </Button>
+          </Box>
+          <Collapse in={showAllSteps} timeout="auto" unmountOnExit>
+            <List dense disablePadding sx={{ mt: 1 }}>
+              {orderedByTime.map((inst) => {
+                const checked = checkedIds.has(inst.id);
+                const start = schedule.starts.get(inst.id) ?? 0;
+                const resource = inst.step.resource ?? "none";
+                const passive = inst.step.passive_minutes ?? 0;
+                const resourceLabel =
+                  resource === "oven" && inst.step.oven_temp_f
+                    ? `oven ${inst.step.oven_temp_f}°`
+                    : resource.replace(/_/g, " ");
+                return (
+                  <ListItem
+                    key={inst.id}
+                    disablePadding
+                    secondaryAction={
+                      resource !== "none" ? (
+                        <Chip
+                          size="small"
+                          variant="outlined"
+                          label={resourceLabel}
+                        />
+                      ) : undefined
+                    }
+                  >
+                    <ListItemButton
+                      divider
+                      onClick={() => handleToggleChecked(inst)}
+                      sx={{ py: 0.5 }}
+                    >
+                      <Checkbox
+                        edge="start"
+                        checked={checked}
+                        tabIndex={-1}
+                        disableRipple
+                      />
+                      <Box
+                        sx={{
+                          minWidth: 44,
+                          mr: 1,
+                          fontVariantNumeric: "tabular-nums",
+                          color: "text.secondary",
+                          fontSize: 14,
+                        }}
+                      >
+                        {formatOffset(start)}
+                      </Box>
+                      <ListItemText
+                        primary={inst.step.name}
+                        secondary={
+                          passive > 0
+                            ? `${inst.recipeName} · ${passive}m passive`
+                            : inst.recipeName
+                        }
+                        sx={{
+                          textDecoration: checked ? "line-through" : "none",
+                          opacity: checked ? 0.55 : 1,
+                          pr: 6,
+                        }}
+                      />
+                    </ListItemButton>
+                  </ListItem>
+                );
+              })}
+            </List>
+          </Collapse>
+        </Paper>
       )}
     </Box>
   );

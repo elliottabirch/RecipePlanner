@@ -47,6 +47,19 @@ export interface StepInstance {
   plannedMealId: string;
   step: RecipeStep;
   recipeName: string;
+  /**
+   * Set only on a week-wide merged prep node (`id === merged-prep::<productId>`,
+   * built by `buildWeekGraph`): the `(plannedMealId, stepId)` pairs of the
+   * original per-recipe single-raw-ingredient prep steps this node replaced.
+   * All handling of one raw ingredient across the whole plan is consolidated
+   * into one node whose `step.active_minutes` is the sum of its members' — "prep
+   * all the onions at once" — while each member's downstream precedence edge is
+   * fanned out from this node so no recipe loses its cut (the sliced-cucumber
+   * consumer and the diced-cucumber consumer both wait on the one prep node).
+   * Cook Mode uses these to reconstruct and sum the members' scaled inputs for
+   * display. Absent on every ordinary per-recipe node.
+   */
+  mergedMembers?: Array<{ plannedMealId: string; stepId: string }>;
 }
 
 /** A precedence edge: `from` must finish before `to` may start. */

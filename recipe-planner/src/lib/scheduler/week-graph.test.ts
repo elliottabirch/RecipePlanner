@@ -130,6 +130,96 @@ function makeRecipeData(
   };
 }
 
+describe("buildWeekGraph — week-wide prep merge", () => {
+  it("collapses same-raw-ingredient prep across meals into one node (summed active) and fans its downstream edges out", () => {
+    const onion = makeProduct({ id: "onion", name: "Onion", type: ProductType.Raw });
+    const diced = makeProduct({ id: "onion-diced", name: "Onion diced", type: ProductType.Transient });
+
+    const mealWithOnionPrep = (mealSuffix: string, active: number, action: string) => {
+      const onionIn = makeProductNode(onion, { id: `onion-in-${mealSuffix}` });
+      const dicedNode = makeProductNode(diced, { id: `diced-${mealSuffix}` });
+      const diceStep = makeStep(`dice-${mealSuffix}`, {
+        name: "dice onion",
+        step_type: StepType.Prep,
+        active_minutes: active,
+        resource: "none",
+        prep_action: action,
+      });
+      const cookStep = makeStep(`cook-${mealSuffix}`, { name: "cook", resource: "none" });
+      return makeRecipeData(
+        {
+          steps: [diceStep, cookStep],
+          productNodes: [onionIn, dicedNode],
+          productToStepEdges: [
+            makeProductToStepEdge(`p2s-dice-${mealSuffix}`, onionIn.id, diceStep.id),
+            makeProductToStepEdge(`p2s-cook-${mealSuffix}`, dicedNode.id, cookStep.id),
+          ],
+          stepToProductEdges: [
+            makeStepToProductEdge(`s2p-${mealSuffix}`, diceStep.id, dicedNode.id),
+          ],
+        },
+        `recipe-${mealSuffix}`,
+        `Recipe ${mealSuffix}`
+      );
+    };
+
+    const mealData: MealKeyedRecipeData = new Map([
+      ["meal-a", mealWithOnionPrep("a", 5, "diced")],
+      ["meal-b", mealWithOnionPrep("b", 7, "sliced")],
+    ]);
+
+    const graph: WeekGraph = buildWeekGraph(mealData);
+
+    const merged = graph.nodes.find((n) => n.id === "merged-prep::onion");
+    expect(merged).toBeDefined();
+    // Summed active time from both meals' prep.
+    expect(merged!.step.active_minutes).toBe(12);
+    expect(merged!.mergedMembers).toHaveLength(2);
+    // The original per-meal prep nodes are gone, replaced by the merged node.
+    const ids = graph.nodes.map((n) => n.id);
+    expect(ids).not.toContain("meal-a::dice-a");
+    expect(ids).not.toContain("meal-b::dice-b");
+    // Precedence preserved: each meal's cook step still waits on the prep, now
+    // fanned out from the single merged node.
+    expect(graph.edges).toEqual(
+      expect.arrayContaining([
+        { from: "merged-prep::onion", to: "meal-a::cook-a" },
+        { from: "merged-prep::onion", to: "meal-b::cook-b" },
+      ])
+    );
+  });
+
+  it("leaves a raw ingredient used by only one prep step untouched (nothing to aggregate)", () => {
+    const garlic = makeProduct({ id: "garlic", name: "Garlic", type: ProductType.Raw });
+    const garlicIn = makeProductNode(garlic, { id: "garlic-in" });
+    const minceStep = makeStep("mince", {
+      name: "mince garlic",
+      step_type: StepType.Prep,
+      active_minutes: 2,
+      resource: "none",
+      prep_action: "minced",
+    });
+    const mealData: MealKeyedRecipeData = new Map([
+      [
+        "meal-a",
+        makeRecipeData(
+          {
+            steps: [minceStep],
+            productNodes: [garlicIn],
+            productToStepEdges: [makeProductToStepEdge("p", garlicIn.id, minceStep.id)],
+          },
+          "recipe-a",
+          "Recipe A"
+        ),
+      ],
+    ]);
+
+    const graph = buildWeekGraph(mealData);
+    expect(graph.nodes.map((n) => n.id)).toContain("meal-a::mince");
+    expect(graph.nodes.some((n) => n.id.startsWith("merged-prep::"))).toBe(false);
+  });
+});
+
 describe("buildWeekGraph — cross-recipe edges", () => {
   it("meal A's stored output produces an edge into meal B's matching input consumer", () => {
     const stockProduct = makeProduct({ id: "chicken-stock", name: "Chicken Stock", type: ProductType.Stored });
