@@ -5,7 +5,7 @@ milestone_name: Workflow Redesign
 current_phase: 5
 current_phase_name: Prep-Day Engine
 status: executing
-stopped_at: "Phase 5 core delivered & deployed to NAS (cook mode: week-wide prep merge, clock-ordered schedule, just_in_time filter). GAPS: 05-11 cook mode done ad-hoc but no SUMMARY and does not surface step instructions (deferred, PREP-04 partial); 05-12 in-app weights panel (PREP-05) NOT built — GA weights only editable via DB. Phase 5 is ~11/12, not closed."
+stopped_at: "05-12 (in-app weights panel + deterministic regenerate) Tasks 1-2 executed and committed; PAUSED at Task 3 checkpoint:human-verify (tablet verification of weight tuning, deterministic regenerate, checked-off confirmation dialog, cross-device persistence). SUMMARY.md NOT written, ROADMAP.md NOT updated — plan is not complete until the human-verify checkpoint is approved. GAPS: 05-11 cook mode done ad-hoc but no SUMMARY and does not surface step instructions (deferred, PREP-04 partial)."
 last_updated: "2026-07-10"
 last_activity: 2026-07-10
 last_activity_desc: Prep-day engine refinements built, deployed to NAS, repo cleaned
@@ -28,24 +28,43 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 
 ## Current Position
 
-Phase: 5 (Prep-Day Engine) — ~11 of 12, core delivered & deployed, NOT closed
+Phase: 5 (Prep-Day Engine) — 05-12 Tasks 1-2 executed, PAUSED at Task 3 human-verify
 Status: Cook mode is live on the NAS (`http://192.168.50.95:3000`). Prep-day
 scheduler ships with week-wide prep merge, clock-ordered Now/Next + full-schedule
 list, and a day-of (`just_in_time`) step filter.
-Last activity: 2026-07-10 — refinements built, deployed, repo cleaned.
+
+05-12 (in-app weights panel + deterministic regenerate, PREP-05) progress:
+- Task 1 DONE (commit 2a524aa): `scheduler-config.ts` (load/save the
+  `scheduler_config` singleton, no sync-queue) + `WeightsPanel.tsx` (5 MUI
+  Sliders 0-10, `active` first + default-boosted per D-06, debounced
+  write-on-release, 48px thumbs, full-width "Regenerate Plan" CTA).
+- Task 2 DONE (commit 15068c0): WeightsPanel mounted in `CookMode.tsx`
+  behind a "Weights" toggle; "Regenerate Plan" reloads `scheduler_config`
+  and re-invokes `generateSchedule(weekGraph, config)` with the persisted
+  seed (deterministic); checked-off steps trigger the exact confirm-dialog
+  copy with an accent-green (not error) Regenerate action, preserving
+  `cook_progress`; no-checked-steps path skips the confirmation.
+- Task 3 (checkpoint:human-verify) NOT YET RUN — requires a human on the
+  tablet: tune weights, regenerate twice with unchanged weights to confirm
+  determinism, check off a step and confirm the dialog copy/styling/behavior,
+  reload on another device to confirm weights persisted. `05-12-SUMMARY.md`
+  is intentionally NOT written and ROADMAP.md is intentionally NOT updated —
+  the plan is not complete until this checkpoint is approved.
+
+Last activity: 2026-07-10 — 05-12 Tasks 1-2 built, `npx tsc --noEmit` clean,
+177/177 tests passing.
 
 Outstanding for Phase 5:
-- **05-12 — in-app weights panel (PREP-05):** not built. GA weights (active,
-  chopping, grouping, elapsed, resource_pressure) are only editable directly in
-  the `scheduler_config` PocketBase record; no UI to tune + regenerate.
+- **05-12 Task 3** — human-verify checkpoint (see above), then write
+  `05-12-SUMMARY.md` and close the plan.
 - **05-11 cook mode:** no formal SUMMARY, and now/next cards don't surface step
   `instructions` (PREP-04 partial — deferred by decision 2026-07-10).
 - No formal phase verification run (`/gsd-verify-work`).
 
-Next candidate: Phase 6 — Import Pipeline & Recipe Lifecycle (the connective-recipe
-todo is scoped to it) — but decide first whether to finish 05-12 to close Phase 5.
+Next candidate: approve the 05-12 Task 3 checkpoint to close Phase 5 (then
+Phase 6 — Import Pipeline & Recipe Lifecycle).
 
-Progress: [█████████░] Phase 5 core shipped, weights panel outstanding
+Progress: [█████████░] Phase 5 core shipped, weights panel built, awaiting human-verify
 
 ## Performance Metrics
 
@@ -230,14 +249,18 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-10 — Phase 5 prep-day refinements (prep merge, clock-order,
-day-of filter, lemon-label fix), all built, tested (177 passing), and deployed to
-the NAS. Working tree clean, pushed.
-Stopped at: Phase 5 CORE delivered & deployed, but NOT closed. Open decision:
-finish 05-12 (in-app weights panel, PREP-05) to close Phase 5, or consciously
-defer it and move to Phase 6.
+Last session: 2026-07-10 — 05-12 (in-app weights panel + deterministic
+regenerate) Tasks 1-2 executed: `scheduler-config.ts`, `WeightsPanel.tsx`,
+and the CookMode.tsx regenerate wiring, all committed (2a524aa, 15068c0).
+`npx tsc --noEmit` clean, 177/177 tests passing.
+Stopped at: 05-12 Task 3 — `checkpoint:human-verify` (blocking gate). A human
+must tune weights, regenerate twice unchanged to confirm determinism, check
+off a step and confirm the exact confirmation-dialog copy/styling/behavior,
+and reload on another device to confirm weights persisted. `05-12-SUMMARY.md`
+is NOT written and ROADMAP.md is NOT updated until this checkpoint is
+approved.
 Note: 05-11 (cook mode) was built ad-hoc — no `05-11-SUMMARY.md`, and it omits
-step-instruction display (deferred). 05-12 (weights panel) was never started.
-No `/gsd-verify-work` run for Phase 5. If a clean GSD audit trail matters, run a
-retroactive verify/summary + build 05-12 before declaring Phase 5 done.
+step-instruction display (deferred). No `/gsd-verify-work` run for Phase 5.
+If a clean GSD audit trail matters, run a retroactive verify/summary for
+05-11 in addition to closing out 05-12's checkpoint.
 Resume file: None
