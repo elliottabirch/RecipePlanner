@@ -5,15 +5,15 @@ milestone_name: Workflow Redesign
 current_phase: 5
 current_phase_name: Prep-Day Engine
 status: executing
-stopped_at: Completed 05-07-PLAN.md
-last_updated: "2026-07-10T02:59:53.488Z"
+stopped_at: Completed 05-08-PLAN.md
+last_updated: "2026-07-10T04:51:32.687Z"
 last_activity: 2026-07-09
 last_activity_desc: Phase 5 execution started
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 45
-  completed_plans: 40
+  completed_plans: 41
   percent: 67
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 5 (Prep-Day Engine) — EXECUTING
-Plan: 8 of 12
+Plan: 9 of 12
 Status: Ready to execute
 Last activity: 2026-07-09 — Phase 5 execution started
 
@@ -96,6 +96,7 @@ Progress: [██████████] 100%
 | Phase 05-prep-day-engine P05 | 15min | 1 tasks | 1 files |
 | Phase 05-prep-day-engine P06 | 20min | 1 tasks | 1 files |
 | Phase 05-prep-day-engine P07 | 20min | 3 tasks | 4 files |
+| Phase 05-prep-day-engine P08 | 20min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -181,6 +182,8 @@ Recent decisions affecting current work:
 - [Phase 05-05]: Cross-recipe product matching in buildWeekGraph uses RecipeProductNode.product (relation-ID field) rather than expand.product.id for id comparison; expand still used for the stored/inventory type check
 - [Phase 05-prep-day-engine]: resources.ts: emptyResourceTimeline() takes no config param (capacities live only in scheduler_config, passed per-call to isFeasibleAt) to avoid an unused-parameter lint/tsc error
 - [Phase ?]: missing-pull-step takes (weekGraph, consumedStoredInputs) and is aggregated via a standalone runWeekLint, kept out of runLint's per-recipe signature (D-07)
+- [Phase 05-08]: StepBackfill review UI defaults every field to Accept; Save is never blocked by pending decisions - Edit/Reject are explicit reviewer overrides (user-approved at checkpoint)
+- [Phase 05-08]: isStepUnbackfilled treats PocketBase un-set defaults (0/empty-string) as needing backfill, not just null - PB never stores null for un-set number/select fields
 
 ### Pending Todos
 
@@ -205,7 +208,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-10T02:59:53.482Z
-Stopped at: Completed 05-07-PLAN.md
+Last session: 2026-07-10T04:51:32.682Z
+Stopped at: Completed 05-08-PLAN.md
 Resume file: 
 None

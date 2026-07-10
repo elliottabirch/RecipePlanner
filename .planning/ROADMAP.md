@@ -199,7 +199,7 @@ Plans:
   4. Cook mode's tablet view shows now/next cards with scaled quantities and instructions, recomputes the remaining timeline as steps are checked off, and shows live countdowns for passive steps (PREP-04)
   5. User can tune scheduler weights in-app and regenerate the plan; the linter, run on demand, flags step-metadata and pull-step violations (PREP-05, PREP-06)
 
-**Plans**: 7/12 plans executed
+**Plans**: 8/12 plans executed
 
 Plans:
 **Wave 1**
@@ -217,7 +217,7 @@ Plans:
 - [x] 05-05-PLAN.md — Week-graph builder (per-instance nodes, cross-recipe edges)
 - [x] 05-06-PLAN.md — Resource feasibility model (cook/oven/stovetop/appliances)
 - [x] 05-07-PLAN.md — Linter v2 rules (durations, prep_action, week-scoped pull-step)
-- [ ] 05-08-PLAN.md — Backfill review page + idempotent apply
+- [x] 05-08-PLAN.md — Backfill review page + idempotent apply
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -260,5 +260,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6. Phases 2 and 4
 | 2. Shopping State & Live Substitution | 10/10 | Complete    | 2026-07-07 |
 | 3. Product Registry Seeding | 6/6 | Complete   | 2026-07-07 |
 | 4. Weekly Planning Memory | 9/9 | Complete    | 2026-07-09 |
-| 5. Prep-Day Engine | 7/12 | In Progress|  |
+| 5. Prep-Day Engine | 8/12 | In Progress|  |
 | 6. Import Pipeline & Recipe Lifecycle | 0/TBD | Not started | - |
