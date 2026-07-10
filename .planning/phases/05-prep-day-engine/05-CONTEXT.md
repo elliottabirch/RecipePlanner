@@ -81,7 +81,8 @@ in-app import, and publish-time lint gate remain Phase 6.
   - `oven_temp_f` (number, required when `resource = oven`) → drives the
     temperature-conflict rule (two different-temp oven steps cannot overlap)
   - `rack_slots` (number, default 1)
-  - Stovetop modeled with a **configurable burner count, default 4**; singleton
+  - Stovetop modeled with a **configurable burner count** (default set to **2**
+    per the household's actual stove, 2026-07-10; was proposed 4); singleton
     appliances (blender/food_processor/instant_pot) capacity 1 each.
   - **Backfill infers** `resource` / `oven_temp_f` / `rack_slots` from
     `prep_action` + step name (same offline draft pass as the core fields),

@@ -422,7 +422,7 @@ async function seedSchedulerConfigSingleton() {
   const created = await pb.collection("scheduler_config").create({
     seed: 12345,
     weights: DEFAULT_WEIGHTS,
-    burner_count: 4,
+    burner_count: 2,
     oven_rack_slots: 2,
     appliances: ["blender", "food_processor", "instant_pot", "microwave", "sous_vide"],
   });

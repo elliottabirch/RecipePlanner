@@ -1541,16 +1541,18 @@ export default function RecipeEditor() {
             />
           )}
 
-          <TextField
-            label="Rack slots"
-            type="number"
-            value={stepRackSlots}
-            onChange={(e) =>
-              setStepRackSlots(e.target.value ? Number(e.target.value) : "")
-            }
-            fullWidth
-            margin="dense"
-          />
+          {stepResource === "oven" && (
+            <TextField
+              label="Rack slots"
+              type="number"
+              value={stepRackSlots}
+              onChange={(e) =>
+                setStepRackSlots(e.target.value ? Number(e.target.value) : "")
+              }
+              fullWidth
+              margin="dense"
+            />
+          )}
         </DialogContent>
         <DialogActions>
           <Button

@@ -62,7 +62,7 @@ function fallbackSchedulerConfig(): SchedulerConfig {
     collectionName: "scheduler_config",
     seed: 1,
     weights: { active: 8, chopping: 3, grouping: 3, elapsed: 4, resource_pressure: 3 },
-    burner_count: 4,
+    burner_count: 2,
     oven_rack_slots: 2,
     appliances: [],
   };

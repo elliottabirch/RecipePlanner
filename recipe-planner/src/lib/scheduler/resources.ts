@@ -10,7 +10,7 @@
  *  - oven: same-temperature-only overlap (a temperature conflict rejects
  *    regardless of rack capacity — RESEARCH Pitfall 2), metered above that
  *    by `rack_slots` vs. `scheduler_config.oven_rack_slots`.
- *  - stovetop: metered by `scheduler_config.burner_count` (default 4).
+ *  - stovetop: metered by `scheduler_config.burner_count` (default 2).
  *  - singleton appliances (blender/food_processor/instant_pot/microwave/
  *    sous_vide): capacity 1 each.
  *

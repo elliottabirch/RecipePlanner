@@ -106,9 +106,14 @@ function missingFieldsFor(
   // PB stores un-set number fields as 0 and text/select as "", so this must be
   // a step-level "has any meaningful value" check, not a per-field null check.
   if (!isStepUnbackfilled(step)) return [];
+  // oven_temp_f and rack_slots are meaningful only for oven steps; hide them
+  // for any other resource so non-oven rows aren't cluttered with N/A fields.
+  const ovenOnly = new Set<BackfillFieldKey>(["oven_temp_f", "rack_slots"]);
   return BACKFILL_FIELDS.filter((field) => {
     const draftValue = entry[field];
-    return draftValue !== null && draftValue !== undefined; // draft offers this field
+    if (draftValue === null || draftValue === undefined) return false; // draft offers nothing
+    if (ovenOnly.has(field) && entry.resource !== "oven") return false; // oven-only
+    return true;
   }).map((field) => ({ field, draftValue: entry[field] }));
 }
 
