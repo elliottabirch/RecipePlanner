@@ -5,15 +5,15 @@ milestone_name: Workflow Redesign
 current_phase: 5
 current_phase_name: Prep-Day Engine
 status: executing
-stopped_at: Completed 05-03-PLAN.md
-last_updated: "2026-07-10T02:20:50.907Z"
+stopped_at: Completed 05-04-PLAN.md
+last_updated: "2026-07-10T02:31:41.754Z"
 last_activity: 2026-07-09
 last_activity_desc: Phase 5 execution started
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 45
-  completed_plans: 36
+  completed_plans: 37
   percent: 67
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 5 (Prep-Day Engine) — EXECUTING
-Plan: 4 of 12
+Plan: 5 of 12
 Status: Ready to execute
 Last activity: 2026-07-09 — Phase 5 execution started
 
@@ -92,6 +92,7 @@ Progress: [██████████] 100%
 | Phase 05 P01 | 25min | 3 tasks | 4 files |
 | Phase 05-prep-day-engine P02 | 8min | 3 tasks | 8 files |
 | Phase 05 P03 | 10min | 2 tasks | 2 files |
+| Phase 05 P04 | 25min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -171,6 +172,9 @@ Recent decisions affecting current work:
 - [Phase 05-02]: runWeekLint introduced as a distinct week-scoped aggregator entry point from the per-recipe runLint
 - [Phase 05-03]: oven_temp_f validation triggers on Save-click attempt (not eager), matching handleSaveEditedStep's existing early-return pattern; clears on next field edit or when resource leaves oven
 - [Phase 05-03]: Add Step dialog intentionally NOT extended with the 7 fields — only the Edit Step dialog + both save touchpoints are in scope; new steps get metadata via edit-after-create
+- [Phase 05-04]: export-steps-for-backfill.mjs authenticates as PB superuser purely for read visibility, issues only getFullList() calls (read-only, cred-safe)
+- [Phase 05-04]: prep_action assigned only to genuine knife-cut steps matching the 6-verb vocabulary; non-cutting prep-typed steps (cook/toast/juice/sweat/thaw) left null rather than forcing a mismatched enum value
+- [Phase 05-04]: resource inferred per step from name+graph context (oven/stovetop/blender/none); no step indicated Instant Pot use so instant_pot was never assigned in the 185-step backfill draft
 
 ### Pending Todos
 
@@ -195,7 +199,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-10T02:20:50.902Z
-Stopped at: Completed 05-03-PLAN.md
+Last session: 2026-07-10T02:31:41.748Z
+Stopped at: Completed 05-04-PLAN.md
 Resume file: 
 None
