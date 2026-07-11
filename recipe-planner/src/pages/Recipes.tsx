@@ -45,6 +45,7 @@ import FilterGroup from "../components/FilterGroup";
 import type { FilterOption } from "../components/FilterGroup";
 import type { FilterState } from "../components/FilterChip";
 import { useRecipeQueue } from "../hooks/useRecipeQueue";
+import AddNoteButton from "../components/AddNoteButton";
 
 export default function Recipes() {
   const navigate = useNavigate();
@@ -505,6 +506,11 @@ export default function Recipes() {
                       {isInQueue(item.id) ? <QueuedIcon /> : <QueueAddIcon />}
                     </IconButton>
                   </Tooltip>
+                  <AddNoteButton
+                    recipeId={item.id}
+                    sourceSurface="recipe_card"
+                    size="small"
+                  />
                   <IconButton
                     size="small"
                     onClick={() => handleDeleteClick(item)}

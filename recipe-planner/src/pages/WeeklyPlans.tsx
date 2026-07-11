@@ -65,6 +65,7 @@ import type { RecipeGraphData } from "../lib/aggregation";
 import { useRecipeQueue } from "../hooks/useRecipeQueue";
 import { formatWeekOf, getUpcomingMonday } from "../lib/planning/dates";
 import { buildDraftExcludingFilter } from "../lib/lifecycle/draft-filter";
+import AddNoteButton from "../components/AddNoteButton";
 
 // Client-side floor for people_multiplier (Security V5 / T-04-08a) — mirrors
 // the PocketBase field's own Min 0.1 constraint as defense in depth.
@@ -982,6 +983,16 @@ export default function WeeklyPlans() {
                                         meal.quantity > 1 &&
                                         ` (×${meal.quantity})`}
                                     </Typography>
+                                    <Box
+                                      sx={{ color: "rgba(255,255,255,0.9)", flexShrink: 0 }}
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <AddNoteButton
+                                        recipeId={meal.recipe}
+                                        sourceSurface="calendar"
+                                        size="small"
+                                      />
+                                    </Box>
                                     <IconButton
                                       size="small"
                                       onClick={(e) => {

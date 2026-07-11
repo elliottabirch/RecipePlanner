@@ -8,6 +8,7 @@ import { useState } from "react";
 import { Box, Typography, Checkbox, Collapse } from "@mui/material";
 import type { StepInstance } from "../../lib/scheduler/types";
 import { ReadinessChip, type ReadinessChipState } from "./ReadinessChip";
+import AddNoteButton from "../AddNoteButton";
 
 export interface ScaledIngredient {
   productName: string;
@@ -113,9 +114,19 @@ export function NowNextCard({
             <Typography variant="subtitle1" fontWeight="bold">
               {instance.step.name}
             </Typography>
-            {statusChip && (
-              <ReadinessChip state={statusChip.state} label={statusChip.label} />
-            )}
+            <Box display="flex" alignItems="center" gap={0.5}>
+              {statusChip && (
+                <ReadinessChip
+                  state={statusChip.state}
+                  label={statusChip.label}
+                />
+              )}
+              <AddNoteButton
+                recipeId={instance.step.recipe}
+                sourceSurface="cook_mode"
+                size="small"
+              />
+            </Box>
           </Box>
           <Typography variant="caption" color="text.secondary">
             {cutCount > 0
