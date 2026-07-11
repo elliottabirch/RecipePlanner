@@ -61,10 +61,10 @@ const SLOTS = [
     sort_order: 0,
     label: "Staples",
     meal_slot: "snack",
-    count: 2,
+    count: 6,
     day: null,
     prefill_from_last_week: true,
-    pool_tags: ["fruit"],
+    pool_tags: ["staple"],
   },
   {
     sort_order: 1,
@@ -113,7 +113,8 @@ const SLOTS = [
     count: 4,
     day: null,
     prefill_from_last_week: false,
-    pool_tags: ["pescatarian"],
+    pool_tags: ["pescatarian", "dinner"],
+    match_all: true,
     exclude_tags: ["micah meal"],
   },
   {
@@ -123,7 +124,8 @@ const SLOTS = [
     count: 1,
     day: null,
     prefill_from_last_week: false,
-    pool_tags: ["pescatarian"],
+    pool_tags: ["pescatarian", "lunch"],
+    match_all: true,
     exclude_tags: ["micah meal"],
   },
   {
@@ -133,7 +135,8 @@ const SLOTS = [
     count: 1,
     day: null,
     prefill_from_last_week: false,
-    pool_tags: ["meat"],
+    pool_tags: ["meat", "lunch"],
+    match_all: true,
     exclude_tags: ["micah meal"],
   },
 ];

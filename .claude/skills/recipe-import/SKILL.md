@@ -205,8 +205,8 @@ const tags = await pb.collection("tags").getFullList({ sort: "name" });
 tags.forEach((t) => console.log(`${t.name}  [${t.id}]`));
 ```
 
-Current tags (as of writing — always re-read; the list grows): `fruit`, `green`, `meat`,
-`micah meal`, `pescatarian`, `protein`, `staple`, `starch`, `vegetable`.
+Current tags (as of writing — always re-read; the list grows): `dinner`, `fruit`, `green`,
+`lunch`, `meat`, `micah meal`, `pescatarian`, `protein`, `staple`, `starch`, `vegetable`.
 
 How to match (guidance, not a hard rule — a dish can carry several):
 - **protein** — the dish's main is a protein (meat/fish/eggs/legumes/protein-dairy).
@@ -218,6 +218,10 @@ How to match (guidance, not a hard rule — a dish can carry several):
   (broccoli, kale, green beans, bok choy, cucumber); **vegetable** is the broader category.
   A green-vegetable dish typically earns both.
 - **fruit** — fruit-based. **staple** — a standing weekly staple item.
+- **dinner** / **lunch** — the adult meal slot. Tag an adult **dinner** `dinner` (pescatarian
+  dinners are `pescatarian`+`dinner`); an adult **lunch** `lunch` (`pescatarian`+`lunch` or
+  `meat`+`lunch`). The wizard's adult slots match on these pairs, so a pescatarian dinner
+  needs BOTH `pescatarian` and `dinner` to appear in the Adult Dinners pool.
 - **micah meal** — a kid's (Micah) meal. **ONLY include `micah meal` when the user
   explicitly asks for it.** Never infer it from the recipe's contents alone — an ordinary
   adult recipe must land with no `micah meal` tag unless the user said so.
