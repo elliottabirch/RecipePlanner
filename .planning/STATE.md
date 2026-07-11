@@ -5,13 +5,13 @@ milestone_name: Workflow Redesign
 current_phase: 6
 current_phase_name: Import Pipeline & Recipe Lifecycle
 status: executing
-stopped_at: Completed 06-04-PLAN.md
-last_updated: "2026-07-11T00:01:13.104Z"
+stopped_at: Completed 06-07-PLAN.md
+last_updated: "2026-07-11T00:07:43.248Z"
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 56
-  completed_plans: 51
+  completed_plans: 52
   percent: 83
 ---
 
@@ -153,6 +153,7 @@ Progress: [██████████] Phase 5 complete — 5 of 6 phases do
 | Phase 06 P03 | 10min | 2 tasks | 4 files |
 | Phase 06 P04 | 18min | 3 tasks | 4 files |
 | Phase 06 P06 | 6min | 1 tasks | 1 files |
+| Phase 06 P07 | 12min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -253,6 +254,7 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 06-04]: recipe create-vs-update carried via reserved remapSeed key __recipe__; node data omits recipe relation (executor injects) so planner stays pure/testable
 - [Phase ?]: [Phase 06-04]: New-Recipe create path sets status=published explicitly (Open Q1/Pitfall 3); executor generics use PocketBase RecordModel for tsc -b build
 - [Phase ?]: [Phase 06-06]: RecipeEditor recipe state was discarded (const [, setRecipe]); captured it so the draft-only Publish button conditions on status===draft and hides after publish — minimal change for D-06. handlePublish returns before any status write on findings (T-06-06a).
+- [Phase 06-07]: In-app Import page is thin wiring over Plan 02/04 pure modules — validateImportJson (non-blocking) + scoreProduct auto-match (threshold 0.15) + buildRecipeGraph(status:draft); unmatched lines resolved inline via QuickCreateProductDialog before any write (T-06-07a/b/c)
 
 ### Pending Todos
 
@@ -284,7 +286,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-11T00:00:37.899Z
+Last session: 2026-07-11T00:07:43.243Z
 gsd-verifier passed all 5 success criteria (`05-VERIFICATION.md`, status:
 passed); `phase.complete` advanced ROADMAP/STATE to Phase 6. PROJECT.md evolved
 (Phases 3/4/5 features → Validated; scheduler/registry/rotation decisions marked

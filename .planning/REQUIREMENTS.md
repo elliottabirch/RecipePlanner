@@ -54,7 +54,7 @@ Requirements for milestone v1.1 Workflow Redesign. Each maps to roadmap phases. 
 
 - [x] **IMP-01**: Recipes have a draft/published lifecycle; drafts are invisible to planning
 - [x] **IMP-02**: User can import structured recipe JSON in-app, landing in prod as a draft via the shared graph-write path
-- [ ] **IMP-03**: The `recipe-import` skill emits import JSON instead of scripts; the test→prod migration ritual is retired
+- [x] **IMP-03**: The `recipe-import` skill emits import JSON instead of scripts; the test→prod migration ritual is retired
 - [ ] **IMP-04**: `/suggest-recipes` proposes 3–5 import-ready candidates honoring the four constraints (registry overlap, low active time, batch-compatible, macro floor)
 - [ ] **IMP-05**: User can attach a one-tap note to a recipe from calendar, cook mode, or recipe card
 - [ ] **IMP-06**: An agent pass turns pending notes into draft revisions, surfaced for review in the week wizard
@@ -123,7 +123,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PREP-06 | Phase 5 | Pending |
 | IMP-01 | Phase 6 | Complete |
 | IMP-02 | Phase 6 | Complete |
-| IMP-03 | Phase 6 | Pending |
+| IMP-03 | Phase 6 | Complete |
 | IMP-04 | Phase 6 | Pending |
 | IMP-05 | Phase 6 | Pending |
 | IMP-06 | Phase 6 | Pending |
