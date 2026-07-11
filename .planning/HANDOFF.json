@@ -1,0 +1,39 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-07-11T03:24:24.515Z",
+  "phase": "6",
+  "phase_name": "Import Pipeline & Recipe Lifecycle",
+  "phase_dir": ".planning/phases/06-import-pipeline-recipe-lifecycle",
+  "plan": 11,
+  "task": 11,
+  "total_tasks": 11,
+  "status": "paused",
+  "completed_tasks": [
+    {"id": 1, "name": "Phase 6 built (11 plans / 3 waves)", "status": "done"},
+    {"id": 2, "name": "Verified 5/5 success criteria (VERIFICATION: UAT-pending)", "status": "done"},
+    {"id": 3, "name": "Code review (8 findings) + fixed blocker + 3 warnings", "status": "done"},
+    {"id": 4, "name": "Deployed to NAS (:3000) + pushed to origin/main", "status": "done"},
+    {"id": 5, "name": "Hands-on UAT walked (6/7 items pass)", "status": "done"},
+    {"id": 6, "name": "Mid-UAT fixes: import store/section, publish-gate stored exemption", "status": "done", "commit": "40d11f0,5cd8ed6"}
+  ],
+  "remaining_tasks": [
+    {"id": 7, "name": "[correctness] Cook-mode note fails on merged-prep nodes (empty recipe) + swallowed error", "status": "not_started"},
+    {"id": 8, "name": "[correctness] Publish button on a revision draft creates a duplicate (should route to write-back)", "status": "not_started"},
+    {"id": 9, "name": "[enhancement] Note icon on all meal chips (Micah section + week-spanning)", "status": "not_started"},
+    {"id": 10, "name": "[gap] recipe_steps has no source_node (write-back step correspondence)", "status": "not_started"}
+  ],
+  "blockers": [],
+  "async_jobs": [],
+  "human_actions_pending": [
+    {"action": "Decide how to handle the 4 UAT findings: fix the 2 correctness bugs now vs. spin up follow-up phase 6.1 vs. leave logged", "context": "User paused at exactly this decision point", "blocking": false}
+  ],
+  "decisions": [
+    {"decision": "Ran execution sequentially on main (no worktrees)", "rationale": "branch strategy is 'none'; safer to hand-drive than parallel-worktree merges", "phase": "6"},
+    {"decision": "Import auto-creates made products (stored/transient) without store/section; only raw leaf inputs get QuickCreate", "rationale": "UAT finding — recipe outputs aren't bought", "phase": "6"},
+    {"decision": "missing-store-section rule exempts stored (not just transient)", "rationale": "all 58 existing stored outputs have no store — made, not bought", "phase": "6"},
+    {"decision": "Evolution write-back is in-place on the ORIGINAL recipe id (D-10)", "rationale": "keeps planned_meals + overrides valid; verified id-stable in UAT", "phase": "6"}
+  ],
+  "uncommitted_files": [],
+  "next_action": "Ask the user (or decide) whether to fix the 2 correctness UAT findings now or create phase 6.1; start with the cook-mode note bug (derive recipeId from plannedMealId->planned_meals.recipe; hide button on merged nodes; surface save errors in AddNoteButton).",
+  "context_notes": "Phase 6 is SHIPPED and LIVE on the NAS (http://192.168.50.95:3000). Prod PB schema already migrated. 282 tests green, tree clean, origin/main up to date. UAT walked live on the tablet: 06-04/05/06/07/09/10 all pass; 06-08 is 2/3 (cook-mode note blocked). The 4 open findings are in 06-UAT-FINDINGS.md. The test fixture recipe was created + fully deleted during UAT — prod is back to 57 recipes. Recurring landmine this session: pure src/lib modules must LAZY-import ../api inside functions (pocketbase.ts -> db-config.ts reads localStorage at module load and crashes node/vitest); buildRecipeGraph can't run in a plain node script for the same reason (evolve write-back scripts use direct PB SDK instead)."
+}
