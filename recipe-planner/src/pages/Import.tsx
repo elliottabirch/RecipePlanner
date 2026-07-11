@@ -12,13 +12,15 @@ import {
   Stack,
   CircularProgress,
 } from "@mui/material";
-import { getAll, collections } from "../lib/api";
-import type { Product } from "../lib/types";
+import { getAll, create, collections } from "../lib/api";
+import { type Product, ProductType } from "../lib/types";
+import { normalizeUnit } from "../lib/units";
 import {
   validateImportJson,
   type ImportError,
   type NormalizedGraph,
 } from "../lib/import/validate-import";
+import { classifyImportNodes } from "../lib/import/classify-nodes";
 import { buildRecipeGraph } from "../lib/import/build-recipe-graph";
 import { scoreProduct, searchProducts } from "../lib/search/product-search";
 import { QuickCreateProductDialog } from "../components/outputs/QuickCreateProductDialog";
@@ -70,6 +72,7 @@ export default function ImportRecipe() {
     ingredients: number;
     steps: number;
     unmatched: number;
+    made: number;
   } | null>(null);
 
   const [quickCreateForRef, setQuickCreateForRef] = useState<string | null>(
@@ -118,7 +121,7 @@ export default function ImportRecipe() {
     // note: no finally-clear on success — we navigate away.
   };
 
-  const handleImport = () => {
+  const handleImport = async () => {
     setLandError(null);
     const res = validateImportJson(text);
 
@@ -137,23 +140,56 @@ export default function ImportRecipe() {
     setWarnings(res.warnings);
     const g = res.graph;
 
+    // A product is something you BUY (raw) or something the recipe MAKES
+    // (transient/stored — the output of a step). Only raw leaf inputs need a
+    // store/section; made products are auto-created without one (a recipe's own
+    // output isn't a purchase). See classifyImportNodes.
+    const roles = classifyImportNodes(g);
+    const localProducts = [...products];
+
     // Resolve products: hinted matchProductId wins; else confident auto-match;
-    // else collect for the inline "Match these products" step (D-02).
+    // else raw → inline "Match these products" step (D-02); made → auto-create
+    // as a stored/transient product (no store/section prompt).
     const nextMatches: Record<string, string> = {};
     const unresolved: string[] = [];
+    let madeCreated = 0;
     for (const pn of g.productNodes) {
       if (pn.matchProductId) {
         nextMatches[pn.ref] = pn.matchProductId;
         continue;
       }
-      const scored = scoreProduct(pn.name, products);
+      const scored = scoreProduct(pn.name, localProducts);
       if (scored.length > 0 && scored[0].score <= AUTO_MATCH_THRESHOLD) {
         nextMatches[pn.ref] = scored[0].product.id;
-      } else {
+        continue;
+      }
+      if (roles[pn.ref] === "raw") {
+        unresolved.push(pn.ref);
+        continue;
+      }
+      // Made product (the recipe's output/intermediate): create it directly as
+      // a stored/transient product with NO store/section. If creation fails,
+      // fall back to the manual resolve step so nothing silently breaks.
+      try {
+        const cu = normalizeUnit(pn.unit);
+        const created = await create<Product>(collections.products, {
+          name: pn.name,
+          type:
+            roles[pn.ref] === "transient"
+              ? ProductType.Transient
+              : ProductType.Stored,
+          ...(cu ? { canonical_unit: cu } : {}),
+        });
+        nextMatches[pn.ref] = created.id;
+        localProducts.push(created);
+        madeCreated += 1;
+      } catch (e) {
+        console.error("Failed to auto-create made product:", pn.name, e);
         unresolved.push(pn.ref);
       }
     }
 
+    setProducts(localProducts);
     setGraph(g);
     setMatches(nextMatches);
     setUnresolvedRefs(unresolved);
@@ -161,6 +197,7 @@ export default function ImportRecipe() {
       ingredients: g.productNodes.length,
       steps: g.steps.length,
       unmatched: unresolved.length,
+      made: madeCreated,
     });
 
     // Fully resolved on first pass → land immediately (no gate).
@@ -214,7 +251,7 @@ export default function ImportRecipe() {
         <Button
           variant="contained"
           color="primary"
-          onClick={handleImport}
+          onClick={() => void handleImport()}
           disabled={landing || text.trim() === ""}
           sx={{ minHeight: 48 }}
         >
@@ -254,8 +291,15 @@ export default function ImportRecipe() {
         <Alert severity="success" sx={{ mb: 2 }}>
           Recipe parsed — {parseInfo.ingredients} ingredients,{" "}
           {parseInfo.steps} steps.
+          {parseInfo.made > 0
+            ? ` Created ${parseInfo.made} made product${
+                parseInfo.made === 1 ? "" : "s"
+              } (recipe outputs).`
+            : ""}
           {parseInfo.unmatched > 0
-            ? ` ${parseInfo.unmatched} products need matching before import.`
+            ? ` ${parseInfo.unmatched} ingredient${
+                parseInfo.unmatched === 1 ? "" : "s"
+              } need matching before import.`
             : ""}
         </Alert>
       )}
