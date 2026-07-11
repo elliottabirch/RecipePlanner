@@ -58,6 +58,8 @@ describe("units.ts — normalizeUnit (alias resolution)", () => {
     ["cu", "cup"],
     ["whole", "each"],
     ["cubes", "each"],
+    ["sprig", "each"],
+    ["sprigs", "each"],
     // Genuinely unresolvable — never guessed (D-08)
     ["by", null],
     ["chile", null],

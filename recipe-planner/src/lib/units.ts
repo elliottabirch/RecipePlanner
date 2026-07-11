@@ -100,6 +100,7 @@ export const UNIT_ALIASES: Record<string, Unit> = {
   cubes: "each",
   slices: "each",
   pitas: "each",
+  sprig: "each",
   sprigs: "each",
 };
 
