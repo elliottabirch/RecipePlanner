@@ -1,39 +1,56 @@
 ---
 name: recipe-import
-description: Import recipes into the RecipePlanner PocketBase database. Use when user provides a recipe (ingredients + instructions) to import into the system. Handles product matching, flow diagram creation, import script generation, and test database verification. Triggers on requests like "import this recipe", "add a new recipe", or when user provides recipe content to add to the database.
+description: Import recipes into the RecipePlanner database. Use when user provides a recipe (ingredients + instructions) to add to the system. Analyzes the recipe into products + steps, reuses existing products, and EMITS the import-page JSON contract (a `{name + hints}` recipe graph) for the user to paste into the in-app /import page — which lands it as a draft directly in prod. Triggers on "import this recipe", "add a new recipe", or when the user provides recipe content to add.
 ---
 
 # Recipe Import
 
-Import recipes into the RecipePlanner database safely through the test environment.
+Turn a recipe (ingredients + instructions) into the **import-page JSON contract** the
+in-app `/import` page accepts. You do the analysis — product reuse, step/timing
+conventions, store/section discipline — and hand the user a single JSON object to paste.
+The page validates it (never blocks), lands it as a **draft directly in prod**, and
+redirects into the RecipeEditor for review/edit. Publishing (the only hard gate) happens
+there later.
+
+**This skill emits JSON. It does not generate import scripts, does not touch the test
+database, and does not migrate anything to prod.** The old `import-*.js` / `migrate-*.js`
+test→prod ritual is retired (IMP-03) — landing and review now happen entirely on the
+`/import` page.
 
 ## Prerequisites
 
-- Test database running on port 8091 (synced with production)
-- Recipe provided by user (ingredients + instructions)
+- Recipe provided by user (name, ingredients, instructions, yield).
+- Read access to the product registry to reuse existing products (query prod directly —
+  see Step 3). This is READ-ONLY; you never write to the DB from this skill.
 
 ## Workflow
 
-1. **Get recipe** - Ask for name, ingredients, instructions, yield
-2. **Create flow diagram** - Analyze recipe, create Mermaid diagram, get user approval
-3. **Check products** - Query test DB directly for matches, identify existing vs new products
-4. **Create import script** - Hardcode to test database (port 8091)
-5. **Run import** - Execute on test database
-6. **Verify in UI** - User checks recipe in test database view
-7. **Promote to prod** - When user approves, migrate recipe (and any weekly plan) to prod database
+1. **Get recipe** — Ask for name, ingredients, instructions, yield, and whether it's a
+   `meal` or a `batch_prep`.
+2. **Analyze into a graph** — Break the recipe into products (raw / transient / stored /
+   inventory) and steps (prep / assembly); sketch the `Product → Step → Product` flow.
+3. **Check existing products** — Query the registry to reuse products (avoid near-dupes),
+   and capture `store`/`section` for any genuinely new non-pantry product.
+4. **Emit the import JSON** — Produce the D-01 `{name + hints}` contract: recipe metadata,
+   product lines, steps with full Phase-5 metadata, and `ref`-based edges. Show it to the
+   user and confirm.
+5. **Hand off to the /import page** — Tell the user to paste the JSON into `/import`. It
+   lands a draft and drops them into RecipeEditor. You are done — no scripts run.
 
 ## Step 1: Analyze Recipe
 
-Break down the recipe:
-- Raw ingredients (purchased items)
-- Prep steps (chop, dice, slice, zest - physical processing of raw produce)
-- Assembly steps (roast, saute, simmer, mix, combine - cooking/combining ingredients)
-- Intermediate products (chopped X, roasted Y)
-- Final products (stored vs transient)
+Break the recipe down:
+- **Raw ingredients** (purchased items).
+- **Prep steps** (chop, dice, slice, zest, mince — physical processing of raw produce).
+- **Assembly steps** (roast, saute, simmer, mix, combine — cooking/combining).
+- **Intermediate products** (chopped X, roasted Y) — `transient`.
+- **Final products** — `stored` (made ahead, refrigerated) vs `transient` (served now).
 
-## Step 2: Create Mermaid Flow Diagram
+## Step 2: Sketch the Flow (Product → Step → Product)
 
-**Critical rule**: Products NEVER connect directly to products. Always: Product -> Step -> Product
+**Critical rule**: Products NEVER connect directly to products. Always
+`Product → Step → Product`. A quick Mermaid sketch is a useful thinking tool (optional,
+not part of the emitted JSON):
 
 ```mermaid
 graph TD
@@ -41,17 +58,20 @@ graph TD
     S1 --> T1[Parsley chopped<br/>TRANSIENT]
 ```
 
-Save to `examples/[recipe-name]/[recipe-name]-flow.md` and get user confirmation.
+Every edge in the sketch becomes a `{from, to}` entry in the JSON `edges` array, using the
+product/step `ref`s (see Step 4).
 
-## Step 3: Check Existing Products
+## Step 3: Check Existing Products (read-only)
 
-The repo has `scripts/find-product-matches.js` with hardcoded categories — useful as a first pass but rarely complete for a new recipe. **Prefer querying the test DB directly** for each ingredient you expect to need:
+Reuse existing products aggressively — the biggest source of import mess is minting
+near-duplicate products. Query the **prod** registry directly (read-only) for each
+ingredient you expect to need. Run from inside `recipe-planner/` (its `node_modules`):
 
 ```javascript
-// One-shot inline node script — run from recipe-planner/ directory
+// One-shot inline node script — READ ONLY. Run from recipe-planner/.
 import PocketBase from "pocketbase";
 async function main() {
-  const pb = new PocketBase("http://192.168.50.95:8091");
+  const pb = new PocketBase("http://192.168.50.95:8090"); // prod, read-only
   const products = await pb.collection("products").getFullList({ sort: "name" });
   for (const term of ["tomato", "onion", "garlic", "paprika"]) {
     console.log(`\n=== ${term} ===`);
@@ -63,148 +83,138 @@ async function main() {
 main().catch((e) => console.error("ERROR:", e.message, e.status, e.url));
 ```
 
-Review matches with user. Common reuse opportunities you might miss:
+Review matches with the user. When you find an existing product, put its id in the product
+line's `matchProductId` hint so the import page auto-links it instead of creating a dupe.
+
+Common reuse opportunities you might miss:
 - `crushed red pepper` and `red pepper flakes` are the **same product**.
-- An existing transient like `onion (yellow) small-dice` is usually fine for "minced onion" — don't create near-duplicates.
-- A recipe asking for "garlic" should typically pull from `garlic cubes (frozen)` (inventory) via a **`Pull out garlic cubes` assembly step** (not a prep step) producing `garlic cube (pulled)` (transient). This applies to any tracked inventory ingredient.
-- Distinct varieties (e.g. `paprika smoked` vs `paprika`) should stay as separate products.
+- An existing transient like `onion (yellow) small-dice` is usually fine for "minced
+  onion" — don't create near-duplicates.
+- A recipe asking for "garlic" should typically pull from `garlic cubes (frozen)`
+  (inventory) via a **`Pull out garlic cubes` assembly step** (not a prep step) producing
+  `garlic cube (pulled)` (transient). This applies to any tracked inventory ingredient.
+- Distinct varieties (e.g. `paprika smoked` vs `paprika`) should stay separate products.
 
-### Store + section assignment (REQUIRED for every new non-pantry product)
+### Store + section hints (REQUIRED for every new non-pantry product)
 
-Every newly-created `raw`, `inventory`, or `stored` product that the user actually buys (i.e. `pantry: false`) **must** be created with a `store` relation and, where applicable, a `section` relation. These power the shopping-list grouping in the UI; products with no store/section quietly fall out of the list and get missed at the store. This was missed on `chives`, `crema`, and `ancho chile` in the creamy-tomato-soup import — don't repeat it.
+Every genuinely NEW `raw`, `inventory`, or `stored` product the user actually buys
+(`pantry: false`) **must** carry `store` (and, where applicable, `section`) hints in its
+product line. These power shopping-list grouping; a product with no store/section quietly
+falls out of the list and gets missed at the store (this was the `chives` / `crema` /
+`ancho chile` bug in the creamy-tomato-soup import — don't repeat it).
 
-Quick procedure when creating a new product:
-1. Ask the user (or infer, then confirm) which store sells it and which department/aisle it lives in.
-2. Look up the IDs in the `stores` and `sections` collections (one inline query, same pattern as the product check above).
-3. Pass `store` and `section` in the `products.create({...})` call alongside `name`/`type`/`pantry`.
+Procedure for a new product:
+1. Ask the user (or infer, then confirm) which store sells it and which department/aisle.
+2. Look up the ids in the `stores` and `sections` collections (one inline read query, same
+   pattern as above), and pass them as `store` / `section` hints on the product line.
+   (If you leave the hint as a plain name string, the import page's inline resolution step
+   will prompt the user to pick — but resolving it up front is cleaner.)
 
 Rules of thumb:
-- **Safeway products**: almost always have a section (`produce`, `dairy`, `meat`, `bakery`, `frozen`, `baking supplies`, `international`, `prepared meals`). Don't leave section blank for a Safeway item.
-- **Online products** (Amazon / specialty): `section` is typically left blank — see existing entries like `garam masala`, `kasuri methi`, `parchment paper`. Store is still required.
+- **Safeway products**: almost always have a section (`produce`, `dairy`, `meat`,
+  `bakery`, `frozen`, `baking supplies`, `international`, `prepared meals`). Don't leave
+  section blank for a Safeway item.
+- **Online products** (Amazon / specialty): `section` typically left blank — see
+  `garam masala`, `kasuri methi`, `parchment paper`. Store still required.
 - **Costco / Trader Joes**: store required; section optional and usually omitted.
-- **`pantry: true` products**: store/section can be omitted — they're not in the active shopping list.
+- **`pantry: true` products**: store/section can be omitted — not in the active list.
 
-Pre-import sanity check after building the product map: list every product you're about to create and confirm each has a store assigned. If any are missing, stop and resolve before running the import.
+Sanity check before emitting: list every product line that will create a NEW product and
+confirm each has a `store` hint.
 
-## Step 4: Create Import Script
+## Step 4: Emit the Import JSON (the D-01 contract)
 
-Create `recipe-planner/import-[recipe-name].js`. Keep existing product IDs in an `existing` const, create new products inline, then merge into a single `products` map for clarity. Use a `for` loop when many sources flow into the same step.
+Produce a single JSON object with `recipe`, `products`, `steps`, and `edges`. This is the
+exact contract the `/import` page's `validateImportJson` accepts (it never throws — any
+problem is surfaced inline for the user to fix; it can never produce a partial write).
 
-```javascript
-import PocketBase from "pocketbase";
+### Shape
 
-const pb = new PocketBase("http://192.168.50.95:8091"); // TEST ONLY
-
-async function importRecipe() {
-  // 1. Create recipe
-  const recipe = await pb.collection("recipes").create({
-    name: "Recipe Name",
-    recipe_type: "meal", // or "batch_prep"
-  });
-
-  // 2. Existing product IDs (from test DB lookup)
-  const existing = {
-    onionYellow: "10x87sv01ut8xa7",
-    salt: "9iane0ye82u9d1m",
-    // ...
-  };
-
-  // 3. Create new products
-  const newProduct = await pb.collection("products").create({
-    name: "product name",
-    type: "raw", // raw|transient|stored|inventory
-    pantry: false,
-  });
-
-  const products = { ...existing, newProduct: newProduct.id };
-
-  // 4. Create product nodes (pass quantity/unit only on raw inputs and stored outputs)
-  const node = await pb.collection("recipe_product_nodes").create({
-    recipe: recipe.id,
-    product: products.onionYellow,
-    quantity: 0.5,
-    unit: "cup",
-  });
-
-  // 5. Create steps
-  const step = await pb.collection("recipe_steps").create({
-    recipe: recipe.id,
-    name: "Step description",
-    step_type: "prep", // prep|assembly
-    timing: "batch", // batch|just_in_time
-  });
-
-  // 6. Create edges — fan-in pattern for steps with many inputs
-  for (const src of [node.id /*, ...other input node ids */]) {
-    await pb.collection("product_to_step_edges").create({
-      recipe: recipe.id,
-      source: src,
-      target: step.id,
-    });
-  }
-  await pb.collection("step_to_product_edges").create({
-    recipe: recipe.id,
-    source: step.id,
-    target: outputNode.id,
-  });
+```json
+{
+  "recipe": {
+    "name": "Creamy Tomato Soup",
+    "notes": "optional human-facing blurb",
+    "recipe_type": "batch_prep",
+    "status": "draft"
+  },
+  "tags": [],
+  "products": [
+    {
+      "ref": "product-1",
+      "name": "onion (yellow)",
+      "unit": "cup",
+      "quantity": 0.5,
+      "matchProductId": "10x87sv01ut8xa7"
+    },
+    {
+      "ref": "product-2",
+      "name": "ancho chile",
+      "unit": "each",
+      "quantity": 2,
+      "productType": "raw",
+      "pantry": false,
+      "store": "STORE_ID_OR_NAME",
+      "section": "SECTION_ID_OR_NAME"
+    },
+    { "ref": "product-3", "name": "onion diced", "unit": "cup" }
+  ],
+  "steps": [
+    {
+      "ref": "step-1",
+      "name": "Dice onion",
+      "step_type": "prep",
+      "timing": "batch",
+      "active_minutes": 5,
+      "passive_minutes": 0,
+      "prep_action": "dice",
+      "instructions": "Small-dice the yellow onion."
+    }
+  ],
+  "edges": [
+    { "from": "product-1", "to": "step-1" },
+    { "from": "step-1", "to": "product-3" }
+  ]
 }
-
-importRecipe().catch(console.error);
 ```
 
-## Step 5: Run and Verify
+### Rules
 
-```bash
-cd recipe-planner
-node import-[recipe-name].js
-```
+- **`ref`s** follow the `product-*` / `step-*` convention (mirrors RecipeEditor's local
+  node ids, so the import id-remap ports unchanged). Every product and step needs a unique
+  `ref`. If you omit `ref`, the validator assigns `product-<n>` / `step-<n>` by position —
+  but assign them explicitly so your edges are readable.
+- **Product lines** require `name` + `unit`. Put `quantity` on raw inputs and stored
+  outputs; transient/intermediate nodes usually omit quantity.
+- **Hints** (all optional): `matchProductId` (reuse an existing product by id — strongly
+  preferred over creating a dupe), `productType` (`raw` | `transient` | `stored` |
+  `inventory`), `pantry` (bool), `fdcId` (USDA FDC id), `store`, `section`.
+- **Steps** require `name` + `step_type` (`prep` | `assembly`). Carry the full Phase-5
+  metadata where known: `timing` (`batch` | `just_in_time`), `active_minutes`,
+  `passive_minutes`, `instructions`, `prep_action`, `resource`, `oven_temp_f`,
+  `rack_slots`. (See references/schema.md for the enum values and field meanings.)
+- **Edges** are `{ "from": ref, "to": ref }`. Direction is inferred from the ref prefix:
+  `product-* → step-*` is an input; `step-* → product-*` is an output. NEVER
+  `product → product`.
+- **`recipe.status`**: set `"draft"` (the import page lands drafts). It's the default even
+  if omitted.
+- Unknown `timing`/`resource` enum values are normalized to `undefined` with a warning by
+  the validator — not a hard error. Prefer the documented enum values.
 
-User should switch UI to TEST database (green chip) and verify the recipe.
+Show the JSON to the user and confirm before handing off. This is the confirm-before-write
+step (nothing has been written yet — the page writes on paste).
 
-## Step 6: Promote to Production
+## Step 5: Hand off to the /import page
 
-After user approves the recipe in test, migrate to prod. The migration is structurally the same for any recipe — copy `recipe` + `recipe_tags` + `recipe_product_nodes` + `recipe_steps` + `product_to_step_edges` + `step_to_product_edges`, mapping product IDs by ID-first then name fallback.
+Tell the user:
 
-If the user also planned a week that includes the new recipe, migrate `weekly_plans` + `planned_meals` for that plan in the same script.
+> Paste this JSON into the **/import** page in the app and submit. It will validate the
+> graph, land it as a **draft** directly in prod, and drop you into the recipe editor for
+> review. Any unmatched products get an inline resolution prompt (pick existing / quick-
+> create / USDA) before the draft finishes landing. When you're happy, hit **Publish** in
+> the editor — that's the only step that runs the linter.
 
-Pattern (write a one-off `scripts/migrate-[thing].js`, then **delete it after running** — it's specific to one recipe/plan):
-
-```javascript
-import PocketBase from "pocketbase";
-const pbTest = new PocketBase("http://192.168.50.95:8091");
-const pbProd = new PocketBase("http://192.168.50.95:8090");
-
-const RECIPE_IDS = ["..."]; // recipe(s) to migrate
-const PLAN_ID = "...";       // optional weekly plan to migrate
-
-function strip(record) {
-  const { created, updated, collectionId, collectionName, expand, ...data } = record;
-  return data;
-}
-
-// 1) Build product ID map: ID-match first, name-match fallback, create otherwise.
-//    Carry test ID to prod when creating, so future migrations match by ID.
-// 2) For each recipe: upsert recipe, recipe_tags, nodes, steps, edges.
-//    Use the productIdMap when copying nodes; preserve node/step IDs across DBs.
-// 3) For the weekly plan (if any): upsert weekly_plan and all planned_meals.
-//
-// See `scripts/migrate-recipes-to-prod.js` (older) and `scripts/migrate-tomato-soup-and-week.js`
-// (newer, includes weekly plan support) for full reference implementations.
-
-async function main() {
-  // ... see reference implementations
-}
-
-main().catch((e) => {
-  console.error("ERROR:", e.message, e.status, e.url);
-  if (e.response?.data) console.error("response:", JSON.stringify(e.response.data, null, 2));
-  process.exit(1);
-});
-```
-
-**Pre-flight check before migrating a weekly plan**: every recipe referenced by a `planned_meals` row must already exist in prod (by ID). Verify by querying prod for each unique recipe ID; create any missing ones first.
-
-**Cleanup**: after a successful one-off migration runs, delete the script. Don't leave hardcoded RECIPE_IDS/PLAN_ID files lying around — git history is the audit trail.
+You are done. Do not run any import or migration script.
 
 ## Product Types
 
@@ -218,10 +228,10 @@ main().catch((e) => {
 
 ## Naming Conventions
 
-**Raw**: `[ingredient]` or `[ingredient] ([variant])` - lowercase
+**Raw**: `[ingredient]` or `[ingredient] ([variant])` — lowercase
 - `lemon`, `onion (yellow)`, `tomato cherry`
 
-**Transient**: `[ingredient] [action]` - action after noun, past tense
+**Transient**: `[ingredient] [action]` — action after noun, past tense
 - `parsley chopped`, `tomato cherry roasted`
 
 **Stored**: Descriptive of the prepared component
@@ -229,34 +239,59 @@ main().catch((e) => {
 
 ## Step Types
 
-- **`prep`**: Physical processing of raw fruits and vegetables into broken-down variants. Examples: chopping, dicing, slicing, zesting, mincing. These steps transform a raw ingredient into a transient "prepped" product.
-- **`assembly`**: Cooking or combining prepped ingredients, inventory items, and pantry items into intermediate or final products. Examples: roasting, sauteing, simmering, mixing, tossing with dressing.
+- **`prep`**: Physical processing of raw fruits and vegetables into broken-down variants
+  (chopping, dicing, slicing, zesting, mincing). Transforms a raw ingredient into a
+  transient "prepped" product.
+- **`assembly`**: Cooking or combining prepped ingredients, inventory items, and pantry
+  items into intermediate or final products (roasting, sauteing, simmering, mixing,
+  tossing with dressing).
 
 ## Step Timing
 
-- **`batch`**: Made ahead on prep day. Use for all prep steps and assembly steps that create stored products.
-- **`just_in_time`**: Performed at serving time. Use for final assembly steps and any steps that must be done fresh (e.g., dressing a salad, warming bread).
+- **`batch`**: Made ahead on prep day. Use for all prep steps and assembly steps that
+  create stored products.
+- **`just_in_time`**: Performed at serving time. Use for final assembly steps and anything
+  that must be done fresh (dressing a salad, warming bread).
 
 ## Database Reference
 
-See [references/schema.md](references/schema.md) for collection details and field types.
+See [references/schema.md](references/schema.md) for collection details, field types, and
+the Phase-5 `recipe_steps` metadata fields (`active_minutes`, `passive_minutes`,
+`instructions`, `prep_action`, `resource`, `oven_temp_f`, `rack_slots`) and the
+`recipes.status` lifecycle field.
 
 ## Common Gotchas
 
-- **Top-level `await` + pocketbase errors**: an unhandled rejection prints the entire pocketbase ESM bundle (~20K characters of minified code), drowning out the actual error. Always wrap script bodies in `async function main()` and use `main().catch((e) => console.error("ERROR:", e.message, e.status, e.url))`. Optionally also dump `e.response?.data` as JSON for the server's validation message.
-- **Node module resolution**: scripts that `import "pocketbase"` must live inside `recipe-planner/` (alongside its `node_modules`). Putting them in `/tmp/` or a parent directory will fail with `ERR_MODULE_NOT_FOUND`.
-- **`weekly_plans` has no `created` field**: sorting by `created` returns 400. Use `getFullList()` without `sort`, or sort client-side.
-- **Test DB drift**: prod IDs and test IDs are intended to match (see `scripts/sync-to-test.js`), but newly created products on the test side won't be in prod until migration carries the test ID over. Migration scripts must check ID first, then name, then create.
+- **Emit JSON, not a script.** The deliverable is the D-01 contract for the /import page.
+  If you catch yourself writing `pb.collection(...).create(...)` to land a recipe, stop —
+  that path is retired. The only DB access this skill makes is the READ-ONLY product
+  lookup in Step 3.
+- **Reuse products via `matchProductId`.** When Step 3 finds an existing product, always
+  put its id in the line's `matchProductId` hint. Bare `name`-only lines force the import
+  page to match/create, risking a near-duplicate.
+- **Store/section on every new non-pantry product** — omit them and the product drops out
+  of the shopping list.
+- **Top-level `await` + pocketbase errors** (for the Step 3 read query): an unhandled
+  rejection prints the entire pocketbase ESM bundle (~20K chars of minified code). Always
+  wrap the read in `async function main()` + `main().catch((e) => console.error("ERROR:",
+  e.message, e.status, e.url))`.
+- **Node module resolution**: the Step 3 read script must live inside `recipe-planner/`
+  (alongside its `node_modules`) or it fails with `ERR_MODULE_NOT_FOUND`.
 
-## Maintenance Scripts (keep these)
+## Maintenance Scripts (registry-hygiene, still useful)
 
-- `scripts/sync-to-test.js` — copy prod → test, preserving IDs. Run when test diverges or before importing a fresh recipe.
-- `scripts/find-product-matches.js` — quick category-bucketed product list. Hardcoded categories; supplement with direct DB queries (see Step 3).
+- `scripts/find-product-matches.js` — quick category-bucketed product list; supplement
+  with direct reads (Step 3).
 - `scripts/find-duplicates.js` — exact + near-duplicate detection across products.
-- `scripts/compare-product-ids.js` — verify prod/test ID alignment before any migration.
 
-One-off `import-*.js` and `migrate-*.js` scripts should be deleted after they run — git history preserves them as references.
+The old per-recipe `import-*.js` and `migrate-*.js` scripts, and the `sync-to-test.js` /
+`compare-product-ids.js` promote-ritual helpers, are no longer part of the import flow
+(the test DB is for schema/code changes only now). Do not create new ones.
 
 ## Example
 
-See `examples/white-bean-stew/` for complete flow diagram example, `examples/mushroom-shawarma-pitas/` for a meal-with-stored-component pattern, and `examples/creamy-tomato-soup/` for an inventory-as-ingredient (frozen garlic cubes) pattern.
+See `examples/white-bean-stew/` for a complete flow-diagram example,
+`examples/mushroom-shawarma-pitas/` for a meal-with-stored-component pattern, and
+`examples/creamy-tomato-soup/` for an inventory-as-ingredient (frozen garlic cubes)
+pattern. Translate the flow diagram into the JSON `products`/`steps`/`edges` arrays as
+shown in Step 4.
