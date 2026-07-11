@@ -15,6 +15,7 @@ import Outputs from "./pages/Outputs";
 import Inventory from "./pages/Inventory";
 import StepBackfill from "./pages/StepBackfill";
 import CookMode from "./pages/CookMode";
+import ImportRecipe from "./pages/Import";
 
 const theme = createTheme({
   palette: {
@@ -54,6 +55,9 @@ function App() {
             <Route path="recipes" element={<Recipes />} />
             <Route path="recipes/:id" element={<RecipeEditor />} />
             <Route path="recipes/new" element={<RecipeEditor />} />
+
+            {/* Import (IMP-02) */}
+            <Route path="import" element={<ImportRecipe />} />
 
             {/* Weekly Plans */}
             <Route path="plans" element={<WeeklyPlans />} />

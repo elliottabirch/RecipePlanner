@@ -32,6 +32,7 @@ import {
   Settings as RegistryIcon,
   Inventory2 as InventoryIcon,
   FactCheck as BackfillIcon,
+  PostAdd as ImportIcon,
 } from "@mui/icons-material";
 import DatabaseSwitcher from "./DatabaseSwitcher";
 import { useRecipeQueue } from "../hooks/useRecipeQueue";
@@ -149,6 +150,7 @@ export default function Layout() {
         {renderNav("Outputs", "/outputs", <OutputIcon />, mini)}
         {renderNav("Inventory", "/inventory", <InventoryIcon />, mini)}
         {renderNav("Step Backfill", "/step-backfill", <BackfillIcon />, mini)}
+        {renderNav("Import", "/import", <ImportIcon />, mini)}
 
         {/* Registries (collapsible submenu; in the rail its icon expands the
             drawer so the sub-items become reachable) */}
@@ -234,6 +236,8 @@ export default function Layout() {
               ? "Outputs"
               : location.pathname.includes("/step-backfill")
               ? "Step Backfill"
+              : location.pathname.includes("/import")
+              ? "Import"
               : "Meal Planner"}
           </Typography>
           <Box sx={{ flexGrow: 1 }} />
