@@ -163,12 +163,19 @@ product whose `canonical_unit` is null (it warns as missing-canonical-unit on pu
 }
 ```
 
-Hand the JSON to the user:
+**Write each accepted candidate to `import-drafts/<kebab-case-recipe-name>.json`** at the
+repo root (create `import-drafts/` if needed) — one file per recipe, ASCII-only, following
+the recipe-import skill's "Deliver the JSON as a FILE" rules (copying a large JSON out of a
+chat code block corrupts it — smart quotes, mid-string wraps, truncation). Show the JSON
+inline for review, but the file is the artifact the user imports from.
 
-> Paste this into the **/import** page and submit. It lands as a **draft** directly in prod
-> (via `buildRecipeGraph({status:"draft"})`), then drops you into the editor to review.
-> Drafts are invisible to weekly planning until you **Publish** — so accepting a suggestion
-> can never leak a half-formed recipe into a meal plan.
+Then hand off:
+
+> I wrote it to `import-drafts/<name>.json`. Open that file, copy its contents, and paste
+> into the **/import** page and submit. It lands as a **draft** directly in prod (via
+> `buildRecipeGraph({status:"draft"})`), then drops you into the editor to review. Drafts
+> are invisible to weekly planning until you **Publish** — so accepting a suggestion can
+> never leak a half-formed recipe into a meal plan.
 
 Do this once per accepted candidate. Rejected candidates are dropped — nothing is written
 for them.

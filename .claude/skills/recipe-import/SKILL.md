@@ -311,8 +311,11 @@ file), rather than relying on the rendered code block. Show the JSON inline for 
 the file is the artifact they actually import from.
 
 Practical rule:
-1. Write the object to a `.json` file (pretty-printed, ASCII quotes only — no smart quotes,
-   no `…` ellipsis, no en/em-dashes inside string values; keep instructions plain ASCII).
+1. Write the object to `import-drafts/<kebab-case-recipe-name>.json` at the repo root
+   (create the `import-drafts/` directory if it doesn't exist) — one file per recipe, named
+   from the recipe (e.g. `import-drafts/honey-garlic-roasted-broccolini.json`). Pretty-print
+   it, ASCII quotes only — no smart quotes, no `…` ellipsis, no en/em-dashes inside string
+   values; keep instructions plain ASCII.
 2. Deliver that file to the user (the inline block is for eyeballing only).
 3. Before delivering, sanity-check the file structurally: it `JSON.parse`s; every `ref` is
    unique; every product line has `name` + `unit`; every step has `name` + `step_type`;
