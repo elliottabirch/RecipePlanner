@@ -114,6 +114,38 @@ describe("planWriteBack — dangling detection (removed nodes)", () => {
   });
 });
 
+describe("planWriteBack — WR-03 duplicate source_node guard", () => {
+  it("only the first reviewed node claims a shared original id; the duplicate is a conflict created fresh", () => {
+    const graph = reviewedGraph();
+    // Both product-1 and product-new now point at the SAME original id origP.
+    graph.productNodes[1].sourceNode = "origP";
+    const { remapSeed, conflicts } = planWriteBack(graph, ["origP", "origS"]);
+    // first claimant keeps the correspondence
+    expect(remapSeed["product-1"]).toBe("origP");
+    // duplicate is NOT seeded (→ created fresh) and is reported
+    expect("product-new" in remapSeed).toBe(false);
+    expect(conflicts).toEqual(["product-new"]);
+    // no two refs ever collapse onto the same original id
+    const seededOriginals = Object.values(remapSeed);
+    expect(new Set(seededOriginals).size).toBe(seededOriginals.length);
+  });
+
+  it("reports an empty conflicts list in the normal 1:1 case", () => {
+    const { conflicts } = planWriteBack(reviewedGraph(), ["origP", "origS"]);
+    expect(conflicts).toEqual([]);
+  });
+
+  it("a duplicated original id is not double-counted as dangling", () => {
+    const graph = reviewedGraph();
+    graph.productNodes[1].sourceNode = "origP"; // duplicate claim
+    graph.steps = []; // drop origS so it dangles
+    graph.edges = [];
+    const { dangling } = planWriteBack(graph, ["origP", "origS"]);
+    // origP is still mapped (by the first claimant), only origS dangles
+    expect(dangling).toEqual(["origS"]);
+  });
+});
+
 describe("planWriteBack — recipe id is never part of the remap", () => {
   it("does not remap the recipe id even if it appears in originalNodeIds", () => {
     // originalNodeIds is strictly NODE ids; the recipe id is passed separately
