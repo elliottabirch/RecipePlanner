@@ -27,7 +27,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Product Registry Seeding** - external plain-name ingredient seed (USDA-linked via fdc_id), fuzzy search everywhere, "Search USDA" mode (completed 2026-07-07)
 - [x] **Phase 4: Weekly Planning Memory** - Plan start dates, people-multiplier, tag-based slot templates, guided-fill wizard (completed 2026-07-09)
 - [x] **Phase 5: Prep-Day Engine** - Step metadata + AI-assisted backfill, seeded GA scheduler, interactive cook mode, weights panel, linter v2
-- [ ] **Phase 6: Import Pipeline & Recipe Lifecycle** - Draft/published recipes, in-app JSON import, recipe-import skill rewrite, /suggest-recipes, evolution loop
+- [x] **Phase 6: Import Pipeline & Recipe Lifecycle** - Draft/published recipes, in-app JSON import, recipe-import skill rewrite, /suggest-recipes, evolution loop (completed 2026-07-11)
 
 ## Phase Details
 
@@ -247,7 +247,7 @@ Plans:
   4. User can attach a one-tap note to a recipe from the calendar, cook mode, or recipe card, and later see an agent-produced draft revision surfaced for review in the week wizard (IMP-05, IMP-06)
   5. Publishing a draft recipe is blocked until it passes the recipe linter; importing itself is never blocked (IMP-07)
 
-**Plans**: 10/11 plans executed
+**Plans**: 11/11 plans complete
 
 Plans:
 **Wave 1** *(parallel — schema foundation + pure import/lifecycle logic)*
@@ -268,7 +268,7 @@ Plans:
 - [x] 06-08-PLAN.md — Note capture: useRecipeNotes hook + one-tap Add-note on card/cook-mode/calendar [IMP-05]
 - [x] 06-09-PLAN.md — Week wizard "Revised — review?" revision flag [IMP-06]
 - [x] 06-10-PLAN.md — Evolution loop: pure planWriteBack + evolve-recipes note-drain/write-back skill [IMP-06]
-- [ ] 06-11-PLAN.md — Manual skills: recipe-import JSON rewrite + /suggest-recipes + constraints module [IMP-03, IMP-04]
+- [x] 06-11-PLAN.md — Manual skills: recipe-import JSON rewrite + /suggest-recipes + constraints module [IMP-03, IMP-04]
 
 ## Progress
 
@@ -282,4 +282,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6. Phases 2 and 4
 | 3. Product Registry Seeding | 6/6 | Complete   | 2026-07-07 |
 | 4. Weekly Planning Memory | 9/9 | Complete    | 2026-07-09 |
 | 5. Prep-Day Engine | 12/12 | Complete    | 2026-07-10 |
-| 6. Import Pipeline & Recipe Lifecycle | 10/11 | In Progress|  |
+| 6. Import Pipeline & Recipe Lifecycle | 11/11 | Complete   | 2026-07-11 |

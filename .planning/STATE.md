@@ -5,14 +5,14 @@ milestone_name: Workflow Redesign
 current_phase: 6
 current_phase_name: Import Pipeline & Recipe Lifecycle
 status: executing
-stopped_at: Completed 06-10-PLAN.md
-last_updated: "2026-07-11T00:24:25.133Z"
+stopped_at: Completed 06-11-PLAN.md
+last_updated: "2026-07-11T00:33:09.829Z"
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 56
   completed_plans: 56
-  percent: 83
+  percent: 100
 ---
 
 # Project State
@@ -156,6 +156,7 @@ Progress: [██████████] Phase 5 complete — 5 of 6 phases do
 | Phase 06 P07 | 12min | 2 tasks | 3 files |
 | Phase 06 P09 | 2min | 1 tasks | 1 files |
 | Phase 06 P10 | 12min | 2 tasks | 3 files |
+| Phase 06 P11 | 6min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -259,6 +260,8 @@ Recent decisions affecting current work:
 - [Phase 06-07]: In-app Import page is thin wiring over Plan 02/04 pure modules — validateImportJson (non-blocking) + scoreProduct auto-match (threshold 0.15) + buildRecipeGraph(status:draft); unmatched lines resolved inline via QuickCreateProductDialog before any write (T-06-07a/b/c)
 - [Phase 06-09]: WeekWizard flags pending draft revisions via a separate up-front getAll (revision_of != "" && status="draft") indexed client-side by revision_of — drafts are excluded from the main load by Plan 05's filter. The low-emphasis warning-outlined "Revised — review?" chip NAVIGATES to /recipes/<draftId> only (stopPropagation, never toggles the pick); the published recipe stays live and drafts stay out of the pool (D-11, IMP-06, T-06-09a)
 - [Phase ?]: planWriteBack keys remapSeed by reviewed-node ref; recipe id passed separately so the recipe record is never re-minted (D-10 write-back integrity)
+- [Phase ?]: recipe-import + /suggest-recipes emit D-01 JSON for the /import page (single write path); direct-write node scripts avoided since app api reads localStorage
+- [Phase ?]: /suggest constraints are a pure src/lib module; macro is soft (estimated:true, protein_g=0 across registry, D-08) — never a hard filter
 
 ### Pending Todos
 
@@ -290,7 +293,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-11T00:24:25.127Z
+Last session: 2026-07-11T00:33:09.823Z
 gsd-verifier passed all 5 success criteria (`05-VERIFICATION.md`, status:
 passed); `phase.complete` advanced ROADMAP/STATE to Phase 6. PROJECT.md evolved
 (Phases 3/4/5 features → Validated; scheduler/registry/rotation decisions marked
@@ -299,8 +302,8 @@ pushed/deployed): linter v2 on-demand wiring (PREP-06 close), connective-recipe
 pull-connector elision across cook mode + display surfaces, meatballs recipe
 graph fixed on PROD (form→cook split), and the cook-mode retime reshuffle bug
 (quick task 260710-jpw). Suite green at 194 tests, tsc clean.
-Stopped at: Completed 06-10-PLAN.md
+Stopped at: Completed 06-11-PLAN.md
 plan. No CONTEXT.md yet, so /gsd-discuss-phase 6 is the recommended entry.
 ⚠️ 15+ commits are unpushed (origin/main behind); the NAS deploys from GitHub,
 so none of this session's work is live on :3000 until pushed + rebuilt.
-Resume file: .planning/phases/06-import-pipeline-recipe-lifecycle/06-UI-SPEC.md
+Resume file: None
