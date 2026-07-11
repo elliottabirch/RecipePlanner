@@ -165,9 +165,14 @@ Household canonical conventions (re-read to confirm — these are the live value
 - **Oils / liquids / pastes → volume** — olive oil, soy sauce, sesame oil, butter, honey,
   miso paste are `tbsp`; maple syrup `fl_oz`. Use `tbsp`/`tsp`/`cup`/`fl_oz` (all
   inter-convertible), never a mass or count unit.
-- **`garlic minced` → `each`** (cloves), NOT `tbsp`. (It's a `raw` product with a prep verb
-  in its name, so it also trips the low-priority `prep-words` warning — that's a longstanding
-  registry choice, not something to "fix" per import.)
+- **Garlic → use `garlic cubes (frozen)` (inventory) → `garlic cube (pulled)` (transient),
+  NOT `garlic minced`.** `garlic minced` is a legacy `raw` product with a prep verb in its
+  name, so it trips `prep-words` — and the publish gate blocks on ANY finding (warning
+  included, `RecipeEditor.handlePublish`), so a new recipe using `garlic minced` can never be
+  published. Wire garlic the household way: a `garlic cubes (frozen)` line (unit `each`) → a
+  `Pull garlic cubes` **assembly** step → `garlic cube (pulled)` (unit `each`) into the dish.
+  (Same applies to ANY raw product whose name carries a prep verb — sliced/diced/minced/
+  chopped/grated/shredded — never introduce or reuse one as a raw line in a new recipe.)
 - A prep transient inherits the dimension of what feeds it: dicing a squash (`each`) yields
   `butternut squash (large dice)` whose canonical is `cup` (volume) — so the diced node is
   `cup`, not `lb`.
