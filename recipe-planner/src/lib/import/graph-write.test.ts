@@ -213,6 +213,67 @@ describe("planGraphWrites — edge direction + endpoint resolution", () => {
   });
 });
 
+describe("planGraphWrites — WR-01 clear-on-update semantics", () => {
+  it("emits explicit empty sentinels for absent clearable step fields on update", () => {
+    // A step changed assembly→prep: timing is now undefined and must be CLEARED
+    // in the DB, not left stale. On the update path undefined fields would be
+    // dropped by the PB SDK, so the planner sends "" / null instead.
+    const graph = baseGraph();
+    graph.steps = [
+      { ref: "step-1", name: "Assemble", step_type: "prep" }, // all optionals absent
+    ];
+    graph.edges = [];
+    const plan = planGraphWrites(graph, { "step-1": "dbS1" });
+    const op = plan.nodes.find((n) => n.ref === "step-1")!;
+    expect(op.op).toBe("update");
+    // select/text clear to "" ; number clears to null
+    expect(op.data.timing).toBe("");
+    expect(op.data.prep_action).toBe("");
+    expect(op.data.resource).toBe("");
+    expect(op.data.instructions).toBe("");
+    expect(op.data.active_minutes).toBeNull();
+    expect(op.data.passive_minutes).toBeNull();
+    expect(op.data.oven_temp_f).toBeNull();
+    expect(op.data.rack_slots).toBeNull();
+  });
+
+  it("clears absent product-node fields on update (quantity→null, meal_destination→\"\")", () => {
+    const graph = baseGraph();
+    graph.productNodes = [
+      { ref: "product-1", name: "Onion", unit: "each", matchProductId: "prodA" },
+    ];
+    graph.edges = [];
+    const plan = planGraphWrites(graph, { "product-1": "dbP1" });
+    const op = plan.nodes.find((n) => n.ref === "product-1")!;
+    expect(op.op).toBe("update");
+    expect(op.data.quantity).toBeNull();
+    expect(op.data.meal_destination).toBe("");
+  });
+
+  it("clears recipe notes on update but leaves create-path fields undefined", () => {
+    const graph = baseGraph();
+    graph.recipe = { name: "R" }; // no notes / recipe_type
+    const updatePlan = planGraphWrites(graph, { [RECIPE_REMAP_KEY]: "recipeX" });
+    expect(updatePlan.recipe.op).toBe("update");
+    expect(updatePlan.recipe.data.notes).toBe("");
+    expect(updatePlan.recipe.data.recipe_type).toBe("");
+
+    const createPlan = planGraphWrites(graph, {});
+    expect(createPlan.recipe.op).toBe("create");
+    // create path unchanged: undefined stays undefined (PB applies its defaults)
+    expect(createPlan.recipe.data.notes).toBeUndefined();
+    expect(createPlan.recipe.data.recipe_type).toBeUndefined();
+  });
+
+  it("does NOT overwrite a present step field with an empty sentinel on update", () => {
+    const graph = baseGraph(); // step-1 carries a full set of fields
+    const plan = planGraphWrites(graph, { "step-1": "dbS1" });
+    const op = plan.nodes.find((n) => n.ref === "step-1")!;
+    expect(op.data.timing).toBe("batch");
+    expect(op.data.active_minutes).toBe(5);
+  });
+});
+
 describe("planGraphWrites — recipe status + optional fields", () => {
   it("includes status only when set", () => {
     const withStatus = planGraphWrites(

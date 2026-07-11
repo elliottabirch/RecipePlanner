@@ -91,11 +91,20 @@ export function planGraphWrites(
   remapSeed: Record<string, string> = {}
 ): GraphWritePlan {
   // --- Recipe op -----------------------------------------------------------
+  // WR-01: on the UPDATE path a field left `undefined` is dropped by the PB SDK
+  // (JSON.stringify omits undefined keys) — so an update could only ever SET a
+  // field, never CLEAR one back to empty. Emit explicit empty sentinels
+  // (`""` for text/select, `null` for number) for clearable fields on update so
+  // blanking a field actually persists. The CREATE path is unchanged: undefined
+  // keys are dropped and PB applies its own empty defaults.
   const recipeDbId = remapSeed[RECIPE_REMAP_KEY];
+  const isRecipeUpdate = Boolean(recipeDbId);
   const recipeData: Record<string, unknown> = {
     name: graph.recipe.name,
-    notes: graph.recipe.notes,
-    recipe_type: graph.recipe.recipe_type,
+    notes: isRecipeUpdate ? graph.recipe.notes ?? "" : graph.recipe.notes,
+    recipe_type: isRecipeUpdate
+      ? graph.recipe.recipe_type ?? ""
+      : graph.recipe.recipe_type,
     ...(graph.recipe.status ? { status: graph.recipe.status } : {}),
     ...(graph.recipe.revision_of
       ? { revision_of: graph.recipe.revision_of }
@@ -109,18 +118,21 @@ export function planGraphWrites(
   const nodes: NodeWriteOp[] = [];
 
   for (const pn of graph.productNodes) {
+    const dbId = remapSeed[pn.ref];
+    const isUpdate = Boolean(dbId);
     const data: Record<string, unknown> = {
       product: pn.matchProductId,
-      quantity: pn.quantity,
+      // WR-01: clear on update — quantity is a number (→ null), meal_destination
+      // is text (→ "").
+      quantity: isUpdate ? pn.quantity ?? null : pn.quantity,
       unit: pn.unit,
-      meal_destination: pn.mealDestination,
+      meal_destination: isUpdate ? pn.mealDestination ?? "" : pn.mealDestination,
       position_x: 0,
       position_y: 0,
       ...(pn.sourceNode ? { source_node: pn.sourceNode } : {}),
     };
-    const dbId = remapSeed[pn.ref];
     nodes.push({
-      op: dbId ? "update" : "create",
+      op: isUpdate ? "update" : "create",
       collection: COLLECTION_PRODUCT_NODES,
       ref: pn.ref,
       ...(dbId ? { dbId } : {}),
@@ -129,24 +141,32 @@ export function planGraphWrites(
   }
 
   for (const step of graph.steps) {
+    const dbId = remapSeed[step.ref];
+    const isUpdate = Boolean(dbId);
+    // WR-01: clear on update. This is the concrete assembly→prep bug — a prep
+    // step must be able to blank `timing` (select → "") so the prep-day
+    // scheduler does not consume a stale serve-time timing. Number fields
+    // (active/passive minutes, oven_temp_f, rack_slots) clear with null;
+    // select/text fields (timing, prep_action, resource, instructions) with "".
     const data: Record<string, unknown> = {
       name: step.name,
       step_type: step.step_type,
-      timing: step.timing,
+      timing: isUpdate ? step.timing ?? "" : step.timing,
       position_x: 0,
       position_y: 0,
-      active_minutes: step.active_minutes,
-      passive_minutes: step.passive_minutes,
-      instructions: step.instructions,
-      prep_action: step.prep_action,
-      resource: step.resource,
-      oven_temp_f: step.oven_temp_f,
-      rack_slots: step.rack_slots,
+      active_minutes: isUpdate ? step.active_minutes ?? null : step.active_minutes,
+      passive_minutes: isUpdate
+        ? step.passive_minutes ?? null
+        : step.passive_minutes,
+      instructions: isUpdate ? step.instructions ?? "" : step.instructions,
+      prep_action: isUpdate ? step.prep_action ?? "" : step.prep_action,
+      resource: isUpdate ? step.resource ?? "" : step.resource,
+      oven_temp_f: isUpdate ? step.oven_temp_f ?? null : step.oven_temp_f,
+      rack_slots: isUpdate ? step.rack_slots ?? null : step.rack_slots,
       ...(step.sourceNode ? { source_node: step.sourceNode } : {}),
     };
-    const dbId = remapSeed[step.ref];
     nodes.push({
-      op: dbId ? "update" : "create",
+      op: isUpdate ? "update" : "create",
       collection: COLLECTION_STEPS,
       ref: step.ref,
       ...(dbId ? { dbId } : {}),
