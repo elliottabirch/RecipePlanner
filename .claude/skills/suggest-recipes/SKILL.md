@@ -49,6 +49,21 @@ Anything needing real day-of cooking is out. Proven-fit templates the household 
 **Indian dishes** (bulk-cook → freeze → serve over rice) and **Thai curries** (same) — lean
 on these shapes when you can.
 
+### Keep it simple — low ingredient count, low complexity
+
+Mental load and the tedium of prepping many small ingredients matter as much as active time.
+**Favor short ingredient lists; reduce the complexity of any complex recipe.** Two reliable
+ways to keep it simple while still tasting great:
+- **Lean on a premade sauce/paste** (curry paste, jarred sauce, tahini, pesto, etc.) instead
+  of building a sauce from many components; or
+- **Stick to the base flavors of the ingredients already in the dish** — let the food + one
+  or two accents carry it.
+
+The goal is easy to make, portion, and assemble, yet still interesting and engaging when done
+right. Exemplars: **simple roasted broccoli with garlic**; **tahini sauce over roasted veggies
+and shrimp**. When a candidate's ingredient list starts sprawling, cut it back or pick a
+premade-sauce shortcut before proposing it.
+
 ### Hard dietary rules (never violate)
 
 - **Adult dinners are pescatarian** — fish/shellfish only, never meat/poultry. And feature a
@@ -119,8 +134,8 @@ main().catch((e) => console.error("ERROR:", e.message, e.status, e.url));
 ## Step 2: Form 3-5 candidates
 
 Draft new recipes (name, ingredients, steps) that satisfy **"Household fit — what to suggest"
-above** (the make-ahead rule, hard dietary rules, and per-eater flavor steering are the real
-filter — apply them first), and that:
+above** (the make-ahead rule, low-ingredient/low-complexity preference, hard dietary rules,
+and per-eater flavor steering are the real filter — apply them first), and that:
 - **reuse existing products** — favor ingredients already in the registry (raise overlap);
 - **keep active time low** — push work into passive/unattended time where possible;
 - **front-load to prep day** — assemble-then-freeze/store, or prep-almost-fully with a small
