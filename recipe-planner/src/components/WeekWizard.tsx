@@ -460,8 +460,21 @@ export default function WeekWizard({ open, plan, onClose }: WeekWizardProps) {
               const pickedCount = picks.get(slot.id)?.size ?? 0;
               const isFull = slot.count > 0 && pickedCount >= slot.count;
               const isStaples = !!slot.prefill_from_last_week;
+              const basePool = poolForSlot(slot, recipes, recipeTagsMap);
+              const basePoolIds = new Set(basePool.map((r) => r.id));
+              // Off-pool picks (added via "+ Add other recipe", or copied
+              // forward by staples prefill) aren't tag-matched, so they'd never
+              // render from the tag pool alone — surface them here so the pick
+              // is visible and removable instead of silently invisible.
+              const pickedInSlot = picks.get(slot.id);
+              const offPoolPicked = pickedInSlot
+                ? [...pickedInSlot.keys()]
+                    .filter((id) => !basePoolIds.has(id))
+                    .map((id) => recipes.find((r) => r.id === id))
+                    .filter((r): r is Recipe => !!r)
+                : [];
               const pool = orderPoolByLRU(
-                poolForSlot(slot, recipes, recipeTagsMap),
+                [...basePool, ...offPoolPicked],
                 lastPlanned
               );
               const slotError = slotErrors.get(slot.id);
