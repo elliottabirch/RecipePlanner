@@ -171,34 +171,44 @@ async function applyRecipesFields() {
 }
 
 /**
- * D-03 / 06-RESEARCH Pitfall 1: backfill EVERY existing recipe to
- * status="published" in the SAME script, immediately after the field add. An
- * un-set select reads as "" and would vanish under a fail-closed filter — this
- * fail-open backfill guarantees nothing disappears from planning on day one.
- * Idempotent: only rows whose status !== "published" are updated.
+ * D-03 / 06-RESEARCH Pitfall 1: backfill legacy recipes with no status yet to
+ * status="published", immediately after the field add. An un-set select reads
+ * as "" and would vanish under a fail-closed filter — this fail-open backfill
+ * guarantees nothing disappears from planning on day one.
+ *
+ * Idempotent AND draft-safe (CR-01): ONLY rows whose status was never assigned
+ * ("" / null / undefined) are touched. An explicit "draft" is a live lifecycle
+ * value the phase introduces — a re-run must NEVER force-publish it. (The
+ * earlier `status !== "published"` gate also matched drafts, so any re-run once
+ * the lifecycle was in use silently promoted every draft to published — the
+ * exact data corruption this migration is supposed to protect against.)
  */
 async function backfillRecipeStatus() {
-  console.log("\n--- recipes.status: backfill all existing rows to published (D-03) ---");
+  console.log("\n--- recipes.status: backfill un-set rows to published (D-03) ---");
   const recipes = await pb.collection("recipes").getFullList();
   let updated = 0;
   for (const r of recipes) {
-    if (r.status !== "published") {
+    // Only legacy rows that were never assigned a status. Never an explicit
+    // "draft" (a live lifecycle value) and never an existing "published".
+    if (r.status === "" || r.status == null) {
       await pb.collection("recipes").update(r.id, { status: "published" });
       updated++;
     }
   }
   if (updated === 0) {
-    console.log(`  All ${recipes.length} recipe(s) already status=published — no-op (idempotent re-run confirmed)`);
+    console.log(`  All ${recipes.length} recipe(s) already carry a status — no-op (idempotent re-run confirmed)`);
   } else {
-    console.log(`  Backfilled ${updated} of ${recipes.length} recipe(s) to status=published`);
+    console.log(`  Backfilled ${updated} of ${recipes.length} recipe(s) (un-set → published)`);
   }
-  // Post-backfill assertion: NOTHING may be left un-published (fail-open guarantee).
+  // Post-backfill assertion: no row may be left with an EMPTY status (the
+  // fail-open guarantee). Explicit drafts are expected and must survive a
+  // re-run, so they are NOT stragglers.
   const check = await pb.collection("recipes").getFullList();
-  const stragglers = check.filter((r) => r.status !== "published");
+  const stragglers = check.filter((r) => r.status === "" || r.status == null);
   if (stragglers.length > 0) {
-    throw new Error(`Backfill verification FAILED: ${stragglers.length} recipe(s) still not published`);
+    throw new Error(`Backfill verification FAILED: ${stragglers.length} recipe(s) still have no status`);
   }
-  console.log(`  Verified: all ${check.length} recipe(s) read status=published`);
+  console.log(`  Verified: all ${check.length} recipe(s) carry a status (drafts preserved)`);
 }
 
 /**
