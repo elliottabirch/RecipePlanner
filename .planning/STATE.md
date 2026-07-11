@@ -5,14 +5,14 @@ milestone_name: Workflow Redesign
 current_phase: 6
 current_phase_name: Import Pipeline & Recipe Lifecycle
 status: executing
-stopped_at: Completed 06-08-PLAN.md
-last_updated: "2026-07-11T00:12:27.076Z"
+stopped_at: Completed 06-09-PLAN.md
+last_updated: "2026-07-11T00:16:53.919Z"
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 56
-  completed_plans: 54
-  percent: 96
+  completed_plans: 55
+  percent: 83
 ---
 
 # Project State
@@ -154,6 +154,7 @@ Progress: [██████████] Phase 5 complete — 5 of 6 phases do
 | Phase 06 P04 | 18min | 3 tasks | 4 files |
 | Phase 06 P06 | 6min | 1 tasks | 1 files |
 | Phase 06 P07 | 12min | 2 tasks | 3 files |
+| Phase 06 P09 | 2min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -255,6 +256,7 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 06-04]: New-Recipe create path sets status=published explicitly (Open Q1/Pitfall 3); executor generics use PocketBase RecordModel for tsc -b build
 - [Phase ?]: [Phase 06-06]: RecipeEditor recipe state was discarded (const [, setRecipe]); captured it so the draft-only Publish button conditions on status===draft and hides after publish — minimal change for D-06. handlePublish returns before any status write on findings (T-06-06a).
 - [Phase 06-07]: In-app Import page is thin wiring over Plan 02/04 pure modules — validateImportJson (non-blocking) + scoreProduct auto-match (threshold 0.15) + buildRecipeGraph(status:draft); unmatched lines resolved inline via QuickCreateProductDialog before any write (T-06-07a/b/c)
+- [Phase 06-09]: WeekWizard flags pending draft revisions via a separate up-front getAll (revision_of != "" && status="draft") indexed client-side by revision_of — drafts are excluded from the main load by Plan 05's filter. The low-emphasis warning-outlined "Revised — review?" chip NAVIGATES to /recipes/<draftId> only (stopPropagation, never toggles the pick); the published recipe stays live and drafts stay out of the pool (D-11, IMP-06, T-06-09a)
 
 ### Pending Todos
 
@@ -286,7 +288,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-11T00:12:27.070Z
+Last session: 2026-07-11T00:16:53.913Z
 gsd-verifier passed all 5 success criteria (`05-VERIFICATION.md`, status:
 passed); `phase.complete` advanced ROADMAP/STATE to Phase 6. PROJECT.md evolved
 (Phases 3/4/5 features → Validated; scheduler/registry/rotation decisions marked
