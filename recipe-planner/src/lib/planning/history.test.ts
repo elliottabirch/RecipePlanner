@@ -139,3 +139,51 @@ describe("poolForSlot — WEEK-03 tag-pool resolution (match-any)", () => {
     expect(pool).toHaveLength(0);
   });
 });
+
+describe("poolForSlot — Micah/adult split (match_all + exclude_tags)", () => {
+  it("match_all requires EVERY pool tag (Micah Proteins = protein AND micah meal)", () => {
+    const recipeTags = new Map<string, string[]>([
+      ["micah-protein", ["protein", "micah meal"]], // qualifies
+      ["adult-protein", ["protein"]], // missing micah meal — excluded
+      ["micah-green", ["green", "micah meal"]], // missing protein — excluded
+    ]);
+    const slot = { pool_tags: ["protein", "micah meal"], match_all: true };
+    const recipes = [
+      recipe("micah-protein", "MP"),
+      recipe("adult-protein", "AP"),
+      recipe("micah-green", "MG"),
+    ];
+
+    const pool = poolForSlot(slot as any, recipes as any, recipeTags);
+
+    expect(pool.map((r) => r.id)).toEqual(["micah-protein"]);
+  });
+
+  it("exclude_tags drops a recipe carrying an excluded tag (adult pool excludes micah meal)", () => {
+    const recipeTags = new Map<string, string[]>([
+      ["adult-dinner", ["pescatarian"]], // qualifies
+      ["micah-pesc", ["pescatarian", "micah meal"]], // excluded by micah meal
+    ]);
+    const slot = { pool_tags: ["pescatarian"], exclude_tags: ["micah meal"] };
+    const recipes = [recipe("adult-dinner", "AD"), recipe("micah-pesc", "MPz")];
+
+    const pool = poolForSlot(slot as any, recipes as any, recipeTags);
+
+    expect(pool.map((r) => r.id)).toEqual(["adult-dinner"]);
+  });
+
+  it("exclude_tags wins even when a pool tag also matches", () => {
+    const recipeTags = new Map<string, string[]>([
+      ["both", ["pescatarian", "micah meal"]],
+    ]);
+    const slot = { pool_tags: ["pescatarian"], exclude_tags: ["micah meal"] };
+
+    const pool = poolForSlot(
+      slot as any,
+      [recipe("both", "B")] as any,
+      recipeTags
+    );
+
+    expect(pool).toHaveLength(0);
+  });
+});

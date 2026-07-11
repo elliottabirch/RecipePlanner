@@ -63,16 +63,35 @@ function tieBreak(
 }
 
 /**
- * WEEK-03 tag-pool eligibility: a recipe is in a slot's pool if its tags
- * intersect the slot's `pool_tags` (match-any).
+ * WEEK-03 tag-pool eligibility, extended for the Micah/adult split:
+ *
+ *  - `pool_tags` (match-any by default): a recipe qualifies if its tags
+ *    intersect the slot's `pool_tags`.
+ *  - `match_all` (opt-in): the recipe must carry EVERY one of `pool_tags`.
+ *    Used by the Micah component slots so e.g. "Micah Proteins" requires both
+ *    `protein` AND `micah meal` — an adult protein never leaks into the pool.
+ *  - `exclude_tags`: a recipe carrying ANY excluded tag is dropped regardless
+ *    of the above. Used by adult slots to keep `micah meal` recipes out.
+ *
+ * A slot with no `pool_tags` has an empty pool (unchanged behaviour).
  */
 export function poolForSlot<T extends { id: string }>(
-  slot: Pick<TemplateSlot, "pool_tags">,
+  slot: Pick<TemplateSlot, "pool_tags"> &
+    Partial<Pick<TemplateSlot, "exclude_tags" | "match_all">>,
   recipes: T[],
   recipeTags: Map<string, string[]>
 ): T[] {
   const poolTagIds = new Set(slot.pool_tags);
-  return recipes.filter((recipe) =>
-    (recipeTags.get(recipe.id) || []).some((tagId) => poolTagIds.has(tagId))
-  );
+  const excludeTagIds = new Set(slot.exclude_tags ?? []);
+  const matchAll = !!slot.match_all;
+  return recipes.filter((recipe) => {
+    const tags = recipeTags.get(recipe.id) || [];
+    if (excludeTagIds.size > 0 && tags.some((tagId) => excludeTagIds.has(tagId))) {
+      return false;
+    }
+    if (poolTagIds.size === 0) return false;
+    return matchAll
+      ? slot.pool_tags.every((tagId) => tags.includes(tagId))
+      : tags.some((tagId) => poolTagIds.has(tagId));
+  });
 }

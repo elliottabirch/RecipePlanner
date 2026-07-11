@@ -5,14 +5,16 @@
 // The slot set below is the user-confirmed household shape (04-06-PLAN.md
 // Task 2 human-action gate): Staples first with prefill_from_last_week=true
 // (copy-forward, LRU wizard consumes this — WEEK-03), then dinner/micah
-// slots keyed to existing tags. `pool_tags` is match-any (04-RESEARCH.md
-// §Pool match-all semantics) — a recipe carrying ANY of a slot's pool tags
-// is eligible for that slot.
+// slots keyed to existing tags. `pool_tags` is match-any by default — a recipe
+// carrying ANY of a slot's pool tags is eligible — EXCEPT slots with
+// match_all=true (Micah component slots), which require ALL pool tags, and
+// exclude_tags, which drop a recipe carrying any listed tag (adult slots
+// exclude "micah meal"). See poolForSlot in src/lib/planning/history.ts.
 //
 // Each pool_tag is referenced by NAME here and resolved to a real `tags`
-// collection id at run time. If a named tag does not exist, the script
-// FAILS LOUDLY (prints the missing name(s), exits non-zero) rather than
-// seeding a slot with a dangling/empty pool (T-04-06b).
+// collection id at run time. Any referenced tag that does not yet exist is
+// AUTO-CREATED on a real run (the names are hardcoded in SLOTS, so there is no
+// typo/dangling-pool risk); a --dry-run just reports what it would create.
 //
 // Idempotent: the template is upserted by `name`; each slot is upserted by
 // (template, sort_order) — re-running never duplicates rows (T-04-06d).
@@ -47,6 +49,13 @@ const TEMPLATE_NAME = "Standard week";
 // wizard copies it forward from last week (WEEK-03). meal_slot values must
 // be members of the planned_meals/template_slots.meal_slot enum
 // (breakfast/lunch/dinner/snack/micah) — Pitfall 4.
+// Household slot shape (week-wizard Micah/adult split). Two pool refinements
+// beyond the original WEEK-03 match-any model:
+//   - match_all: recipe must carry EVERY pool_tag. The Micah component slots
+//     use it so "Micah Proteins" == protein AND micah meal (an adult protein
+//     never leaks in).
+//   - exclude_tags: recipe dropped if it carries ANY listed tag. The adult
+//     slots exclude "micah meal" so the two pools stay strictly separate.
 const SLOTS = [
   {
     sort_order: 0,
@@ -59,48 +68,73 @@ const SLOTS = [
   },
   {
     sort_order: 1,
-    label: "Proteins",
-    meal_slot: "dinner",
+    label: "Micah Proteins",
+    meal_slot: "micah",
     count: 2,
     day: null,
     prefill_from_last_week: false,
-    pool_tags: ["protein"],
+    pool_tags: ["protein", "micah meal"],
+    match_all: true,
   },
   {
     sort_order: 2,
-    label: "Starches",
-    meal_slot: "dinner",
-    count: 2,
-    day: null,
-    prefill_from_last_week: false,
-    pool_tags: ["starch"],
-  },
-  {
-    sort_order: 3,
-    label: "Vegetables",
-    meal_slot: "dinner",
-    count: 2,
-    day: null,
-    prefill_from_last_week: false,
-    pool_tags: ["vegetable"],
-  },
-  {
-    sort_order: 4,
-    label: "Greens/Salads",
-    meal_slot: "dinner",
+    label: "Micah Greens",
+    meal_slot: "micah",
     count: 1,
     day: null,
     prefill_from_last_week: false,
-    pool_tags: ["green"],
+    pool_tags: ["green", "micah meal"],
+    match_all: true,
+  },
+  {
+    sort_order: 3,
+    label: "Micah Starch",
+    meal_slot: "micah",
+    count: 1,
+    day: null,
+    prefill_from_last_week: false,
+    pool_tags: ["starch", "micah meal"],
+    match_all: true,
+  },
+  {
+    sort_order: 4,
+    label: "Micah Vegetables",
+    meal_slot: "micah",
+    count: 2,
+    day: null,
+    prefill_from_last_week: false,
+    pool_tags: ["vegetable", "micah meal"],
+    match_all: true,
   },
   {
     sort_order: 5,
-    label: "Micah meals",
-    meal_slot: "micah",
-    count: 3,
+    label: "Adult Dinners",
+    meal_slot: "dinner",
+    count: 4,
     day: null,
     prefill_from_last_week: false,
-    pool_tags: ["micah meal"],
+    pool_tags: ["pescatarian"],
+    exclude_tags: ["micah meal"],
+  },
+  {
+    sort_order: 6,
+    label: "Adult Lunch — pescatarian",
+    meal_slot: "lunch",
+    count: 1,
+    day: null,
+    prefill_from_last_week: false,
+    pool_tags: ["pescatarian"],
+    exclude_tags: ["micah meal"],
+  },
+  {
+    sort_order: 7,
+    label: "Adult Lunch — meat",
+    meal_slot: "lunch",
+    count: 1,
+    day: null,
+    prefill_from_last_week: false,
+    pool_tags: ["meat"],
+    exclude_tags: ["micah meal"],
   },
 ];
 
@@ -167,12 +201,15 @@ export function planTemplateAction(existingTemplate, templateName) {
 export function planSlotActions(slotsConfig, existingSlotsBySortOrder, tagIdsByName) {
   return slotsConfig.map((slot) => {
     const pool_tags = slot.pool_tags.map((name) => tagIdsByName[name]);
+    const exclude_tags = (slot.exclude_tags ?? []).map((name) => tagIdsByName[name]);
     const payload = {
       label: slot.label,
       count: slot.count,
       meal_slot: slot.meal_slot,
       day: slot.day ?? null,
       pool_tags,
+      exclude_tags,
+      match_all: !!slot.match_all,
       sort_order: slot.sort_order,
       prefill_from_last_week: !!slot.prefill_from_last_week,
     };
@@ -203,15 +240,19 @@ function printReport(templateAction, slotActions, tagIdsByName) {
 
   console.log(`\nSlots (${slotActions.length}):`);
   console.log(
-    "  sort  action        label              meal_slot  day   count  prefill  pool_tags"
+    "  sort  action        label                       meal_slot  count  all   pool_tags (- exclude_tags)"
   );
   console.log(
-    "  ----  ------------  -----------------  ---------  ----  -----  -------  ---------"
+    "  ----  ------------  --------------------------  ---------  -----  ----  --------------------------"
   );
   for (const a of slotActions) {
     const p = a.payload;
+    const pools = a.slot.pool_tags.join("+");
+    const excl = (a.slot.exclude_tags ?? []).length
+      ? ` - ${a.slot.exclude_tags.join(",")}`
+      : "";
     console.log(
-      `  ${String(p.sort_order).padEnd(4)}  ${a.action.padEnd(12)}  ${p.label.padEnd(17)}  ${p.meal_slot.padEnd(9)}  ${String(p.day ?? "-").padEnd(4)}  ${String(p.count).padEnd(5)}  ${String(p.prefill_from_last_week).padEnd(7)}  ${a.slot.pool_tags.join(",")}`
+      `  ${String(p.sort_order).padEnd(4)}  ${a.action.padEnd(12)}  ${p.label.padEnd(26)}  ${p.meal_slot.padEnd(9)}  ${String(p.count).padEnd(5)}  ${String(!!p.match_all).padEnd(4)}  ${pools}${excl}`
     );
   }
 }
@@ -255,8 +296,45 @@ async function main() {
 
   const allTags = await pb.collection("tags").getFullList();
   const tagsByName = new Map(allTags.map((t) => [normalizeName(t.name), t]));
-  const requiredTagNames = [...new Set(SLOTS.flatMap((s) => s.pool_tags))];
-  const tagIdsByName = resolveTagIds(requiredTagNames, tagsByName);
+  const requiredTagNames = [
+    ...new Set(SLOTS.flatMap((s) => [...s.pool_tags, ...(s.exclude_tags ?? [])])),
+  ];
+  const missingTagNames = requiredTagNames.filter(
+    (n) => !tagsByName.has(normalizeName(n))
+  );
+
+  // Auto-create any missing required tags. The tag names are hardcoded in SLOTS
+  // (not user input), so a missing name is simply a new pool tag the household
+  // hasn't created yet — there is no typo/dangling-pool risk that the old
+  // fail-loud guard (T-04-06b) was protecting against. Auth + backup happen up
+  // front here because creating tags is itself a mutation.
+  let authed = false;
+  let backedUp = false;
+  if (missingTagNames.length > 0 && !DRY_RUN) {
+    console.log(`\nMissing required tag(s) — will create: ${missingTagNames.join(", ")}`);
+    await authenticateSuperuser();
+    authed = true;
+    await backupBeforeSeed();
+    backedUp = true;
+    console.log("\n--- Creating missing tags ---");
+    for (const name of missingTagNames) {
+      const createdTag = await pb.collection("tags").create({ name });
+      tagsByName.set(normalizeName(name), createdTag);
+      console.log(`  Created tag "${name}" (${createdTag.id})`);
+    }
+  }
+
+  // After creation nothing is missing. In a dry-run that still has missing tags,
+  // show a "(to-create)" placeholder id so the disposition report renders.
+  const tagIdsByName =
+    missingTagNames.length > 0 && DRY_RUN
+      ? Object.fromEntries(
+          requiredTagNames.map((n) => [
+            n,
+            tagsByName.get(normalizeName(n))?.id ?? "(to-create)",
+          ])
+        )
+      : resolveTagIds(requiredTagNames, tagsByName);
 
   const existingTemplate = await pb
     .collection("week_templates")
@@ -277,12 +355,17 @@ async function main() {
   printReport(templateAction, slotActions, tagIdsByName);
 
   if (DRY_RUN) {
+    if (missingTagNames.length > 0) {
+      console.log(
+        `\nNOTE: ${missingTagNames.length} tag(s) will be created on apply: ${missingTagNames.join(", ")}`
+      );
+    }
     console.log("\nDRY RUN — no PocketBase writes performed. Re-run without --dry-run to apply.");
     return;
   }
 
-  await authenticateSuperuser();
-  await backupBeforeSeed();
+  if (!authed) await authenticateSuperuser();
+  if (!backedUp) await backupBeforeSeed();
 
   console.log("\n--- Applying template + slot upserts ---");
 

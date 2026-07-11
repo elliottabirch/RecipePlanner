@@ -2653,6 +2653,28 @@
         "required": false,
         "system": false,
         "type": "bool"
+      },
+      {
+        "cascadeDelete": false,
+        "collectionId": "pbc_4015827361",
+        "hidden": false,
+        "id": "relation_exclude_tags",
+        "maxSelect": 999,
+        "minSelect": 0,
+        "name": "exclude_tags",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "relation"
+      },
+      {
+        "hidden": false,
+        "id": "bool_match_all",
+        "name": "match_all",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "bool"
       }
     ],
     "indexes": [],

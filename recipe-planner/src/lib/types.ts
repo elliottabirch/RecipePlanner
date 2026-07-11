@@ -185,7 +185,9 @@ export interface TemplateSlot extends BaseRecord {
   count: number;
   meal_slot: MealSlot; // REQUIRED — must match planned_meals.meal_slot's required flag
   day?: Day;
-  pool_tags: string[]; // relation IDs to tags, match-any
+  pool_tags: string[]; // relation IDs to tags; match-any unless match_all is set
+  exclude_tags?: string[]; // relation IDs to tags; recipe dropped if it carries ANY (Micah/adult split)
+  match_all?: boolean; // require ALL pool_tags (default false = match-any); Micah component slots
   sort_order?: number;
   prefill_from_last_week?: boolean;
 }
