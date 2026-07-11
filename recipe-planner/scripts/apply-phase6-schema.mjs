@@ -5,7 +5,7 @@
 // apply-phase5-schema.mjs). Idempotent: every step existence-checks before
 // mutating, so re-running is a no-op (T-06-01a).
 //
-// Four changes:
+// Five changes (change (e) added post-UAT):
 // (a) recipes gains a nullable `status` select (draft|published) mirroring the
 //     existing `recipe_type` select shape (D-03), PLUS a nullable `revision_of`
 //     relation → recipes (D-10 draft→original linkage). Both additive.
@@ -23,6 +23,9 @@
 // (d) recipe_product_nodes gains a nullable `source_node` relation →
 //     recipe_product_nodes (D-10, Open Q2 option A: node correspondence for
 //     id-stable evolution write-back).
+// (e) recipe_steps gains a nullable `source_node` relation → recipe_steps
+//     (06 UAT #4: mirror (d) for STEP correspondence so a full-graph
+//     write-back can update cloned steps in place instead of churning ids).
 //
 // After a successful run against the TEST instance, the live schema is
 // re-exported to the canonical schema mirror at the REPO ROOT
@@ -363,6 +366,30 @@ async function applyRecipeProductNodesFields() {
   await applyFieldsToCollection("recipe_product_nodes", [sourceNodeField]);
 }
 
+/**
+ * 06 UAT #4: mirror the `source_node` correspondence field onto recipe_steps
+ * (→ recipe_steps, self-relation) so a draft-revision's cloned STEPS — not just
+ * its product nodes — can point back at their originals for id-stable
+ * full-graph write-back. Additive + nullable; only clone steps set it.
+ */
+async function applyRecipeStepsFields() {
+  const steps = await pb.collections.getOne("recipe_steps");
+  const sourceNodeField = {
+    id: "relation_step_source_node",
+    name: "source_node",
+    type: "relation",
+    required: false,
+    hidden: false,
+    presentable: false,
+    system: false,
+    cascadeDelete: false,
+    collectionId: steps.id, // → recipe_steps (self-relation)
+    maxSelect: 1,
+    minSelect: 0,
+  };
+  await applyFieldsToCollection("recipe_steps", [sourceNodeField]);
+}
+
 async function reExportSchema() {
   console.log("\n--- Re-exporting live schema mirror ---");
   const allCollections = await pb.collections.getFullList();
@@ -381,6 +408,7 @@ async function main() {
   await backfillRecipeStatus();
   await applyRecipeNotesCollection();
   await applyRecipeProductNodesFields();
+  await applyRecipeStepsFields();
 
   if (PB_URL === DB_URLS.test) {
     await reExportSchema();

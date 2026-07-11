@@ -12,6 +12,7 @@ import {
   Box,
   TextField,
   Button,
+  Alert,
 } from "@mui/material";
 import { NoteAdd as NoteAddIcon } from "@mui/icons-material";
 import { useRecipeNotes } from "../hooks/useRecipeNotes";
@@ -34,6 +35,7 @@ export default function AddNoteButton({
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [text, setText] = useState("");
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const open = Boolean(anchorEl);
 
@@ -45,17 +47,24 @@ export default function AddNoteButton({
   const handleClose = () => {
     setAnchorEl(null);
     setText("");
+    setError(null);
   };
 
   const handleSave = async () => {
     const trimmed = text.trim();
     if (!trimmed) return;
     setSaving(true);
+    setError(null);
     try {
       await addNote(recipeId, trimmed, sourceSurface);
       handleClose();
     } catch (err) {
+      // Surface the failure to the cook instead of swallowing it (06 UAT #1):
+      // a note against a recipe-less step (empty recipeId) previously failed
+      // silently. The button is now hidden on such nodes, but keep the visible
+      // guard so any future write failure is not lost to the console.
       console.error("Failed to save note:", err);
+      setError("Couldn't save note. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -82,6 +91,11 @@ export default function AddNoteButton({
         onClick={(e) => e.stopPropagation()}
       >
         <Box sx={{ p: 2, width: 280, display: "flex", flexDirection: "column", gap: 1 }}>
+          {error && (
+            <Alert severity="error" sx={{ py: 0 }}>
+              {error}
+            </Alert>
+          )}
           <TextField
             autoFocus
             multiline

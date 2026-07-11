@@ -121,11 +121,16 @@ export function NowNextCard({
                   label={statusChip.label}
                 />
               )}
-              <AddNoteButton
-                recipeId={instance.step.recipe}
-                sourceSurface="cook_mode"
-                size="small"
-              />
+              {/* Week-wide merged-prep nodes carry a synthetic step with an
+                  empty `recipe` (spans multiple recipes — a note has no single
+                  target), so omit the note affordance there (06 UAT #1). */}
+              {instance.step.recipe && (
+                <AddNoteButton
+                  recipeId={instance.step.recipe}
+                  sourceSurface="cook_mode"
+                  size="small"
+                />
+              )}
             </Box>
           </Box>
           <Typography variant="caption" color="text.secondary">

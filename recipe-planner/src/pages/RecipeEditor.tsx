@@ -33,6 +33,7 @@ import {
   Select,
   MenuItem,
   Chip,
+  Tooltip,
   Autocomplete,
   Divider,
 } from "@mui/material";
@@ -762,6 +763,19 @@ export default function RecipeEditor() {
   // unblocked, publishing is the one hard gate.
   const handlePublish = async () => {
     if (!id) return;
+    // A revision draft (revision_of set) must NOT be published as a fresh
+    // recipe — that mints a SECOND published recipe with a new id and orphans
+    // planned_meals/overrides, the exact thing the evolution write-back avoids
+    // (06 UAT #3, D-10). Approval happens via the evolve-recipes write-back,
+    // which writes the reviewed change onto the ORIGINAL recipe id in place.
+    if (recipe?.revision_of) {
+      setError(
+        "This is a revision draft — approve it via the evolve-recipes flow so " +
+          "the change writes onto the original recipe. Publishing here would " +
+          "create a duplicate."
+      );
+      return;
+    }
     try {
       setPublishing(true);
       setError(null);
@@ -905,16 +919,27 @@ export default function RecipeEditor() {
             {saving ? "Saving..." : "Save"}
           </Button>
 
-          {recipe?.status === "draft" && (
-            <Button
-              variant="contained"
-              color="success"
-              onClick={handlePublish}
-              disabled={publishing}
-            >
-              {publishing ? "Publishing..." : "Publish"}
-            </Button>
-          )}
+          {recipe?.status === "draft" &&
+            (recipe?.revision_of ? (
+              // Revision drafts are approved via the evolve-recipes write-back
+              // (onto the original recipe id), never plain-published (06 UAT #3).
+              <Tooltip title="Approve this revision via the evolve-recipes flow — it writes the change onto the original recipe. Publishing here would create a duplicate.">
+                <Chip
+                  color="warning"
+                  variant="outlined"
+                  label="Revision draft — approve via evolve"
+                />
+              </Tooltip>
+            ) : (
+              <Button
+                variant="contained"
+                color="success"
+                onClick={handlePublish}
+                disabled={publishing}
+              >
+                {publishing ? "Publishing..." : "Publish"}
+              </Button>
+            ))}
         </Box>
 
         {error && (

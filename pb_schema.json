@@ -1859,11 +1859,24 @@
         "required": false,
         "system": false,
         "type": "number"
+      },
+      {
+        "cascadeDelete": false,
+        "collectionId": "pbc_1735492817",
+        "hidden": false,
+        "id": "relation_step_source_node",
+        "maxSelect": 1,
+        "minSelect": 0,
+        "name": "source_node",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "relation"
       }
     ],
     "indexes": [],
     "created": "2026-01-02 00:55:42.538Z",
-    "updated": "2026-07-10 06:04:15.019Z",
+    "updated": "2026-07-11 03:38:16.225Z",
     "system": false
   },
   {

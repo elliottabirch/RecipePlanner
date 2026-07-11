@@ -134,6 +134,11 @@ export interface RecipeStep extends BaseRecord {
   resource?: "oven" | "stovetop" | "blender" | "food_processor" | "instant_pot" | "microwave" | "sous_vide" | "smoker" | "none";
   oven_temp_f?: number;
   rack_slots?: number;
+  // Evolution loop step correspondence (D-10, mirrors source_node on
+  // recipe_product_nodes): a clone step in a draft revision points back at the
+  // original published step so a full-graph write-back can update steps in
+  // place (id-stable) rather than churn ids. Nullable — only clone steps set it.
+  source_node?: string; // relation ID to recipe_steps
 }
 
 // Recipe Graph Edges

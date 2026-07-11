@@ -804,24 +804,53 @@ export default function WeeklyPlans() {
                     </Typography>
                     <Box display="flex" flexDirection="column" gap={0.5}>
                       {meals.map((meal) => (
-                        <Chip
+                        <Box
                           key={meal.id}
-                          label={`${meal.expand?.recipe?.name || "Unknown"}${
-                            meal.quantity && meal.quantity > 1
-                              ? ` (×${meal.quantity})`
-                              : ""
-                          }`}
-                          onDelete={() => handleDeleteClick("meal", meal)}
-                          size="small"
                           sx={{
+                            px: 1,
+                            py: 0.5,
                             backgroundColor: tagColor,
                             color: "white",
-                            justifyContent: "space-between",
-                            "& .MuiChip-deleteIcon": {
-                              color: "rgba(255,255,255,0.7)",
-                            },
+                            borderRadius: 4,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.5,
                           }}
-                        />
+                        >
+                          <Typography
+                            variant="caption"
+                            sx={{ color: "inherit", lineHeight: 1.2, flex: 1 }}
+                          >
+                            {meal.expand?.recipe?.name || "Unknown"}
+                            {meal.quantity &&
+                              meal.quantity > 1 &&
+                              ` (×${meal.quantity})`}
+                          </Typography>
+                          <Box
+                            sx={{ color: "rgba(255,255,255,0.9)", flexShrink: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <AddNoteButton
+                              recipeId={meal.recipe}
+                              sourceSurface="calendar"
+                              size="small"
+                            />
+                          </Box>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteClick("meal", meal);
+                            }}
+                            sx={{
+                              p: 0,
+                              color: "rgba(255,255,255,0.7)",
+                              flexShrink: 0,
+                            }}
+                          >
+                            <DeleteIcon sx={{ fontSize: 14 }} />
+                          </IconButton>
+                        </Box>
                       ))}
                     </Box>
                   </Box>
@@ -883,20 +912,50 @@ export default function WeeklyPlans() {
                   </Typography>
                   <Box display="flex" flexWrap="wrap" gap={1}>
                     {weekSpanningMeals.map((meal) => (
-                      <Chip
+                      <Box
                         key={meal.id}
-                        label={`${meal.expand?.recipe?.name || "Unknown"} (${
-                          meal.meal_slot
-                        })`}
-                        onDelete={() => handleDeleteClick("meal", meal)}
                         sx={{
+                          px: 1,
+                          py: 0.5,
                           backgroundColor: SLOT_COLORS[meal.meal_slot],
                           color: "white",
-                          "& .MuiChip-deleteIcon": {
-                            color: "rgba(255,255,255,0.7)",
-                          },
+                          borderRadius: 4,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.5,
                         }}
-                      />
+                      >
+                        <Typography
+                          variant="caption"
+                          sx={{ color: "inherit", lineHeight: 1.2 }}
+                        >
+                          {meal.expand?.recipe?.name || "Unknown"} ({meal.meal_slot})
+                        </Typography>
+                        <Box
+                          sx={{ color: "rgba(255,255,255,0.9)", flexShrink: 0 }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <AddNoteButton
+                            recipeId={meal.recipe}
+                            sourceSurface="calendar"
+                            size="small"
+                          />
+                        </Box>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteClick("meal", meal);
+                          }}
+                          sx={{
+                            p: 0,
+                            color: "rgba(255,255,255,0.7)",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <DeleteIcon sx={{ fontSize: 14 }} />
+                        </IconButton>
+                      </Box>
                     ))}
                   </Box>
                 </Box>

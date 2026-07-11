@@ -293,7 +293,14 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-11T00:33:09.823Z
+Session resumed 2026-07-10: Phase 6 shipped + UAT'd. User elected to FIX ALL 4
+open UAT findings inline (not phase 6.1): #1 cook-mode note on merged-prep, #3
+revision-draft publish duplicate, #2 note icon on all chips, #4
+recipe_steps.source_node. Work in progress on `main`.
+
+---
+
+Prior — Last session: 2026-07-11T00:33:09.823Z
 gsd-verifier passed all 5 success criteria (`05-VERIFICATION.md`, status:
 passed); `phase.complete` advanced ROADMAP/STATE to Phase 6. PROJECT.md evolved
 (Phases 3/4/5 features → Validated; scheduler/registry/rotation decisions marked

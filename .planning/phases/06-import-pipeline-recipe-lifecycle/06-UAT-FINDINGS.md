@@ -16,7 +16,15 @@ Running record of the hands-on UAT against the deployed app (prod, :3000 / PB :8
 - **Publish gate over-blocked stored outputs** (`5cd8ed6`) — `missing-store-section` flagged every recipe's stored output (all 58 existing stored products have no store — they're made, not bought). Rule now exempts `stored` like it already did `transient`.
 - **Data:** aligned the "lemon, preserved" fixture product `canonical_unit` `oz → each` (cross-dimension vs the `each` node).
 
-## Open findings / TODO
+## Resolved (2026-07-10, all 4 fixed in one pass)
+All four findings below were fixed inline (tsc clean, 282/282 tests green), schema
+applied to test+prod, pushed + redeployed to the NAS.
+1. **#1 cook-mode note** — `NowNextCard` now omits `AddNoteButton` when `instance.step.recipe` is empty (merged-prep synthetic step spans recipes); `AddNoteButton.handleSave` surfaces failures via an inline `Alert` instead of console-only.
+2. **#2 note icon on all chips** — Micah-section + week-spanning chips converted from `<Chip>` to the day-grid `<Box>` row so they carry the one-tap `AddNoteButton` + delete.
+3. **#3 revision publish duplicate** — `RecipeEditor.handlePublish` guards on `revision_of` (blocks + explains); the Publish button is replaced by a "Revision draft — approve via evolve" chip for revision drafts. Approval stays the in-place write-back onto the original id.
+4. **#4 recipe_steps.source_node** — added the nullable self-relation to `recipe_steps` (test + prod), mirrored `source_node` onto the `RecipeStep` type; write-back code already wrote the field.
+
+## Original findings (for reference)
 1. **[bug] Cook-mode note fails on merged-prep nodes (06-08).** `NowNextCard` passes `recipeId={instance.step.recipe}`, but week-wide merged-prep StepInstances carry a synthetic `step` with empty `recipe` → `addNote("")` fails, and `AddNoteButton.handleSave` swallows the error (console-only). Fix: derive recipe id from `plannedMealId → planned_meals.recipe`; disable/hide the note button on merged nodes (`mergedMembers` present — ambiguous across recipes); surface save errors to the user instead of swallowing.
 2. **[enhancement] Note icon on all meal chips.** The one-tap note is currently only on day-assigned meal chips. It should also appear on the person/"Micah" meals section chips and the week-spanning chips above the calendar — every recipe chip should offer the note affordance.
 3. **[bug] Publish button on a revision draft creates a duplicate (06-06 × evolution loop).** `handlePublish` flips `status→published` on any draft, ignoring `revision_of`. Publishing a revision draft mints a SECOND published recipe with a new id, orphaning `planned_meals`/overrides — the exact thing D-10's in-place branch avoids. Fix: on a draft with `revision_of` set, the RecipeEditor should route to the evolve-recipes write-back (approve → write onto the original id) instead of normal publish — hide/relabel the Publish button as "Approve revision", or block plain publish when `revision_of` is set.
