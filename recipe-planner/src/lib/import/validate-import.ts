@@ -5,9 +5,10 @@
  *
  * FIRST-CLASS INVARIANT: `validateImportJson` NEVER throws and NEVER blocks.
  * Every failure mode (malformed JSON, a product line missing name/unit, a step
- * missing step_type, a dangling edge ref) is surfaced as an `ImportError` list
- * rather than propagated — so the import UI renders problems inline and a bad
- * paste can never produce a partial graph write (threat T-06-02a/T-06-02b).
+ * missing step_type, a dangling edge ref, an incoherent edge direction) is
+ * surfaced as an `ImportError` list rather than propagated — so the import UI
+ * renders problems inline and a bad paste can never produce a partial graph
+ * write or a silently-dropped edge (threat T-06-02a/T-06-02b).
  *
  * Unknown `resource`/`timing` enum values normalize to `undefined` + a warning
  * (never a hard reject), mirroring `loadRecipe`'s `|| undefined` idiom
@@ -176,6 +177,11 @@ export function validateImportJson(raw: string | unknown): ValidateImportResult 
   }
   const productNodes: NormalizedProductNode[] = [];
   const refs = new Set<string>();
+  // WR-02: track the KIND of each declared ref so edge direction can be
+  // validated (product→step / step→product) instead of silently dropped
+  // downstream by buildRecipeGraph's direction inference.
+  const productRefs = new Set<string>();
+  const stepRefs = new Set<string>();
   productsRaw.forEach((entry, i) => {
     const label = `products[${i}]`;
     if (!isPlainObject(entry)) {
@@ -192,6 +198,7 @@ export function validateImportJson(raw: string | unknown): ValidateImportResult 
       errors.push(err(`${label} has a duplicate ref "${ref}"`));
     }
     refs.add(ref);
+    productRefs.add(ref);
 
     if (!name || !unit) return; // don't emit a half-built node
 
@@ -233,6 +240,7 @@ export function validateImportJson(raw: string | unknown): ValidateImportResult 
       errors.push(err(`${label} has a duplicate ref "${ref}"`));
     }
     refs.add(ref);
+    stepRefs.add(ref);
 
     const stepTypeRaw = entry.step_type;
     if (stepTypeRaw == null || stepTypeRaw === "") {
@@ -302,7 +310,12 @@ export function validateImportJson(raw: string | unknown): ValidateImportResult 
     steps.push(step);
   });
 
-  // 5. Edges — each {from,to} ref must resolve to a declared node.
+  // 5. Edges — each {from,to} ref must resolve to a declared node AND the pair
+  //    must form a coherent direction (product→step or step→product). WR-02:
+  //    buildRecipeGraph infers edge direction from node kind, so a product↔
+  //    product / step↔step edge has no valid edge collection and would be
+  //    silently dropped on write. Surfacing it as an ImportError here keeps the
+  //    validator's `ok:true` an honest promise that every edge survives.
   const edgesRaw = Array.isArray(parsed.edges) ? parsed.edges : [];
   if (!Array.isArray(parsed.edges)) {
     errors.push(err("edges must be an array"));
@@ -326,9 +339,22 @@ export function validateImportJson(raw: string | unknown): ValidateImportResult 
     if (!refs.has(to)) {
       errors.push(err(`${label} references a missing node "${to}"`));
     }
-    if (refs.has(from) && refs.has(to)) {
-      edges.push({ from, to });
+    if (!refs.has(from) || !refs.has(to)) return;
+
+    // Both endpoints are declared → each is exactly one kind (a ref shared by a
+    // product and a step is already a duplicate-ref error above).
+    const fromIsProduct = productRefs.has(from);
+    const toIsProduct = productRefs.has(to);
+    if (fromIsProduct === toIsProduct) {
+      const kind = fromIsProduct ? "product" : "step";
+      errors.push(
+        err(
+          `${label} connects two ${kind} nodes ("${from}" → "${to}"); an edge must run product→step or step→product`
+        )
+      );
+      return;
     }
+    edges.push({ from, to });
   });
 
   // 6. Tags (optional).

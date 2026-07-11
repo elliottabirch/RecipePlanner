@@ -118,6 +118,43 @@ describe("validateImportJson — never-throw contract normalizer", () => {
     }
   });
 
+  it("rejects an edge connecting two product nodes (incoherent direction, WR-02)", () => {
+    const p = validPayload();
+    p.edges.push({ from: "product-1", to: "product-2" });
+    const result = validateImportJson(p);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(
+        result.errors.some(
+          (e) => /two product nodes/i.test(e.message) && e.message.includes("product-1")
+        )
+      ).toBe(true);
+    }
+  });
+
+  it("rejects an edge connecting two step nodes (incoherent direction, WR-02)", () => {
+    const p = validPayload();
+    p.steps.push({ ref: "step-2", name: "Chill", step_type: "assembly" });
+    p.edges.push({ from: "step-1", to: "step-2" });
+    const result = validateImportJson(p);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors.some((e) => /two step nodes/i.test(e.message))).toBe(true);
+    }
+  });
+
+  it("accepts both product→step and step→product coherent edges", () => {
+    const p = validPayload();
+    // add a step→product edge (e.g. a step producing an output product)
+    p.products.push({ ref: "product-3", name: "Hummus", unit: "g", quantity: 460 });
+    p.edges.push({ from: "step-1", to: "product-3" });
+    const result = validateImportJson(p);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.graph.edges).toContainEqual({ from: "step-1", to: "product-3" });
+    }
+  });
+
   it("normalizes an unknown resource enum to undefined with a warning, graph still ok", () => {
     const p = validPayload();
     (p.steps[0] as { resource: string }).resource = "laser-oven";

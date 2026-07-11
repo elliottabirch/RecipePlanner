@@ -80,10 +80,14 @@ export interface GraphWritePlan {
  *
  * Ports the verified handleSave contract (RecipeEditor.tsx 704-813):
  *  - a ref present in `remapSeed` → `update` in place (that dbId); absent → `create`
- *  - edges are recreated each save; direction inferred from the `product-*` /
- *    `step-*` ref prefix; an edge is skipped when either endpoint ref does not
- *    resolve (not a graph node and not seeded) or is a product↔product /
- *    step↔step pair (no valid edge collection)
+ *  - edges are recreated each save; direction is resolved from each endpoint's
+ *    node KIND (a product node vs a step node in the graph), falling back to the
+ *    `product-*` / `step-*` ref prefix only for refs present solely in
+ *    `remapSeed` (WR-02: kind resolution stops a valid edge between
+ *    non-prefixed node refs from being silently dropped). An edge is skipped
+ *    when either endpoint ref does not resolve (not a graph node and not seeded)
+ *    or is a product↔product / step↔step pair (no valid edge collection —
+ *    `validateImportJson` rejects these before they reach here)
  *  - positions are emitted as {x:0,y:0} (non-load-bearing; loadRecipe re-runs dagre)
  */
 export function planGraphWrites(
@@ -179,17 +183,35 @@ export function planGraphWrites(
   // handleSave's newNodeDbIds = {...seed, ...created}: every graph node ends
   // up with a dbId, and seeded refs are already present.
   const resolvable = new Set<string>();
-  for (const pn of graph.productNodes) resolvable.add(pn.ref);
-  for (const step of graph.steps) resolvable.add(step.ref);
+  const productRefs = new Set<string>();
+  const stepRefs = new Set<string>();
+  for (const pn of graph.productNodes) {
+    resolvable.add(pn.ref);
+    productRefs.add(pn.ref);
+  }
+  for (const step of graph.steps) {
+    resolvable.add(step.ref);
+    stepRefs.add(step.ref);
+  }
   for (const key of Object.keys(remapSeed)) {
     if (key !== RECIPE_REMAP_KEY) resolvable.add(key);
   }
 
+  // WR-02: resolve direction from node kind, not the ref string. A ref present
+  // only in `remapSeed` (an evolution write-back seed) has no declared node
+  // here, so fall back to the `product-*` convention for those — RecipeEditor's
+  // local node ids always follow it.
+  const refIsProduct = (ref: string): boolean => {
+    if (productRefs.has(ref)) return true;
+    if (stepRefs.has(ref)) return false;
+    return ref.startsWith("product");
+  };
+
   const edges: EdgeWriteOp[] = [];
   for (const edge of graph.edges) {
     if (!resolvable.has(edge.from) || !resolvable.has(edge.to)) continue;
-    const sourceIsProduct = edge.from.startsWith("product");
-    const targetIsProduct = edge.to.startsWith("product");
+    const sourceIsProduct = refIsProduct(edge.from);
+    const targetIsProduct = refIsProduct(edge.to);
     if (sourceIsProduct && !targetIsProduct) {
       edges.push({
         collection: COLLECTION_PRODUCT_TO_STEP,
