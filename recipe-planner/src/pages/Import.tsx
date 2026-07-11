@@ -12,7 +12,7 @@ import {
   Stack,
   CircularProgress,
 } from "@mui/material";
-import { getAll, create, collections } from "../lib/api";
+import { getAll, create, remove, collections } from "../lib/api";
 import { type Product, ProductType } from "../lib/types";
 import { normalizeUnit } from "../lib/units";
 import {
@@ -49,6 +49,37 @@ import { QuickCreateProductDialog } from "../components/outputs/QuickCreateProdu
 // the user reviews near-misses rather than silently mis-matching.
 const AUTO_MATCH_THRESHOLD = 0.15;
 
+/**
+ * PocketBase surfaces validation failures as a generic `ClientResponseError`
+ * whose `.message` is just "Failed to create record." — the useful per-field
+ * reasons live in `.response.data` (e.g. `{ prep_action: { message: "Invalid
+ * value." } }`). Flatten those so the land-error Alert tells the user WHICH
+ * field PB rejected instead of a dead-end generic message.
+ */
+function describeWriteError(e: unknown): string {
+  if (e && typeof e === "object" && "response" in e) {
+    const resp = (e as {
+      response?: {
+        data?: Record<string, { message?: string } | unknown>;
+        message?: string;
+      };
+    }).response;
+    const fieldMap = resp?.data;
+    if (fieldMap && typeof fieldMap === "object") {
+      const parts = Object.entries(fieldMap).map(([field, v]) => {
+        const msg =
+          v && typeof v === "object" && "message" in v
+            ? (v as { message?: string }).message
+            : undefined;
+        return `${field}: ${msg ?? "invalid"}`;
+      });
+      if (parts.length) return parts.join("; ");
+    }
+    if (resp?.message) return resp.message;
+  }
+  return e instanceof Error ? e.message : String(e);
+}
+
 export default function ImportRecipe() {
   const navigate = useNavigate();
 
@@ -80,6 +111,11 @@ export default function ImportRecipe() {
   );
   const [landing, setLanding] = useState(false);
   const [landError, setLandError] = useState<string | null>(null);
+  // Product ids freshly created for this paste's made products (recipe
+  // outputs). If the land fails they are orphans (their recipe was rolled back),
+  // and — worse — they'd auto-match on the next paste and dangle once cleaned.
+  // Tracked so a failed land removes them, leaving the registry as it was.
+  const [madeCreatedIds, setMadeCreatedIds] = useState<string[]>([]);
 
   useEffect(() => {
     getAll<Product>(collections.products, { sort: "name" })
@@ -95,7 +131,8 @@ export default function ImportRecipe() {
    */
   const landDraft = async (
     g: NormalizedGraph,
-    m: Record<string, string>
+    m: Record<string, string>,
+    madeIds: string[]
   ) => {
     setLanding(true);
     setLandError(null);
@@ -112,10 +149,19 @@ export default function ImportRecipe() {
       navigate("/recipes/" + recipeId);
     } catch (e) {
       console.error("Failed to land import draft:", e);
-      setLandError(
-        "Couldn't land the draft. " +
-          (e instanceof Error ? e.message : String(e))
+      // buildRecipeGraph rolls back its own recipe/nodes/steps/edges on the
+      // create path; the made products were created earlier (here), so clean
+      // them up too — otherwise they orphan and poison the next paste.
+      await Promise.all(
+        madeIds.map((id) =>
+          remove(collections.products, id).catch(() => {})
+        )
       );
+      if (madeIds.length) {
+        setProducts((ps) => ps.filter((p) => !madeIds.includes(p.id)));
+        setMadeCreatedIds([]);
+      }
+      setLandError("Couldn't land the draft. " + describeWriteError(e));
       setLanding(false);
     }
     // note: no finally-clear on success — we navigate away.
@@ -152,6 +198,7 @@ export default function ImportRecipe() {
     // as a stored/transient product (no store/section prompt).
     const nextMatches: Record<string, string> = {};
     const unresolved: string[] = [];
+    const madeIds: string[] = [];
     let madeCreated = 0;
     for (const pn of g.productNodes) {
       if (pn.matchProductId) {
@@ -182,6 +229,7 @@ export default function ImportRecipe() {
         });
         nextMatches[pn.ref] = created.id;
         localProducts.push(created);
+        madeIds.push(created.id);
         madeCreated += 1;
       } catch (e) {
         console.error("Failed to auto-create made product:", pn.name, e);
@@ -193,6 +241,7 @@ export default function ImportRecipe() {
     setGraph(g);
     setMatches(nextMatches);
     setUnresolvedRefs(unresolved);
+    setMadeCreatedIds(madeIds);
     setParseInfo({
       ingredients: g.productNodes.length,
       steps: g.steps.length,
@@ -202,7 +251,7 @@ export default function ImportRecipe() {
 
     // Fully resolved on first pass → land immediately (no gate).
     if (unresolved.length === 0) {
-      void landDraft(g, nextMatches);
+      void landDraft(g, nextMatches, madeIds);
     }
   };
 
@@ -386,7 +435,7 @@ export default function ImportRecipe() {
         <Button
           variant="contained"
           color="primary"
-          onClick={() => graph && landDraft(graph, matches)}
+          onClick={() => graph && landDraft(graph, matches, madeCreatedIds)}
           disabled={landing}
           sx={{ minHeight: 48 }}
         >

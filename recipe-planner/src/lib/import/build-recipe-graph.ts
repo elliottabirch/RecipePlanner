@@ -259,61 +259,86 @@ export async function buildRecipeGraph(
 
   const plan = planGraphWrites(graph, planSeed);
 
-  // 1. Recipe.
-  let recipeId: string;
-  if (plan.recipe.op === "update") {
-    await update(collections.recipes, plan.recipe.dbId!, plan.recipe.data);
-    recipeId = plan.recipe.dbId!;
-  } else {
-    const created = await create<RecordModel>(
-      collections.recipes,
-      plan.recipe.data
-    );
-    recipeId = created.id;
-  }
+  // Rollback bookkeeping — only for the brand-new-recipe (create) path. A
+  // partially-written import (e.g. one step whose select value PB rejects) used
+  // to leave an orphan recipe + partial nodes that poisoned the next attempt
+  // (its auto-created products then auto-matched on retry). On the create path
+  // we now delete everything THIS call created if any write throws, so a failed
+  // import leaves no partial. The update path (evolution write-back) is left
+  // exactly as before — its updates aren't cleanly reversible, so we don't try.
+  const isNewRecipe = !opts?.recipeId;
+  let createdRecipeId: string | null = null;
+  const createdRecords: { collection: string; id: string }[] = [];
 
-  // 2. Nodes — inject the recipe relation, create or update, record dbIds.
-  const nodeDbIds: Record<string, string> = { ...seed };
-  for (const nodeOp of plan.nodes) {
-    const data = { recipe: recipeId, ...nodeOp.data };
-    if (nodeOp.op === "update") {
-      await update(nodeOp.collection, nodeOp.dbId!, data);
-      nodeDbIds[nodeOp.ref] = nodeOp.dbId!;
+  try {
+    // 1. Recipe.
+    let recipeId: string;
+    if (plan.recipe.op === "update") {
+      await update(collections.recipes, plan.recipe.dbId!, plan.recipe.data);
+      recipeId = plan.recipe.dbId!;
     } else {
       const created = await create<RecordModel>(
-        nodeOp.collection,
-        data
+        collections.recipes,
+        plan.recipe.data
       );
-      nodeDbIds[nodeOp.ref] = created.id;
+      recipeId = created.id;
+      createdRecipeId = created.id;
     }
-  }
 
-  // 3. Edges — delete all existing (existing-recipe path only), then recreate.
-  if (opts?.recipeId) {
-    const [oldPts, oldStp] = await Promise.all([
-      getAll<RecordModel>(collections.productToStepEdges, {
-        filter: `recipe="${recipeId}"`,
-      }),
-      getAll<RecordModel>(collections.stepToProductEdges, {
-        filter: `recipe="${recipeId}"`,
-      }),
-    ]);
-    await Promise.all([
-      ...oldPts.map((e) => remove(collections.productToStepEdges, e.id)),
-      ...oldStp.map((e) => remove(collections.stepToProductEdges, e.id)),
-    ]);
-  }
+    // 2. Nodes — inject the recipe relation, create or update, record dbIds.
+    const nodeDbIds: Record<string, string> = { ...seed };
+    for (const nodeOp of plan.nodes) {
+      const data = { recipe: recipeId, ...nodeOp.data };
+      if (nodeOp.op === "update") {
+        await update(nodeOp.collection, nodeOp.dbId!, data);
+        nodeDbIds[nodeOp.ref] = nodeOp.dbId!;
+      } else {
+        const created = await create<RecordModel>(nodeOp.collection, data);
+        nodeDbIds[nodeOp.ref] = created.id;
+        createdRecords.push({ collection: nodeOp.collection, id: created.id });
+      }
+    }
 
-  for (const edgeOp of plan.edges) {
-    const sourceDbId = nodeDbIds[edgeOp.sourceRef];
-    const targetDbId = nodeDbIds[edgeOp.targetRef];
-    if (!sourceDbId || !targetDbId) continue; // handleSave line 799 guard
-    await create(edgeOp.collection, {
-      recipe: recipeId,
-      source: sourceDbId,
-      target: targetDbId,
-    });
-  }
+    // 3. Edges — delete all existing (existing-recipe path only), then recreate.
+    if (opts?.recipeId) {
+      const [oldPts, oldStp] = await Promise.all([
+        getAll<RecordModel>(collections.productToStepEdges, {
+          filter: `recipe="${recipeId}"`,
+        }),
+        getAll<RecordModel>(collections.stepToProductEdges, {
+          filter: `recipe="${recipeId}"`,
+        }),
+      ]);
+      await Promise.all([
+        ...oldPts.map((e) => remove(collections.productToStepEdges, e.id)),
+        ...oldStp.map((e) => remove(collections.stepToProductEdges, e.id)),
+      ]);
+    }
 
-  return { recipeId, nodeDbIds };
+    for (const edgeOp of plan.edges) {
+      const sourceDbId = nodeDbIds[edgeOp.sourceRef];
+      const targetDbId = nodeDbIds[edgeOp.targetRef];
+      if (!sourceDbId || !targetDbId) continue; // handleSave line 799 guard
+      const createdEdge = await create<RecordModel>(edgeOp.collection, {
+        recipe: recipeId,
+        source: sourceDbId,
+        target: targetDbId,
+      });
+      createdRecords.push({ collection: edgeOp.collection, id: createdEdge.id });
+    }
+
+    return { recipeId, nodeDbIds };
+  } catch (err) {
+    if (isNewRecipe) {
+      // Best-effort rollback (reverse order: edges/nodes/steps, then recipe).
+      // Swallow individual delete failures — the original error is what matters.
+      for (const r of createdRecords.reverse()) {
+        await remove(r.collection, r.id).catch(() => {});
+      }
+      if (createdRecipeId) {
+        await remove(collections.recipes, createdRecipeId).catch(() => {});
+      }
+    }
+    throw err;
+  }
 }

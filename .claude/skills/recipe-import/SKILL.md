@@ -94,6 +94,23 @@ Common reuse opportunities you might miss:
   (inventory) via a **`Pull out garlic cubes` assembly step** (not a prep step) producing
   `garlic cube (pulled)` (transient). This applies to any tracked inventory ingredient.
 - Distinct varieties (e.g. `paprika smoked` vs `paprika`) should stay separate products.
+- **Fresh vs dried herbs are distinct products but the registry may only have one.** If a
+  recipe wants dried thyme and only `thyme (fresh)` exists, either reuse `thyme (fresh)`
+  (adjust the quantity — the recipe usually gives both) via `matchProductId`, or create a
+  new `thyme dried`. Don't leave it to auto-match, which will silently bind fresh→dried.
+
+### Silent auto-match trap (the `red wine` → `red wine vinegar` bug)
+
+The /import page auto-matches a product line to an existing product when the fuzzy score is
+≤ 0.15 — and it does this BEFORE showing the user anything, with no prompt. A new raw
+product whose name is a substring/near-match of an existing DIFFERENT product gets silently
+bound to the wrong one (`"red wine"` matches `"red wine vinegar"` at 0.057). To avoid it:
+- If you intend a SPECIFIC existing product, always set `matchProductId` — never rely on
+  the auto-matcher to pick.
+- If the product is genuinely NEW and a confusable near-match exists in the registry, say
+  so explicitly in your handoff ("red wine will auto-match to red wine vinegar — fix it in
+  the editor after landing, or I can pre-create it") so the user knows to correct it. There
+  is no JSON hint that forces "create new, don't auto-match."
 
 ### Store + section hints (REQUIRED for every new non-pantry product)
 
@@ -204,15 +221,46 @@ problem is surfaced inline for the user to fix; it can never produce a partial w
 Show the JSON to the user and confirm before handing off. This is the confirm-before-write
 step (nothing has been written yet — the page writes on paste).
 
+### Deliver the JSON as a FILE, not just an inline block (copy-safety)
+
+The /import page's `validateImportJson` is total and won't throw, but it parses **the exact
+text the user pastes** — and copying a large JSON out of a chat/terminal code block reliably
+corrupts it: hard newlines get inserted mid-string at the wrap column, straight quotes get
+"smartened" to curly quotes (`"` → `"` `"`), and long blocks get silently truncated. Any of
+these makes the paste fail. **Always write the emitted JSON to a real `.json` file and hand
+that file to the user** so they can open it in an editor and copy clean text (or paste the
+file), rather than relying on the rendered code block. Show the JSON inline for review, but
+the file is the artifact they actually import from.
+
+Practical rule:
+1. Write the object to a `.json` file (pretty-printed, ASCII quotes only — no smart quotes,
+   no `…` ellipsis, no en/em-dashes inside string values; keep instructions plain ASCII).
+2. Deliver that file to the user (the inline block is for eyeballing only).
+3. Before delivering, sanity-check the file structurally: it `JSON.parse`s; every `ref` is
+   unique; every product line has `name` + `unit`; every step has `name` + `step_type`;
+   every edge's `from`/`to` resolves and runs product↔step (never product→product); every
+   step has ≥1 inbound and ≥1 outbound edge. Also list every line that will create a NEW
+   product (no `matchProductId`) and confirm each buyable one carries a `store` hint.
+4. **Validate every SELECT value against the real schema enums** (the #1 real-world import
+   failure): `recipe.recipe_type ∈ {meal, batch_prep}`; each step's
+   `step_type ∈ {prep, assembly}`, `timing ∈ {batch, just_in_time}`,
+   `prep_action ∈ {sliced, diced, minced, chopped, grated, shredded}`,
+   `resource ∈ {oven, stovetop, blender, food_processor, instant_pot, microwave, sous_vide,
+   smoker, none}`. A bad `prep_action`/`step_type`/`recipe_type` is a HARD 400 that fails
+   the whole import (only `timing`/`resource` soft-normalize). Grep the schema mirror
+   (`pb_schema.json`) for the live `values=[...]` if unsure — don't trust memory.
+
 ## Step 5: Hand off to the /import page
 
 Tell the user:
 
-> Paste this JSON into the **/import** page in the app and submit. It will validate the
-> graph, land it as a **draft** directly in prod, and drop you into the recipe editor for
-> review. Any unmatched products get an inline resolution prompt (pick existing / quick-
-> create / USDA) before the draft finishes landing. When you're happy, hit **Publish** in
-> the editor — that's the only step that runs the linter.
+> Open the JSON **file** I handed you (don't copy from the chat code block — that introduces
+> line-wrap/smart-quote artifacts that fail the paste), copy its contents, and paste into the
+> **/import** page in the app and submit. It will validate the graph, land it as a **draft**
+> directly in prod, and drop you into the recipe editor for review. Any unmatched products
+> get an inline resolution prompt (pick existing / quick-create / USDA) before the draft
+> finishes landing. When you're happy, hit **Publish** in the editor — that's the only step
+> that runs the linter.
 
 You are done. Do not run any import or migration script.
 
@@ -246,6 +294,17 @@ You are done. Do not run any import or migration script.
   items into intermediate or final products (roasting, sauteing, simmering, mixing,
   tossing with dressing).
 
+### `prep_action` is a SELECT — past-tense, fixed vocabulary
+
+`prep_action` is NOT free text. Its only legal values (past-tense) are:
+**`sliced`, `diced`, `minced`, `chopped`, `grated`, `shredded`**. A present-tense verb
+(`dice`, `chop`, `slice`) or anything off-list is a HARD import failure — PB returns a
+generic "Failed to create record." and the whole draft fails to land (unlike
+`timing`/`resource`, which soft-normalize with a warning). Use it only on genuine
+knife-prep steps; **omit the key entirely** for non-knife steps (pull, cook, toast,
+simmer, serve). `step_type` (`prep`|`assembly`) and `timing` (`batch`|`just_in_time`) are
+likewise selects — emit the exact enum strings from `references/schema.md`.
+
 ## Step Timing
 
 - **`batch`**: Made ahead on prep day. Use for all prep steps and assembly steps that
@@ -271,6 +330,11 @@ the Phase-5 `recipe_steps` metadata fields (`active_minutes`, `passive_minutes`,
   page to match/create, risking a near-duplicate.
 - **Store/section on every new non-pantry product** — omit them and the product drops out
   of the shopping list.
+- **Hand off the JSON as a FILE.** Copying a large JSON out of a chat/terminal code block
+  corrupts it (mid-string line-wraps, straight→curly quotes, silent truncation) and the
+  paste fails. Write it to a `.json` file (plain ASCII — no smart quotes / ellipsis / fancy
+  dashes in string values) and deliver that; the inline block is for review only. See
+  Step 4 "Deliver the JSON as a FILE."
 - **Top-level `await` + pocketbase errors** (for the Step 3 read query): an unhandled
   rejection prints the entire pocketbase ESM bundle (~20K chars of minified code). Always
   wrap the read in `async function main()` + `main().catch((e) => console.error("ERROR:",

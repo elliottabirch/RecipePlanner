@@ -82,10 +82,17 @@ JSON mapping: `quantity`/`unit` come from the product line; `product` is resolve
 - **passive_minutes: number** — unattended minutes (oven/simmer time; NOT counted as
   active).
 - **instructions: text** — free-text step instructions.
-- **prep_action: text** — the verb/action (e.g. "dice", "roast").
+- **prep_action: select** — the knife/prep action, PAST-TENSE, one of exactly:
+  **"sliced" | "diced" | "minced" | "chopped" | "grated" | "shredded"**. NOT free text —
+  a present-tense verb ("dice", "chop") or any other value is a HARD reject (PB 400
+  "Failed to create record."), unlike `timing`/`resource` which soft-normalize. Leave it
+  unset (omit the key) for a non-knife step (cook/toast/pull/simmer/serve).
 - **resource: select** — "oven" | "stovetop" | "blender" | "food_processor" |
   "instant_pot" | "microwave" | "sous_vide" | "smoker" | "none". Unknown values normalize
   to undefined + a warning at import (never a hard reject).
+- **step_type: select (required)** — "prep" | "assembly". **timing: select** — "batch" |
+  "just_in_time". Both are selects: `step_type` and any non-normalized select value that
+  PB rejects hard-fail the whole import. Only `timing`/`resource` are soft-normalized.
 - **oven_temp_f: number** — oven temperature in Fahrenheit (when resource = oven).
 - **rack_slots: number** — oven rack slots the step occupies (prep-day scheduling).
 
