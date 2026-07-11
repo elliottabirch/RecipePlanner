@@ -294,9 +294,18 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Session resumed 2026-07-10: Phase 6 shipped + UAT'd. User elected to FIX ALL 4
-open UAT findings inline (not phase 6.1): #1 cook-mode note on merged-prep, #3
-revision-draft publish duplicate, #2 note icon on all chips, #4
-recipe_steps.source_node. Work in progress on `main`.
+open UAT findings inline (not phase 6.1) — ALL DONE + LIVE:
+- #1 cook-mode note on merged-prep — button hidden on empty-recipe synthetic
+  steps; AddNoteButton surfaces save errors via inline Alert.
+- #3 revision-draft publish duplicate — handlePublish guards on revision_of;
+  Publish button → "Revision draft — approve via evolve" chip.
+- #2 note icon on all chips — Micah + week-spanning chips converted to the
+  day-grid Box row with the note affordance.
+- #4 recipe_steps.source_node — nullable self-relation added to test+prod PB;
+  RecipeStep type mirrors it. Schema mirror re-exported.
+Commit b1a1d55 pushed to origin/main; NAS redeployed (bundle
+index-CXyRZ36Z.js, service active, :3000 → HTTP 200). tsc clean, 282/282 tests.
+Phase 6 findings CLOSED — v1.1 milestone is a candidate for close/audit.
 
 ---
 
