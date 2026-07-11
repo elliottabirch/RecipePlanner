@@ -6,6 +6,8 @@ import {
   List,
   ListItem,
   ListItemText,
+  ListItemIcon,
+  Checkbox,
   IconButton,
   Chip,
 } from "@mui/material";
@@ -213,6 +215,9 @@ export function ShoppingListTab({
     const resolved = item.isResolved;
     const atMin = haveValue <= 0;
     const atMax = haveValue >= total;
+    // Fulfilled = the whole line is accounted for by have-N (remaining 0).
+    // Distinct from make/skip resolution, which the chip handles.
+    const fulfilled = total > 0 && haveValue >= total;
 
     const handleDecrease = () => {
       if (atMin) return;
@@ -222,13 +227,15 @@ export function ShoppingListTab({
       if (atMax) return;
       onSetHaveQuantity?.(key, Math.min(total, haveValue + 1));
     };
+    // One-tap fulfill/unfulfill toggle (replaces tapping + N times). Checking
+    // sets have to the full total; unchecking clears the have-N entry.
+    const handleToggleFulfilled = () => {
+      onSetHaveQuantity?.(key, fulfilled ? null : total);
+    };
+    // Undo a make/skip resolution back to buy. (The have-complete case is now
+    // undone by the fulfill checkbox, not this chip — no more reset-to-0.)
     const handleUnresolve = () => {
-      if (item.resolution !== "buy") {
-        onSetResolution?.(key, "buy");
-      } else {
-        // resolved via have >= needed — clear the have-N entry
-        onSetHaveQuantity?.(key, null);
-      }
+      onSetResolution?.(key, "buy");
     };
 
     return (
@@ -243,6 +250,16 @@ export function ShoppingListTab({
           py: 0.5,
         }}
       >
+        <ListItemIcon sx={{ minWidth: 48 }}>
+          <Checkbox
+            edge="start"
+            checked={fulfilled}
+            onChange={handleToggleFulfilled}
+            size="medium"
+            aria-label={`Mark ${item.productName} fulfilled`}
+            sx={{ p: 1.5 }}
+          />
+        </ListItemIcon>
         <ListItemText
           primaryTypographyProps={{ variant: "body1" }}
           primary={
@@ -287,7 +304,7 @@ export function ShoppingListTab({
           {remainingValue > 0 ? `${formatQty(remainingValue)} to buy` : "All set"}
         </Typography>
 
-        {resolved && (
+        {item.resolution !== "buy" && (
           <Box
             sx={{
               minWidth: 48,
