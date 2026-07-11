@@ -14,10 +14,14 @@ const created: { collection: string; id: string }[] = [];
 const removed: { collection: string; id: string }[] = [];
 let failOnCollection: string | null = null;
 let idCounter = 0;
+// Existing recipe_tags joins the update path should find + delete before it
+// recreates from graph.tagIds. Default empty; set per-test.
+let existingRecipeTags: { id: string }[] = [];
 
 vi.mock("../api", () => ({
   collections: {
     recipes: "recipes",
+    recipeTags: "recipe_tags",
     productToStepEdges: "product_to_step_edges",
     stepToProductEdges: "step_to_product_edges",
   },
@@ -31,7 +35,9 @@ vi.mock("../api", () => ({
     return { id };
   }),
   update: vi.fn(async () => ({})),
-  getAll: vi.fn(async () => []),
+  getAll: vi.fn(async (collection: string) =>
+    collection === "recipe_tags" ? existingRecipeTags : []
+  ),
   remove: vi.fn(async (collection: string, id: string) => {
     removed.push({ collection, id });
   }),
@@ -58,6 +64,7 @@ beforeEach(() => {
   removed.length = 0;
   failOnCollection = null;
   idCounter = 0;
+  existingRecipeTags = [];
 });
 
 describe("buildRecipeGraph — create-path rollback", () => {
@@ -91,5 +98,42 @@ describe("buildRecipeGraph — create-path rollback", () => {
     ).rejects.toThrow("Failed to create record.");
     // Update path must not delete the pre-existing recipe or anything else.
     expect(removed).toEqual([]);
+  });
+});
+
+describe("buildRecipeGraph — tag writes (recipe_tags spine)", () => {
+  it("creates a recipe_tags row per tagId on the create path", async () => {
+    const g = graph();
+    g.tagIds = ["tagA", "tagB"];
+    await buildRecipeGraph(g);
+    const tagCreates = created.filter((c) => c.collection === "recipe_tags");
+    expect(tagCreates).toHaveLength(2);
+  });
+
+  it("writes no recipe_tags when tagIds is empty", async () => {
+    await buildRecipeGraph(graph());
+    expect(created.some((c) => c.collection === "recipe_tags")).toBe(false);
+  });
+
+  it("rolls back created recipe_tags rows when a later write fails", async () => {
+    const g = graph();
+    g.tagIds = ["tagA"];
+    failOnCollection = "recipe_steps"; // recipe + tag + product node created, then step throws
+    await expect(buildRecipeGraph(g)).rejects.toThrow("Failed to create record.");
+    expect(removed.some((r) => r.collection === "recipe_tags")).toBe(true);
+  });
+
+  it("update path deletes existing recipe_tags then recreates from tagIds", async () => {
+    const g = graph();
+    g.tagIds = ["tagA", "tagB"];
+    existingRecipeTags = [{ id: "old-1" }, { id: "old-2" }];
+    await buildRecipeGraph(g, { recipeId: "existing-recipe" });
+    expect(
+      removed
+        .filter((r) => r.collection === "recipe_tags")
+        .map((r) => r.id)
+        .sort()
+    ).toEqual(["old-1", "old-2"]);
+    expect(created.filter((c) => c.collection === "recipe_tags")).toHaveLength(2);
   });
 });

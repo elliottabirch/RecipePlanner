@@ -725,24 +725,8 @@ export default function RecipeEditor() {
         }
       );
 
-      // Tags stay in the editor (not part of the node/edge spine): delete the
-      // existing recipe_tags then recreate from the current selection.
-      if (!isNew) {
-        const existingTags = await getAll<RecipeTag>(collections.recipeTags, {
-          filter: `recipe="${recipeId}"`,
-        });
-        await Promise.all(
-          existingTags.map((rt) => remove(collections.recipeTags, rt.id))
-        );
-      }
-      await Promise.all(
-        selectedTags.map((tag) =>
-          create(collections.recipeTags, {
-            recipe: recipeId,
-            tag: tag.id,
-          })
-        )
-      );
+      // Tags (recipe_tags) are now persisted inside buildRecipeGraph from
+      // graph.tagIds (the one write spine) — no separate editor-side sync.
 
       setNodeDbIds(newNodeDbIds);
 

@@ -135,6 +135,13 @@ contract the `recipe-import` skill produces — see
 products via `matchProductId` hints (from the Step 1 registry read) so you don't mint
 near-duplicates, and put `store`/`section` hints on any genuinely new non-pantry product.
 
+**Populate `recipe.tags`** by matching the candidate against the **existing** tags — never
+invent new ones — exactly as the recipe-import skill's "Match tags" section describes. Read
+the `tags` collection, include the id of every tag that genuinely applies (a candidate
+usually earns several: e.g. a vegetable side is `vegetable`, a leafy one also `green`; a
+fish dish is `protein` + `pescatarian`). **Only include the `micah meal` tag when the user
+explicitly asked for a Micah meal** — never infer it from the recipe alone.
+
 ```json
 {
   "recipe": { "name": "Miso-glazed Tofu", "recipe_type": "meal", "status": "draft" },
@@ -167,6 +174,9 @@ for them.
   until published), so a suggestion can never contaminate a real plan (threat T-06-11a).
 - **Macro is soft** — the protein figure is `estimated` and never a filter (threat
   T-06-11b, D-08). Print it with its caveat; reject nothing on it.
+- **Match existing tags, never invent** — populate `recipe.tags` from the tags already in
+  the collection; include every one that applies. `micah meal` goes on ONLY when the user
+  explicitly asked for a Micah meal.
 - **Read-only DB access** — this skill only reads the registry/plans; the `/import` page
   performs the write. Wrap read scripts in `async function main()` + `.catch` and run them
   from inside `recipe-planner/`.

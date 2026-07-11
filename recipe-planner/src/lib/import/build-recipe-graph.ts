@@ -285,6 +285,28 @@ export async function buildRecipeGraph(
       createdRecipeId = created.id;
     }
 
+    // 1b. Tags (recipe_tags joins) — centralized on the shared write spine so
+    // BOTH the /import path and the editor save persist tags identically (this
+    // is what makes imported/suggested recipes actually land tagged). On the
+    // update path, delete the recipe's existing joins first, then recreate from
+    // graph.tagIds (mirrors the editor's prior in-place sync); on the create
+    // path just create them and record for rollback.
+    if (opts?.recipeId) {
+      const existingTags = await getAll<RecordModel>(collections.recipeTags, {
+        filter: `recipe="${recipeId}"`,
+      });
+      await Promise.all(
+        existingTags.map((rt) => remove(collections.recipeTags, rt.id))
+      );
+    }
+    for (const tagId of graph.tagIds) {
+      const createdTag = await create<RecordModel>(collections.recipeTags, {
+        recipe: recipeId,
+        tag: tagId,
+      });
+      createdRecords.push({ collection: collections.recipeTags, id: createdTag.id });
+    }
+
     // 2. Nodes — inject the recipe relation, create or update, record dbIds.
     const nodeDbIds: Record<string, string> = { ...seed };
     for (const nodeOp of plan.nodes) {

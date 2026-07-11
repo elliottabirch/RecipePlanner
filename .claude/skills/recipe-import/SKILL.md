@@ -139,6 +139,38 @@ Rules of thumb:
 Sanity check before emitting: list every product line that will create a NEW product and
 confirm each has a `store` hint.
 
+### Match tags (populate `recipe.tags`)
+
+The recipe graph carries tags (`recipe.tags` is an array of tag **ids**). Match the recipe
+against the **existing** tags — never invent new ones. Read the `tags` collection (one
+inline query, same read-only pattern as the product check above) and include the id of
+every tag that genuinely applies. Match as many as fit — a recipe usually earns several.
+
+```javascript
+const tags = await pb.collection("tags").getFullList({ sort: "name" });
+tags.forEach((t) => console.log(`${t.name}  [${t.id}]`));
+```
+
+Current tags (as of writing — always re-read; the list grows): `fruit`, `green`, `meat`,
+`micah meal`, `pescatarian`, `protein`, `staple`, `starch`, `vegetable`.
+
+How to match (guidance, not a hard rule — a dish can carry several):
+- **protein** — the dish's main is a protein (meat/fish/eggs/legumes/protein-dairy).
+- **pescatarian** — no meat/poultry (fish/seafood/vegetarian ok). **meat** — contains
+  poultry / red meat / pork. These two are mutually exclusive; tag whichever fits.
+- **starch** — rice / pasta / potato / bread / grain-forward (starchy roots like sweet
+  potato & squash count).
+- **vegetable** / **green** — a vegetable dish. Use **green** for leafy/green vegetables
+  (broccoli, kale, green beans, bok choy, cucumber); **vegetable** is the broader category.
+  A green-vegetable dish typically earns both.
+- **fruit** — fruit-based. **staple** — a standing weekly staple item.
+- **micah meal** — a kid's (Micah) meal. **ONLY include `micah meal` when the user
+  explicitly asks for it.** Never infer it from the recipe's contents alone — an ordinary
+  adult recipe must land with no `micah meal` tag unless the user said so.
+
+Leave `tags` as `[]` only when nothing genuinely applies. Confirm the matched tags with the
+user alongside the JSON.
+
 ## Step 4: Emit the Import JSON (the D-01 contract)
 
 Produce a single JSON object with `recipe`, `products`, `steps`, and `edges`. This is the
@@ -215,6 +247,8 @@ problem is surfaced inline for the user to fix; it can never produce a partial w
   `product → product`.
 - **`recipe.status`**: set `"draft"` (the import page lands drafts). It's the default even
   if omitted.
+- **`tags`**: an array of existing tag **ids**, matched per "Match tags" above. Include
+  every tag that applies; `micah meal` ONLY when the user explicitly asked.
 - Unknown `timing`/`resource` enum values are normalized to `undefined` with a warning by
   the validator — not a hard error. Prefer the documented enum values.
 
