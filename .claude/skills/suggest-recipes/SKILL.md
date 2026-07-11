@@ -146,7 +146,14 @@ and per-eater flavor steering are the real filter — apply them first), and tha
 Each candidate is analyzed the same way the `recipe-import` skill analyzes a recipe:
 products (raw/transient/stored/inventory) + steps (prep/assembly) + `Product → Step →
 Product` edges, with the full Phase-5 step metadata (`active_minutes`, `passive_minutes`,
-`timing`, `prep_action`, `resource`, etc.).
+`timing`, `prep_action`, `resource`, etc.). Two things it's easy to get wrong (see
+recipe-import "Step 2", "Recipe Type", "Step Timing"):
+- **Raw whole veg/aromatics ALWAYS go through a `prep` step → transient** (reuse existing
+  cuts like `cucumber small dice`, `onion (red) brunoise`, `tomato cherry halved`) before an
+  assembly — never wire a raw onion/cucumber/tomato straight into a salad or dish.
+- **`recipe_type` is `meal`** for these weekly recipes; `batch_prep` is ONLY for multi-week
+  freeze/preserve batches. Prep steps leave `timing` unset; prep-day cook/assembly steps are
+  `batch`; genuine day-of steps are `just_in_time`.
 
 ## Step 3: Score + print a summary per candidate
 

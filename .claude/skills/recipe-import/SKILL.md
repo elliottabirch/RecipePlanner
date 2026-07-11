@@ -61,6 +61,18 @@ graph TD
 Every edge in the sketch becomes a `{from, to}` entry in the JSON `edges` array, using the
 product/step `ref`s (see Step 4).
 
+**Raw whole vegetables and aromatics ALWAYS pass through a `prep` step first — never wire a
+raw veg straight into an assembly.** A raw onion / cucumber / tomato / pepper goes
+`raw → prep step (prep_action set, timing UNSET, resource "none") → transient "<veg> <cut>"`,
+and only the transient feeds the assembly (this is the roasted-carrots / cucumber-salad /
+bok-choy pattern). REUSE the existing cut-transients — the registry already has
+`cucumber small dice`, `cucumber sliced`, `onion (red) brunoise`, `onion (yellow) large dice`,
+`tomato cherry halved`, `green onion sliced`, `carrot large dice`, etc. (grep the registry
+for the veg to find its cut). Only pre-cut/frozen items (`frozen stir fry vegetables`) and
+already-processed products (`chickpeas cooked`, `feta cheese crumbled`, jarred sauces) skip
+the prep step. Whole items that genuinely roast/cook whole (cherry tomatoes into a tray bake,
+spinach that wilts) also don't need a cut.
+
 ## Step 3: Check Existing Products (read-only)
 
 Reuse existing products aggressively — the biggest source of import mess is minting
@@ -366,6 +378,16 @@ You are done. Do not run any import or migration script.
 **Stored**: Descriptive of the prepared component
 - `lemon-parsley mixture`, `white bean stew base`
 
+## Recipe Type (`meal` vs `batch_prep`)
+
+- **`meal`** — the DEFAULT for normal weekly recipes, including everything prepped Saturday
+  and eaten across the week (roasts, salads, curries, braises). Almost every import/suggestion
+  is a `meal`.
+- **`batch_prep`** — reserved for genuine multi-week batches: a large quantity cooked to
+  FREEZE or PRESERVE for several weeks (e.g. "spinach egg bites (batch)", "Broccoli Patties
+  (batch)"). Do NOT use `batch_prep` just because a weekly meal is made ahead — a `meal` with
+  `batch`-timed prep-day steps already expresses that.
+
 ## Step Types
 
 - **`prep`**: Physical processing of raw fruits and vegetables into broken-down variants
@@ -388,10 +410,16 @@ likewise selects — emit the exact enum strings from `references/schema.md`.
 
 ## Step Timing
 
-- **`batch`**: Made ahead on prep day. Use for all prep steps and assembly steps that
-  create stored products.
-- **`just_in_time`**: Performed at serving time. Use for final assembly steps and anything
-  that must be done fresh (dressing a salad, warming bread).
+Three cases — mirror the household's existing recipes:
+- **prep steps → leave `timing` UNSET** (omit the key). A knife/prep step is not a scheduled
+  cook; existing prep steps ("dice carrots", "halve baby bok choy") carry no timing.
+- **`batch`** — a cook/assembly step done during the Saturday prep-day session (roasting,
+  simmering, tossing a make-ahead salad). The normal case for a weekly meal's assembly steps.
+- **`just_in_time`** — a step that MUST happen the night you eat: a fresh sear, baking the
+  fish, warming tortillas and assembling tacos, dressing a salad kept un-dressed.
+
+NOTE: step-`timing` `batch` (a prep-day task) is a DIFFERENT axis from recipe-`recipe_type`
+`batch_prep` (multi-week freezer batch, below) — do not conflate them.
 
 ## Database Reference
 
