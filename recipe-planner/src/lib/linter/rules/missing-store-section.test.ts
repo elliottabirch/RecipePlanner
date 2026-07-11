@@ -47,6 +47,13 @@ describe("lintMissingStoreSection", () => {
     expect(findings).toHaveLength(0);
   });
 
+  it("does NOT flag an inventory item with no store (stocked/made, not per-shop bought)", () => {
+    const findings = lintMissingStoreSection([
+      product("garlic cubes (frozen)", ProductType.Inventory),
+    ]);
+    expect(findings).toHaveLength(0);
+  });
+
   it("does NOT flag a pantry product with no store", () => {
     const findings = lintMissingStoreSection([
       product("salt", ProductType.Raw, { pantry: true }),
