@@ -31,6 +31,51 @@ re-derive the math):
    heuristic, never a hard filter. Always print it with its "estimated" caveat; never
    reject a candidate on it.
 
+## Household fit — what to suggest
+
+The four constraints above are mechanical; this is the household's actual taste + rhythm.
+Honor it or the suggestion is off-target.
+
+### The make-ahead rule (MANDATORY — reject anything that fails it)
+
+~90% of the work must be front-loaded to **prep day (Saturday)**. The household's process is:
+Saturday, fully cut / slice / cook / parboil everything; then eat **fast 5–10 min meals** the
+rest of the week. A candidate qualifies only if it takes ONE of these two shapes:
+1. **Fully assembled ahead → frozen or stored**, reheated as-is; or
+2. **Cooked/prepped almost all the way** on prep day, leaving only a small **sear / assemble
+   / reheat** step (5–10 min) the night it's eaten.
+
+Anything needing real day-of cooking is out. Proven-fit templates the household loves:
+**Indian dishes** (bulk-cook → freeze → serve over rice) and **Thai curries** (same) — lean
+on these shapes when you can.
+
+### Hard dietary rules (never violate)
+
+- **Adult dinners are pescatarian** — fish/shellfish only, never meat/poultry. And feature a
+  substantial protein at every dinner (they prioritize protein intake).
+- **Micah's vegetables must be COOKED** — never suggest raw veg for him.
+- **Micah is a kid** — keep it approachable (mild/sweet/familiar landing pad) even when
+  introducing a new flavor.
+- **Favor low active-prep, batch-prep** across the board (this is the make-ahead rule above).
+
+### Per-eater preferences (steer flavor by whose meal it is)
+
+- **Micah (component meals — protein / green / starch / vegetable):** simple, kid-friendly,
+  cooked; gently introduce new flavors.
+- **Pescatarian meals (the wife's):** she eats fish/shellfish only and likes it **healthier,
+  balanced, vegetable-forward — salads and lighter dishes**. Pescatarian dinners + the
+  pescatarian lunch carry HER preferences.
+- **Meat meals (the meat lunch / his dishes):** carry HIS preferences — **fattier, cheesier,
+  pork, saucy** dishes.
+
+### Slot targeting
+
+The user names the target recipe type in the ask (e.g. "a Micah vegetable", "a pescatarian
+dinner", "a meat lunch"). Take the slot/pool from the ask, propose candidates tailored to it,
+and tag accordingly (Micah component, adult pescatarian dinner, meat lunch, pescatarian
+lunch, staple). Don't invent a slot they didn't ask for. Favor **new flavor profiles** —
+don't re-propose ones the registry already covers well.
+
 ## Workflow
 
 1. **Read context** (read-only) — pull the product registry + recent plans/recipes.
@@ -73,11 +118,15 @@ main().catch((e) => console.error("ERROR:", e.message, e.status, e.url));
 
 ## Step 2: Form 3-5 candidates
 
-Draft new recipes (name, ingredients, steps) that:
+Draft new recipes (name, ingredients, steps) that satisfy **"Household fit — what to suggest"
+above** (the make-ahead rule, hard dietary rules, and per-eater flavor steering are the real
+filter — apply them first), and that:
 - **reuse existing products** — favor ingredients already in the registry (raise overlap);
 - **keep active time low** — push work into passive/unattended time where possible;
-- **fit the household's rhythm** — batch-prep-friendly where it makes sense;
-- **aren't near-duplicates** of recipes already in the list (check against `recipes`).
+- **front-load to prep day** — assemble-then-freeze/store, or prep-almost-fully with a small
+  day-of sear/assemble step (this is the mandatory make-ahead rule, not just "nice");
+- **aren't near-duplicates** of recipes already in the list (check against `recipes`), and
+  lean toward new flavor profiles.
 
 Each candidate is analyzed the same way the `recipe-import` skill analyzes a recipe:
 products (raw/transient/stored/inventory) + steps (prep/assembly) + `Product → Step →
