@@ -142,6 +142,13 @@ usually earns several: e.g. a vegetable side is `vegetable`, a leafy one also `g
 fish dish is `protein` + `pescatarian`). **Only include the `micah meal` tag when the user
 explicitly asked for a Micah meal** — never infer it from the recipe alone.
 
+**Match each product line's `unit` to the product's `canonical_unit`** (recipe-import skill,
+"Match each product line's unit" section) or the publish linter hard-blocks on
+cross-dimension. Read `canonical_unit` in the Step 1 registry pull and pick a convertible
+unit: whole produce → `each` (broccoli/carrot/squash are `each`, not `lb`), oils/liquids/
+pastes → volume (`tbsp`/`fl_oz`), `garlic minced` → `each`. Also flag any existing non-pantry
+product whose `canonical_unit` is null (it warns as missing-canonical-unit on publish).
+
 ```json
 {
   "recipe": { "name": "Miso-glazed Tofu", "recipe_type": "meal", "status": "draft" },
@@ -177,6 +184,9 @@ for them.
 - **Match existing tags, never invent** — populate `recipe.tags` from the tags already in
   the collection; include every one that applies. `micah meal` goes on ONLY when the user
   explicitly asked for a Micah meal.
+- **Units must match `canonical_unit`** — each product line's `unit` must be convertible to
+  the matched product's `canonical_unit` (produce `each`, liquids/pastes volume), or the
+  publish linter hard-blocks on cross-dimension.
 - **Read-only DB access** — this skill only reads the registry/plans; the `/import` page
   performs the write. Wrap read scripts in `async function main()` + `.catch` and run them
   from inside `recipe-planner/`.

@@ -77,7 +77,13 @@ async function main() {
     console.log(`\n=== ${term} ===`);
     products
       .filter((p) => p.name.toLowerCase().includes(term))
-      .forEach((p) => console.log(`  ${p.name} [${p.type}] pantry=${p.pantry} id=${p.id}`));
+      .forEach((p) =>
+        // ALWAYS print canonical_unit — the recipe's unit must be convertible to
+        // it or the publish linter throws cross-dimension (see next subsection).
+        console.log(
+          `  ${p.name} [${p.type}] pantry=${p.pantry} canonical=${p.canonical_unit || "(null)"} id=${p.id}`
+        )
+      );
   }
 }
 main().catch((e) => console.error("ERROR:", e.message, e.status, e.url));
@@ -138,6 +144,37 @@ Rules of thumb:
 
 Sanity check before emitting: list every product line that will create a NEW product and
 confirm each has a `store` hint.
+
+### Match each product line's `unit` to the product's `canonical_unit` (publish-linter safety)
+
+The publish linter (`runRecipeLint`) hard-blocks on **cross-dimension**: a product whose
+recipe nodes carry a unit that is NOT convertible to its `canonical_unit` (e.g. a `tbsp`
+node on a product whose canonical is `each`). It also warns **missing-canonical-unit** for
+any non-pantry product left with a null canonical. So when you pick a `unit` for a product
+line, it must live in the **same dimension** as that product's existing canonical:
+
+- For an EXISTING product (you set `matchProductId`): read its `canonical_unit` (printed
+  above) and choose a **convertible** unit. Mismatches are the #1 import-lint failure.
+- For a NEW product: the import page seeds `canonical_unit` from your line's `unit`, so just
+  pick a sensible one — later nodes on that product must then stay in that dimension.
+
+Household canonical conventions (re-read to confirm — these are the live values):
+- **Whole vegetables / produce → `each`** (broccoli, carrot, kale, sweet potato, butternut
+  squash are all `each`). A veg line should be `"unit": "each"` (count of heads/bunches),
+  NOT `lb`. Loose-by-weight items (e.g. green beans) are `lb`.
+- **Oils / liquids / pastes → volume** — olive oil, soy sauce, sesame oil, butter, honey,
+  miso paste are `tbsp`; maple syrup `fl_oz`. Use `tbsp`/`tsp`/`cup`/`fl_oz` (all
+  inter-convertible), never a mass or count unit.
+- **`garlic minced` → `each`** (cloves), NOT `tbsp`. (It's a `raw` product with a prep verb
+  in its name, so it also trips the low-priority `prep-words` warning — that's a longstanding
+  registry choice, not something to "fix" per import.)
+- A prep transient inherits the dimension of what feeds it: dicing a squash (`each`) yields
+  `butternut squash (large dice)` whose canonical is `cup` (volume) — so the diced node is
+  `cup`, not `lb`.
+
+Sanity check before emitting: for every product line, confirm its `unit` is convertible to
+the matched product's `canonical_unit` (same dimension). Flag any existing non-pantry
+product whose canonical is `(null)` — it will warn on publish; offer to set it.
 
 ### Match tags (populate `recipe.tags`)
 
@@ -234,7 +271,9 @@ problem is surfaced inline for the user to fix; it can never produce a partial w
   `ref`. If you omit `ref`, the validator assigns `product-<n>` / `step-<n>` by position —
   but assign them explicitly so your edges are readable.
 - **Product lines** require `name` + `unit`. Put `quantity` on raw inputs and stored
-  outputs; transient/intermediate nodes usually omit quantity.
+  outputs; transient/intermediate nodes usually omit quantity. The `unit` MUST be
+  convertible to the matched product's `canonical_unit` (see "Match each product line's
+  unit" — produce `each`, liquids/pastes volume; a cross-dimension unit hard-blocks publish).
 - **Hints** (all optional): `matchProductId` (reuse an existing product by id — strongly
   preferred over creating a dupe), `productType` (`raw` | `transient` | `stored` |
   `inventory`), `pantry` (bool), `fdcId` (USDA FDC id), `store`, `section`.
