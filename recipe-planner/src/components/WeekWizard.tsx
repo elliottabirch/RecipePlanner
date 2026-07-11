@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Accordion,
   AccordionDetails,
@@ -52,6 +53,7 @@ interface WeekWizardProps {
 type PicksBySlot = Map<string, Map<string, string>>; // slotId -> recipeId -> plannedMealId
 
 export default function WeekWizard({ open, plan, onClose }: WeekWizardProps) {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -65,6 +67,10 @@ export default function WeekWizard({ open, plan, onClose }: WeekWizardProps) {
   const [lastPlanned, setLastPlanned] = useState<Map<string, string>>(
     new Map()
   );
+  // originalRecipeId -> draftRevisionId (D-11 evolution-loop review flag).
+  const [pendingRevisions, setPendingRevisions] = useState<
+    Map<string, string>
+  >(new Map());
 
   const [picks, setPicks] = useState<PicksBySlot>(new Map());
   const [pendingKeys, setPendingKeys] = useState<Set<string>>(new Set());
@@ -99,6 +105,7 @@ export default function WeekWizard({ open, plan, onClose }: WeekWizardProps) {
           tagsData,
           allPlans,
           allPlannedMeals,
+          draftRevisions,
         ] = await Promise.all([
           getAll<WeekTemplate>(collections.weekTemplates),
           getAll<Recipe>(collections.recipes, {
@@ -111,9 +118,24 @@ export default function WeekWizard({ open, plan, onClose }: WeekWizardProps) {
           // Unfiltered — LRU needs meals from ALL plans, not plan-scoped
           // (04-RESEARCH.md Anti-Pattern).
           getAll<PlannedMeal>(collections.plannedMeals),
+          // Draft revisions are filtered out of the main recipes load by the
+          // draft-excluding filter, so fetch them separately (D-11). One extra
+          // getAll indexed client-side by revision_of (06-RESEARCH.md).
+          getAll<Recipe>(collections.recipes, {
+            filter: 'revision_of != "" && status = "draft"',
+          }),
         ]);
 
         if (cancelled) return;
+
+        // Index pending draft revisions by the original recipe they revise.
+        // If several drafts revise the same recipe, last write wins — the flag
+        // is a notice, not a merge, so any linked draft opens for review.
+        const revisionMap = new Map<string, string>();
+        draftRevisions.forEach((draft) => {
+          if (draft.revision_of) revisionMap.set(draft.revision_of, draft.id);
+        });
+        setPendingRevisions(revisionMap);
 
         const activeTemplate = templates[0] || null;
         setTemplate(activeTemplate);
@@ -527,23 +549,42 @@ export default function WeekWizard({ open, plan, onClose }: WeekWizardProps) {
                             pendingKey(slot.id, recipe.id)
                           );
                           const chipColor = getChipColor(slot, recipe.id);
+                          const draftRevisionId = pendingRevisions.get(recipe.id);
                           return (
-                            <Chip
+                            <Box
                               key={recipe.id}
-                              label={recipe.name}
-                              onClick={() => togglePick(slot, recipe.id)}
-                              variant={isPicked ? "filled" : "outlined"}
-                              disabled={isPending}
-                              sx={{
-                                fontSize: "0.875rem",
-                                height: 40,
-                                px: 1.5,
-                                opacity: isPending ? 0.6 : 1,
-                                backgroundColor: isPicked ? chipColor : undefined,
-                                color: isPicked ? "white" : "text.primary",
-                                borderColor: isPicked ? chipColor : chipColor,
-                              }}
-                            />
+                              sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+                            >
+                              <Chip
+                                label={recipe.name}
+                                onClick={() => togglePick(slot, recipe.id)}
+                                variant={isPicked ? "filled" : "outlined"}
+                                disabled={isPending}
+                                sx={{
+                                  fontSize: "0.875rem",
+                                  height: 40,
+                                  px: 1.5,
+                                  opacity: isPending ? 0.6 : 1,
+                                  backgroundColor: isPicked ? chipColor : undefined,
+                                  color: isPicked ? "white" : "text.primary",
+                                  borderColor: isPicked ? chipColor : chipColor,
+                                }}
+                              />
+                              {draftRevisionId && (
+                                <Chip
+                                  size="small"
+                                  variant="outlined"
+                                  color="warning"
+                                  label="Revised — review?"
+                                  onClick={(e) => {
+                                    // Navigate only — never toggles the pick.
+                                    e.stopPropagation();
+                                    navigate(`/recipes/${draftRevisionId}`);
+                                  }}
+                                  sx={{ fontSize: "0.75rem", height: 28 }}
+                                />
+                              )}
+                            </Box>
                           );
                         })}
                       </Box>
