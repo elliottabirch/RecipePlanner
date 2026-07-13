@@ -267,6 +267,7 @@ Recent decisions affecting current work:
 
 - `nas-pocketbase-tailnet` — NAS PocketBase instances join the tailnet; `db-config.ts` switches from LAN IPs to tailnet hostnames. Required before Phase 2 and Phase 6 store/phone use; does not block local development. See `.planning/todos/pending/nas-pocketbase-tailnet.md`.
 - `connective-recipe-batch-then-consume` — **PARTIALLY RESOLVED 2026-07-10 (commit 0574b5c):** spurious in-plan pull connectors are now elided in cook mode (`buildWeekGraph`) and skipped in batch prep / product flow (`buildProductFlowGraph`), via a shared detector `aggregation/utils/connective.ts` (inverse of the missing-pull-step linter). STILL OPEN (deferred to Phase 6): contextual naming (producer output hard-codes "…frozen"; belongs with `swap-aware-prep-naming`) and import-time modeling of the batch→consume link (blocked on the unbuilt import pipeline). See `.planning/todos/pending/connective-recipe-batch-then-consume.md`.
+- `restore-week-pull-list-on-prep-print-view` — the Batch Prep print view's page-1 week pull list (all week's ingredients split fridge/freezer/dry/pantry) renders empty. Code was never deleted: it's derived from the filtered `batchPrepSteps` (which now drops JIT + original-packaging steps), hard-filters to `ProductType.Raw`, silently drops unknown storage locations, applies no people-multiplier, and mounts the print view under `display:none`. Distinct from the working JIT `buildPullLists`. See `.planning/todos/pending/2026-07-12-restore-week-pull-list-on-prep-print-view.md`.
 
 ### Blockers/Concerns
 
