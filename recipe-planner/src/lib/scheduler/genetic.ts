@@ -55,6 +55,7 @@ import {
   isFeasibleAt,
   nextCandidateTime,
   occupyResources,
+  stepResource,
   type ResourceCapacityConfig,
 } from "./resources";
 import type {
@@ -402,7 +403,7 @@ function countAdjacencyBreaks(
 function computeResourcePressure(schedule: Schedule): number {
   const events: Array<{ t: number; delta: number }> = [];
   for (const instance of schedule.order) {
-    const resource = instance.step.resource ?? "none";
+    const resource = stepResource(instance.step);
     if (resource === "none") continue;
     const start = schedule.starts.get(instance.id) ?? 0;
     const end = schedule.ends.get(instance.id) ?? start;

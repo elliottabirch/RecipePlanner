@@ -254,6 +254,47 @@ describe("buildWeekGraph — week-wide prep merge", () => {
     expect(graph.nodes.map((n) => n.id)).toContain("meal-a::mince");
     expect(graph.nodes.some((n) => n.id.startsWith("merged-prep::"))).toBe(false);
   });
+
+  it("merges prep whose resource is un-set as PocketBase stores it (empty string, not 'none')", () => {
+    const onion = makeProduct({ id: "onion", name: "Onion", type: ProductType.Raw });
+
+    // PocketBase writes an un-set `resource` as "", which the RecipeStep union
+    // does not admit — so the cast. A step saved without ever touching the
+    // resource picker must still be a merge candidate.
+    const mealWithOnionPrep = (suffix: string, resource: string) => {
+      const onionIn = makeProductNode(onion, { id: `onion-in-${suffix}` });
+      const diceStep = makeStep(`dice-${suffix}`, {
+        name: "dice onion",
+        step_type: StepType.Prep,
+        active_minutes: 5,
+        resource: resource as RecipeStep["resource"],
+        prep_action: "diced",
+      });
+      return makeRecipeData(
+        {
+          steps: [diceStep],
+          productNodes: [onionIn],
+          productToStepEdges: [
+            makeProductToStepEdge(`p2s-${suffix}`, onionIn.id, diceStep.id),
+          ],
+        },
+        `recipe-${suffix}`,
+        `Recipe ${suffix}`
+      );
+    };
+
+    const graph = buildWeekGraph(
+      new Map([
+        ["meal-a", mealWithOnionPrep("a", "")],
+        ["meal-b", mealWithOnionPrep("b", "none")],
+      ]) as MealKeyedRecipeData
+    );
+
+    const merged = graph.nodes.find((n) => n.id === "merged-prep::onion");
+    expect(merged).toBeDefined();
+    expect(merged!.mergedMembers).toHaveLength(2);
+    expect(merged!.step.active_minutes).toBe(10);
+  });
 });
 
 describe("buildWeekGraph — cross-recipe edges", () => {

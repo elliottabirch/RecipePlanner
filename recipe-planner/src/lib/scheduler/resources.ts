@@ -43,6 +43,17 @@ function isSingletonAppliance(resource: string): resource is SingletonAppliance 
   return (SINGLETON_APPLIANCES as readonly string[]).includes(resource);
 }
 
+/** A step's resource, normalized to `"none"` when un-set. PocketBase stores an
+ * un-set `resource` as `""` — which the `RecipeStep["resource"]` union does not
+ * admit — so `??` leaves the empty string intact and every `=== "none"` test
+ * silently misses. Uses `||`, the same quirk `memberActionLabel` handles for
+ * `prep_action`. Route every read of `step.resource` through this. */
+export function stepResource(
+  step: Pick<RecipeStep, "resource">
+): NonNullable<RecipeStep["resource"]> {
+  return step.resource || "none";
+}
+
 /** `[aStart, aEnd)` vs `[bStart, bEnd)` half-open interval overlap. */
 export function overlaps(aStart: number, aEnd: number, bStart: number, bEnd: number): boolean {
   return aStart < bEnd && bStart < aEnd;
@@ -76,7 +87,7 @@ export function isFeasibleAt(
 ): boolean {
   const active = step.active_minutes ?? 0;
   const passive = step.passive_minutes ?? 0;
-  const resource = step.resource ?? "none";
+  const resource = stepResource(step);
   const activeEnd = candidateStart + active;
   const resourceEnd = activeEnd + passive;
 
@@ -140,7 +151,7 @@ export function occupyResources(
   end: number
 ): void {
   const active = step.active_minutes ?? 0;
-  const resource = step.resource ?? "none";
+  const resource = stepResource(step);
   const activeEnd = start + active;
 
   // The cook is occupied for the active window only, regardless of resource.

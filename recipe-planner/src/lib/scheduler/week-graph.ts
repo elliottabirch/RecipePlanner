@@ -50,6 +50,7 @@ import {
   collectProducedProductIds,
   collectSpuriousPullInstanceIds,
 } from "../aggregation/utils/connective";
+import { stepResource } from "./resources";
 import type { StepInstance, WeekGraph, WeekGraphEdge } from "./types";
 
 /** `plannedMealId` sentinel for a week-wide merged prep node — it belongs to no
@@ -163,7 +164,7 @@ export function buildWeekGraph(mealData: MealKeyedRecipeData): WeekGraph {
         step,
         recipeName: recipeData.recipe.name,
       });
-      if ((step.resource ?? "none") === "none") {
+      if (stepResource(step) === "none") {
         const raw = singleRawInput(recipeData, step.id);
         if (raw) mergeableInfo.set(id, raw);
       }
