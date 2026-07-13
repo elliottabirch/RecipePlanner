@@ -75,3 +75,15 @@ rather than bolting a garlic special case onto `units.ts`.
 Add unit tests in `src/lib/units.test.ts` covering clove→cube, cube→clove, and the
 each-vs-clove ambiguity, plus an aggregation test asserting Honey Garlic Broccolini pulls
 1 cube.
+
+## ⚠️ Land this together with `alias-units-break-cross-recipe-aggregation`
+
+That todo found a *second*, independent garlic bug: the aggregation read path never calls
+`normalizeUnit`, so a node with unit `"cube"` fails `canConvert` against itself and gets split
+into a separate line — which is why a week using garlic in two recipes only asked for 1 cube.
+
+The two interact, and order matters. Fixing the aggregation split **alone** makes the tomato
+soup's cloves and the broccolini's cubes finally merge — but at the **1:1 ratio this todo
+describes**, summing cloves and cubes as if they were the same unit. Under-counting would
+become mis-counting. Ship the ratio fix (or at least the recipe-node data correction) in the
+same pass.
