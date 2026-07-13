@@ -59,18 +59,37 @@ because for them the JIT steps are **the entire cook**. Verified against prod:
 So cook mode showed three knife tasks and a freezer pull, then declared itself done — while
 ~70 minutes of actual cooking, including a 35-minute braise, existed only in the database.
 
-## The data is probably RIGHT. The app is missing a surface.
+## CORRECTION (2026-07-12): the data for THESE two recipes is WRONG
 
-Worth being clear about this, because the tempting "fix" is to re-tag these steps as `batch`
-and that would be wrong. Browning mushrooms and simmering a bourguignon genuinely *are* day-of
-work — you chop on prep day and cook the braise the night you eat it. The `batch` / `just_in_time`
-split is modeling reality correctly.
+An earlier draft of this todo claimed the recipe data was correct and the app was solely at
+fault. **That was wrong** — the user pushed back, and they're right. See the sibling todo
+`mis-tagged-just-in-time-timing-on-make-ahead-steps` for the data fix.
 
-The defect is that **`just_in_time` has no home**. Cook mode is explicitly the *prep-day*
-schedule. There is no *day-of* schedule anywhere. The nearest thing, `buildPullLists` →
-`PullListsTab` (`aggregation.ts:106`), walks JIT steps only to list the **ingredients to pull
-from storage** — it never surfaces the steps themselves, their instructions, durations, or
-order. The cooking instructions for a JIT meal are unreachable from any screen.
+Per the recipe-import skill's own documented convention:
+
+> **`batch`** — a cook/assembly step done during the Saturday prep-day session (roasting,
+> **simmering**, tossing a make-ahead salad). **The normal case for a weekly meal's assembly
+> steps.**
+> **`just_in_time`** — a step that MUST happen the night you eat: a fresh sear, baking the
+> fish, warming tortillas and assembling tacos, dressing a salad kept un-dressed.
+
+"Simmering" is named as the canonical **batch** example. So `Simmer bourguignon`,
+`Brown mushrooms`, and `create spaghetti` are **mis-tagged** and belong in the prep-day
+schedule. Once retagged, cook mode WILL show them and the immediate stranding goes away for
+these two recipes.
+
+## The app defect is still real, just narrower
+
+Retagging fixes these recipes; it does not fix the class. A correctly-JIT step — `assemble
+tacos`, `warm pitas`, `Bake cod (day-of)`, `Serve over noodles` — is *still* invisible in every
+screen. Cook mode is explicitly the *prep-day* schedule; there is **no day-of schedule
+anywhere**. The nearest thing, `buildPullLists` → `PullListsTab` (`aggregation.ts:106`), walks
+JIT steps only to list the **ingredients to pull from storage** — never the steps themselves,
+their instructions, durations, or order.
+
+So the cook still has no screen telling them how to finish a meal on the night they eat it.
+And cook mode **still ends silently**, which is the part that actually stranded the user: even
+with perfect data, a prep-day list that just stops reads as "you're done."
 
 ## Solution
 
