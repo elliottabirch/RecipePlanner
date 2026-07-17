@@ -10,5 +10,6 @@
   },
   "claude_orchestration": {
     "enabled": true
-  }
+  },
+  "model_profile": "adaptive"
 }
