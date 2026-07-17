@@ -3,6 +3,30 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import PocketBase from "pocketbase";
 
+/**
+ * Report + gated-apply audit for recipe_product_nodes.quantity corrections.
+ *
+ * Built for the garlic over-pull (quick 260716-rpp), then generalized when
+ * thyme turned out to be a second instance of the same class: a sub-unit
+ * alias (`clove`, `cube`, `sprig`, …) collapsing into `each` alongside a
+ * different denomination of the same product, so the two merge 1:1. Expect
+ * a third — hence one parameterized safety implementation rather than a
+ * copy per ingredient.
+ *
+ * Usage:
+ *   node scripts/audit-node-quantities.js --match garlic --evidence 'clove|cube'
+ *   node scripts/audit-node-quantities.js --match '^thyme' --evidence 'sprig|bunch|package' --apply
+ *
+ *   --match <regex>     product-name pattern, case-insensitive (required)
+ *   --evidence <regex>  prose to mine from the owning recipe's steps, to
+ *                       recover authoring intent the unit field lost
+ *   --label <slug>      output filename prefix (default: slug of --match)
+ *   --apply             actually write (default is a dry run)
+ *
+ * Worksheets land at dedup-output/<label>-node-quantities.{json,md} and the
+ * rollback at <label>-node-quantities.rollback.json. `--label garlic`
+ * therefore still resolves the original garlic worksheet paths.
+ */
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // PB_URL lets this script be pointed at test (:8091) for the D-06 rehearsal
@@ -12,17 +36,52 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PB_URL = process.env.PB_URL || "http://192.168.50.95:8090";
 
 // Safety default: dry-run unless --apply is explicitly passed (D-08 safety
-// net — never mutate prod data silently). This is the report + gated-apply
-// audit for the garlic quantity over-pull (260716-rpp Task 1/4).
+// net — never mutate prod data silently).
 const APPLY = process.argv.includes("--apply");
 const DRY_RUN = !APPLY;
+
+function argValue(flag) {
+  const i = process.argv.indexOf(flag);
+  if (i === -1) return undefined;
+  const v = process.argv[i + 1];
+  if (v === undefined || v.startsWith("--")) {
+    throw new Error(`${flag} requires a value`);
+  }
+  return v;
+}
+
+const MATCH_RAW = argValue("--match");
+if (!MATCH_RAW) {
+  throw new Error(
+    "--match <regex> is required (product-name pattern, e.g. --match garlic). " +
+      "Refusing to audit every product by default."
+  );
+}
+// Build the regexes eagerly so a bad pattern fails before any network call.
+let MATCH_RE, EVIDENCE_RE;
+try {
+  MATCH_RE = new RegExp(MATCH_RAW, "i");
+} catch (e) {
+  throw new Error(`--match "${MATCH_RAW}" is not a valid regex: ${e.message}`);
+}
+const EVIDENCE_RAW = argValue("--evidence");
+try {
+  EVIDENCE_RE = EVIDENCE_RAW ? new RegExp(EVIDENCE_RAW, "i") : null;
+} catch (e) {
+  throw new Error(`--evidence "${EVIDENCE_RAW}" is not a valid regex: ${e.message}`);
+}
+
+const LABEL = (argValue("--label") ?? MATCH_RAW)
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, "-")
+  .replace(/^-+|-+$/g, "") || "audit";
 
 const pb = new PocketBase(PB_URL);
 
 const OUTPUT_DIR = path.join(__dirname, "dedup-output");
-const WORKSHEET_JSON_PATH = path.join(OUTPUT_DIR, "garlic-node-quantities.json");
-const WORKSHEET_MD_PATH = path.join(OUTPUT_DIR, "garlic-node-quantities.md");
-const ROLLBACK_PATH = path.join(OUTPUT_DIR, "garlic-node-quantities.rollback.json");
+const WORKSHEET_JSON_PATH = path.join(OUTPUT_DIR, `${LABEL}-node-quantities.json`);
+const WORKSHEET_MD_PATH = path.join(OUTPUT_DIR, `${LABEL}-node-quantities.md`);
+const ROLLBACK_PATH = path.join(OUTPUT_DIR, `${LABEL}-node-quantities.rollback.json`);
 
 const EVIDENCE_MAX_LEN = 200;
 
@@ -53,11 +112,12 @@ function truncate(text) {
 }
 
 /**
- * Report phase — READ ONLY. Fetches every garlic-named product, every
- * recipe_product_node against those products, and recovers clove/cube
- * authoring evidence from the owning recipe's steps (the raw unit string
- * is gone from the DB per planning_findings #4 — the step prose is the
- * only surviving evidence of intent).
+ * Report phase — READ ONLY. Fetches every product matching --match, every
+ * recipe_product_node against those products, and recovers authoring
+ * evidence matching --evidence from the owning recipe's steps. That prose
+ * matters because the raw unit string is gone from the DB the moment it
+ * normalizes (`clove` -> `each`), leaving step text as the only surviving
+ * record of what the author meant.
  *
  * proposedQuantity is seeded EQUAL to currentQuantity and confirmed is
  * seeded false for every row — this script never auto-proposes a
@@ -65,21 +125,28 @@ function truncate(text) {
  * flips confirmed using the evidence column + the recipe itself.
  */
 async function buildReport() {
-  console.log("\n--- Building garlic node-quantity report (read-only) ---");
+  console.log(
+    `\n--- Building ${LABEL} node-quantity report (read-only) ---`
+  );
 
   const allProducts = await pb.collection("products").getFullList();
-  const garlicProducts = allProducts.filter((p) => /garlic/i.test(p.name));
-  const garlicProductIds = new Set(garlicProducts.map((p) => p.id));
-  const productById = new Map(garlicProducts.map((p) => [p.id, p]));
+  const matchedProducts = allProducts.filter((p) => MATCH_RE.test(p.name));
+  const matchedProductIds = new Set(matchedProducts.map((p) => p.id));
+  const productById = new Map(matchedProducts.map((p) => [p.id, p]));
 
   console.log(
-    `  Garlic products: ${garlicProducts.map((p) => `${p.name} (${p.id})`).join(", ") || "(none found)"}`
+    `  Products matching /${MATCH_RE.source}/i: ${matchedProducts.map((p) => `${p.name} (${p.id})`).join(", ") || "(none found)"}`
   );
+  if (matchedProducts.length === 0) {
+    throw new Error(
+      `No product name matches /${MATCH_RE.source}/i — refusing to write an empty worksheet. Check the --match pattern.`
+    );
+  }
 
   const allNodes = await pb
     .collection("recipe_product_nodes")
     .getFullList({ expand: "recipe" });
-  const garlicNodes = allNodes.filter((n) => garlicProductIds.has(n.product));
+  const matchedNodes = allNodes.filter((n) => matchedProductIds.has(n.product));
 
   const allSteps = await pb.collection("recipe_steps").getFullList();
   const stepsByRecipe = new Map();
@@ -88,19 +155,23 @@ async function buildReport() {
     stepsByRecipe.get(s.recipe).push(s);
   }
 
-  const rows = garlicNodes.map((node) => {
+  const rows = matchedNodes.map((node) => {
     const product = productById.get(node.product);
     const recipe = node.expand?.recipe;
     const recipeSteps = stepsByRecipe.get(node.recipe) || [];
-    const cloveOrCubeMentions = recipeSteps
-      .flatMap((s) => [s.name, s.instructions])
-      .filter(Boolean)
-      .filter((text) => /clove|cube/i.test(text))
-      .map((text) => truncate(text.trim()));
+    const mentions = EVIDENCE_RE
+      ? recipeSteps
+          .flatMap((s) => [s.name, s.instructions])
+          .filter(Boolean)
+          .filter((text) => EVIDENCE_RE.test(text))
+          .map((text) => truncate(text.trim()))
+      : [];
     const evidence =
-      cloveOrCubeMentions.length > 0
-        ? cloveOrCubeMentions.join(" | ")
-        : "(no clove/cube mention found in recipe steps)";
+      mentions.length > 0
+        ? mentions.join(" | ")
+        : EVIDENCE_RE
+          ? `(no /${EVIDENCE_RE.source}/i mention found in recipe steps)`
+          : "(no --evidence pattern given)";
 
     const currentQuantity = node.quantity ?? 0;
     const currentUnit = node.unit ?? "";
@@ -127,18 +198,20 @@ async function buildReport() {
       a.recipeName.localeCompare(b.recipeName)
   );
 
-  console.log(`  Found ${rows.length} garlic node(s) across ${garlicProducts.length} product(s)`);
+  console.log(
+    `  Found ${rows.length} node(s) across ${matchedProducts.length} matched product(s)`
+  );
   return rows;
 }
 
 function renderMarkdown(rows) {
   const lines = [
-    "# Garlic Node Quantity Audit",
+    `# Node Quantity Audit — ${LABEL}`,
     "",
     `Generated: ${new Date().toISOString()}`,
     `Source: ${PB_URL}`,
     "",
-    `${rows.length} garlic node(s) found. Every row seeds \`confirmed: false\` and`,
+    `${rows.length} node(s) matching /${MATCH_RE.source}/i. Every row seeds \`confirmed: false\` and`,
     "`proposedQuantity === currentQuantity` — nothing here is auto-proposed",
     "(D-08). Fill in `proposedQuantity` and flip `confirmed: true` in the JSON",
     "worksheet only for rows you have personally decided, using the Evidence",
@@ -204,7 +277,7 @@ function preflightValidate(confirmedRows) {
 async function backupBeforeApply() {
   console.log("\n--- Creating pre-apply backup ---");
   const stamp = new Date().toISOString().replace(/[:.]/g, "-").toLowerCase();
-  const basename = `pre-garlic-quantities-${stamp}.zip`;
+  const basename = `pre-${LABEL}-quantities-${stamp}.zip`;
   const ok = await pb.backups.create(basename);
   if (!ok) {
     throw new Error(
@@ -270,7 +343,7 @@ async function applyConfirmedRows(confirmedToApply) {
 
 async function main() {
   console.log("=".repeat(80));
-  console.log("AUDIT GARLIC NODE QUANTITIES");
+  console.log(`AUDIT NODE QUANTITIES — ${LABEL}`);
   console.log(`Target: ${PB_URL}`);
   console.log(`Worksheet: ${WORKSHEET_JSON_PATH}`);
   console.log(
@@ -346,6 +419,6 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error("\n❌ AUDIT GARLIC NODE QUANTITIES FAILED:", fmtError(e));
+  console.error(`\n❌ AUDIT NODE QUANTITIES (${LABEL}) FAILED:`, fmtError(e));
   process.exit(1);
 });

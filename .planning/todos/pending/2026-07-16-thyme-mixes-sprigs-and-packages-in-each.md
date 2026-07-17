@@ -1,13 +1,45 @@
 ---
 created: 2026-07-16
-title: thyme (fresh) mixes sprigs and packages in the same `each` unit — same class as the garlic over-pull
+title: "[RESOLVED 2026-07-16] thyme (fresh) mixed sprigs and packages in the same `each` unit — same class as the garlic over-pull"
 area: database
 severity: minor
 source: 260716-rpp follow-up sweep for other instances of the garlic bug class
 files:
   - recipe-planner/src/lib/units.ts:87-105 (UNIT_ALIASES — sprig/sprigs -> each, added 2026-07-11 in 1e3dfd1)
-  - recipe-planner/scripts/audit-garlic-node-quantities.js (the human-confirmed-worksheet pattern to reuse)
+  - recipe-planner/scripts/audit-node-quantities.js (the parameterized human-confirmed-worksheet sweep)
+  - recipe-planner/src/lib/linter/rules/mixed-denomination.ts (the lint rule that found this)
 ---
+
+## Resolved — 2026-07-16
+
+**Decision: one `each` of thyme (fresh) is a SPRIG.** Rationale: recipes are
+authored in sprigs (Bourguignon's node was literally written `3 sprig`, see
+1e3dfd1), `sprig -> each` already exists in `UNIT_ALIASES` so imports keep
+producing them, and the sibling `bay leaf` product already uses `each` = one
+individual leaf. The alternative (each = package) would make cook cards read
+"0.25 package thyme".
+
+Applied via `node scripts/audit-node-quantities.js --match '^thyme'
+--evidence 'sprig|bunch|package|thyme' --apply`:
+
+| Node | Recipe | Was | Now |
+|---|---|---|---|
+| `50v4tg329j2dsd8` | vegetable stock | 0.5 (half a bunch) | 6 sprigs |
+| `7o818wf72sg40qb` | butternut squash soup (batch) | 1 (ambiguous) | 3 sprigs |
+
+Left untouched, both already correct sprig counts: `071w7766e8h557i` Creamy
+Tomato Soup (8) and `rned60yvy2l47hb` Mushroom Bourguignon (3). Also untouched:
+`v5z29tjf5s3x3y4` White Bean and Tomato Stew (`1 tbsp`) — a different dimension,
+which convert-or-split (DATA-01) correctly renders as its own line.
+
+Verified: all five nodes read back as intended; the `mixed-denomination` lint
+rule that surfaced this now returns **0 findings** against live prod; week 7/13
+aggregates thyme to one line of `11 each` (8 + 3 sprigs, both pre-existing
+correct nodes — this fix changed no planned week's total).
+
+Pre-apply PB backup: `pre-thyme-quantities-2026-07-17t04-25-21-498z.zip`.
+Rollback worksheet: `scripts/dedup-output/thyme-node-quantities.rollback.json`
+(gitignored). Only `quantity` was written — never `unit`, no deletes.
 
 ## Problem
 
@@ -54,7 +86,7 @@ already gone from the DB**, so nothing can infer intent automatically (D-08).
    0.5 node implies whoever wrote it meant a package. Whatever is chosen, all five
    nodes must be re-expressed in it.
 2. **Correct the nodes** using the human-confirmed-worksheet pattern from
-   `scripts/audit-garlic-node-quantities.js` (dry-run default, PB backup + rollback
+   `scripts/audit-node-quantities.js` (dry-run default, PB backup + rollback
    worksheet before any write, rows seed `confirmed:false`). This is small enough
    to fold into any nearby data pass.
 3. **The general guard — PARTLY SHIPPED 2026-07-16.** Every sub-unit alias in

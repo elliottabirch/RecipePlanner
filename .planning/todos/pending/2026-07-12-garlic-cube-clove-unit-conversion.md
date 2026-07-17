@@ -6,7 +6,7 @@ files:
   - recipe-planner/src/lib/units.ts:87-105 (UNIT_ALIASES — clove and cube both -> each)
   - recipe-planner/src/lib/units.ts:126-136 (convert — count-to-count is identity or null)
   - recipe-planner/src/lib/units.ts:20-56 (Dimension / Unit / UNIT_DIMENSIONS)
-  - recipe-planner/scripts/audit-garlic-node-quantities.js (260716-rpp Task 1 — the read-only prod audit + gated --apply that fixes the DATA over-pull; run under 260716-rpp Task 4)
+  - recipe-planner/scripts/audit-node-quantities.js (the read-only prod audit + gated --apply that fixed this; renamed from audit-garlic-node-quantities.js and parameterized when thyme turned out to be a second instance — run as `--match garlic --evidence 'clove|cube'`)
   - recipe-planner/scripts/dedup-output/garlic-node-quantities.json (260716-rpp Task 1 worksheet — human-confirmed corrections land here)
 ---
 
@@ -102,7 +102,7 @@ still existed.
 Two layers, unchanged from the original todo, but re-scoped by what's actually
 live vs. deferred:
 
-**1. Data fix — being addressed by `scripts/audit-garlic-node-quantities.js`
+**1. Data fix — done, via `scripts/audit-node-quantities.js`
 under 260716-rpp.** Read-only audit of every garlic node (recipe, current
 qty/unit, and clove/cube prose evidence recovered from recipe steps) →
 human-confirmed worksheet (`scripts/dedup-output/garlic-node-quantities.json`,
