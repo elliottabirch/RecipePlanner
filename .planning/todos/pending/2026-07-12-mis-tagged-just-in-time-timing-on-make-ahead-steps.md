@@ -1,13 +1,64 @@
 ---
 created: 2026-07-12
-title: "`create spaghetti` mega-step needs splitting (bourguignon retag already applied — by hand, unrecorded)"
+title: "`create spaghetti` mega-step split to a 4-step all-batch model (bourguignon retag already applied — by hand, unrecorded)"
 area: database
 files:
   - .claude/skills/recipe-import/SKILL.md:415-426 ("Step Timing" — the convention being violated)
   - recipe-planner/src/lib/scheduler/week-graph.ts:158 (JIT steps excluded from the prep-day graph)
   - recipe-planner/src/lib/linter/rules/timing-coherence.ts (SHIPPED 2026-07-16, u4p Task 2 — guards this class going forward)
-  - recipe-planner/scripts/split-create-spaghetti-step.js (SHIPPED 2026-07-16, u4p Task 3 — the split, gated behind human `--apply`)
+  - recipe-planner/scripts/split-create-spaghetti-step.js (REWRITTEN 2026-07-17, u4p Task 1 — the 4-step all-batch split, gated behind human `--apply`)
 ---
+
+## Corrected 2026-07-17 (u4p) — the split model itself was wrong
+
+**Read this before anything below it, including the 2026-07-16 correction —
+it describes a proposal this todo made that the user does NOT want.**
+
+A direct **user interview (2026-07-17)** settled how meat spaghetti is
+actually cooked, and it overturns this todo's own solution:
+
+> The spaghetti is boiled on prep day, combined with the sauce, and stored
+> combined. There is no day-of work for this dish.
+
+Every consequence follows, and each one corrects something this todo (or a
+prior revision of the fixing plan) got wrong:
+
+- **`create spaghetti` being retagged `batch` (wholesale) was CORRECT, not a
+  half-fix.** The 2026-07-16 correction below calls it "wrongly-scheduled"
+  because it assumed the boil-and-plate work was day-of. It is not. There was
+  nothing wrong with the wholesale retag except that it left one step doing
+  the work of four.
+- **This todo's own proposal — "split it into a `batch` sauce step ... plus a
+  day-of step that cooks noodles and plates"  — was FALSE**, and was never
+  derived from how the user cooks. It was assumed from the dish's name
+  ("spaghetti" implies day-of boiling) rather than checked. A script
+  implementing exactly that proposal (`28c9102`) was designed, planned, and
+  rehearsed on `:8091` — and never applied to prod, because the rehearsal
+  step surfaced the divergence before the checkpoint. It has since been
+  **rewritten**, not amended, for the correct model.
+- **Meat spaghetti having zero `just_in_time` steps is correct by design.**
+  Its absence from cook mode's day-of summary (`collectDayOfWork`,
+  `day-of-work.ts`) is a **property to assert**, not a gap to close. Anyone
+  who "fixes" that absence by adding a day-of plate step is re-introducing
+  this exact bug for the third time — this todo has now been wrong about
+  this dish twice.
+- **The real, narrow defect was granularity, not timing.** One 8a/15p
+  mega-step hid two overlappable passive windows and under-counted active
+  time (real total: 10a/23p, not 8a/15p). Splitting into four `batch` steps
+  (Cook spaghetti 2a/8p, Cook meat 5a/0p, Simmer meat sauce 1a/15p, Combine
+  all 2a/0p) lets the scheduler place the 8-minute noodle boil inside the
+  15-minute sauce simmer — **but only because prod's
+  `scheduler_config.burner_count` is 2.** `resources.ts` holds a stovetop
+  resource for a step's full active+passive window; at `burner_count: 1` this
+  split would make the dish **slower**, not faster. If that config value
+  ever changes, the split's rationale evaporates.
+
+**Mark this piece SHIPPED once the human `--apply` at the `260716-u4p`
+checkpoint lands** — `scripts/split-create-spaghetti-step.js` (rewritten
+2026-07-17, model `batch-4step-v2`) is the script; it was rehearsed
+end-to-end on `:8091` including an executed `--rollback`, and the read-only
+report against prod is the human-facing worksheet at
+`scripts/dedup-output/split-create-spaghetti.md`.
 
 ## Corrected 2026-07-16 (u4p)
 
@@ -138,14 +189,23 @@ touching an excluded step. The simmer would then schedule **with no dependency o
 exactly the silent-edge-drop failure described in `unproduced-non-raw-inputs-are-invisible`.
 **Retag the pull and the simmer in the same change.**
 
-**2. `create spaghetti` is a mega-step that cannot be tagged correctly either way.**
-Its instructions are *"Brown ground beef, combine with marinara, and simmer over cooked
+> **RETRACTED 2026-07-17 (u4p): the proposal below (a `batch` sauce step plus a
+> `just_in_time` day-of plate step) is WRONG and was never built.** A direct user
+> interview established the spaghetti is boiled on prep day and stored combined
+> with the sauce — there is no day-of work for this dish at all. The correct
+> model is FOUR `batch` steps (Cook spaghetti, Cook meat, Simmer meat sauce,
+> Combine all); the defect was granularity, not a day-of/make-ahead split. See
+> the Corrected section at the top of this file.
+
+**2. `create spaghetti` is a mega-step that cannot be tagged correctly either way.** ~~Its
+instructions are *"Brown ground beef, combine with marinara, and simmer over cooked
 spaghetti; top with parmesan"* — one step conflating **make-ahead sauce** (brown + simmer:
 `batch`) with **day-of** work (boil the spaghetti, plate, top with parmesan: `just_in_time`).
 No single `timing` value is right. **Split it** into a `batch` sauce step producing a stored
 meat-sauce product, plus a day-of step that cooks noodles and plates — mirroring how
 Mushroom Bourguignon already separates `Simmer bourguignon` from `Cook egg noodles` /
-`Serve over noodles`.
+`Serve over noodles`.~~ (superseded — see retraction above: the actual defect is that this
+one step hides two overlappable passive windows, not a day-of/make-ahead split.)
 
 ## Also worth cleaning
 
@@ -158,10 +218,13 @@ convention and makes the data harder to reason about. Low priority.
 
 1. **Fix the four steps — DONE, but done OUTSIDE the repo, unrecorded.** Bourguignon's
    brown/simmer/pull are `batch` in prod; `create spaghetti` is `batch` (wholesale) in both
-   spaghetti recipes. No script did this and no commit records it — see the Corrected section
-   at the top. What remains is the SPLIT, not the retag: `260716-u4p` Task 3 ships
-   `scripts/split-create-spaghetti-step.js` behind the full gated-write pattern (checkpoint
-   pending human `--apply`).
+   spaghetti recipes — and **correctly so** (see the 2026-07-17 correction at the top: there
+   is no day-of work for this dish). No script did this and no commit records it. What
+   remains is a **4-step all-`batch` granularity split** (Cook spaghetti, Cook meat, Simmer
+   meat sauce, Combine all), not a day-of/make-ahead split: `260716-u4p` Task 1 rewrote
+   `scripts/split-create-spaghetti-step.js` for this model, rehearsed it end-to-end (apply +
+   rollback) on `:8091`, and left it behind the full gated-write pattern — checkpoint pending
+   human `--apply` against prod.
 2. **Stop it recurring — SHIPPED.** `rules/timing-coherence.ts` (`260716-u4p` Task 2) flags an
    `assembly` step tagged `just_in_time` with `passive_minutes >= 5` AND a
    simmer/braise/stew verb in its name+instructions. Zero findings against the 24 live JIT
