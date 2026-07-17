@@ -1,7 +1,9 @@
 ---
 created: 2026-07-12
-title: Check-off annihilates a step's passive window in retimeSchedule
+title: "[RESOLVED 2026-07-17] Check-off annihilates a step's passive window in retimeSchedule"
 area: general
+severity: major
+source: 260717-25d Task 1
 files:
   - recipe-planner/src/lib/scheduler/retime.ts:130-146 (effStep — the passive-collapse bug)
   - recipe-planner/src/pages/CookMode.tsx:570-586 (handleToggleChecked — elapsedMinutes from the Now anchor)
@@ -9,6 +11,58 @@ files:
   - recipe-planner/src/lib/scheduler/genetic.ts:295-335 (decodeSSGS — the CORRECT reference behavior)
   - recipe-planner/src/lib/scheduler/retime.test.ts
 ---
+
+## Resolved — 2026-07-17
+
+**Fixed by flooring passive at its estimate** — this todo's own "floored
+variant" (`passiveOcc = estPassive > 0 ? Math.max(estPassive, actualElapsed -
+activeOcc) : 0`), chosen over its "honest model" alternative (`active =
+actualElapsed`) because the honest model changes `activeOcc` semantics for
+EVERY passive step in the app — every active-phase overrun would propagate
+to dependents, a real behaviour change needing its own evidence, not a
+2-line correctness fix. `activeOcc`'s `Math.min` cap is untouched, byte for
+byte. Verified genuine overrun absorption still works: a simmer that really
+took 50 minutes still ends at 50, not pinned at 43 — the floor is a floor,
+not a pin. Live line numbers drifted to `retime.ts:138-149`.
+
+**This todo understated its own bug — the phantom-burner defect is bigger
+than the "dependents collapse" framing.** The collapse does not merely
+mis-time a dependent step; it **phantom-frees the resource (burner/oven) the
+checked-off step is still physically occupying**, so the scheduler placed a
+second pot on an occupied burner — verified with real prod shapes
+(`Simmer bourguignon` 8a/35p, `Brown mushrooms` 12a/0p, `burner_count: 1`)
+and **no precedence edge required at all**. `resources.ts` meters stovetop
+across a step's full active+passive window precisely because a simmering pot
+still holds its burner; the collapse lied to that model and produced a
+PHYSICALLY IMPOSSIBLE schedule, not merely a wrong time. This is why the
+fix shipped ahead of Task 2's display-order fix, and why the phantom-burner
+case, not this todo's blend-symptom case, is the stronger regression test.
+
+**The origin, because the process is the finding.** `5704693` ("fix
+checked-off step keeps active/passive split") introduced the buggy formula
+AND the test named after it (`retime.test.ts:146`), in the SAME commit,
+while fixing the previous shuffle (the third fix in this area after
+`3665946` and `b91ac19`). Its own commit message reasoned entirely about the
+full-list check-off path ("since a full-list check-off records the step's
+estimate") — where the formula happens to be correct — and never considered
+the Now-card path, where `actualElapsed` is active-only. **A path-coverage
+bug, not a math error.** Proof of the gap: the fix passes all 326 existing
+tests UNCHANGED; two new tests were added that specifically exercise
+`actualElapsed <= estActive`, verified RED against the old formula before
+the fix landed.
+
+**The check-off contract is now written down in `retime.ts`** — the comment
+block that previously encoded the opposite assumption (and grew this bug
+once already) now states plainly: check-off means hands-on work is
+finished, `actualElapsed` measures the active phase only, and passive
+continues unattended and is floored at its estimate, never derived from how
+fast the cook was.
+
+**Deferred rider spun out honestly**, not dropped: `deriveReadiness`
+passive-awareness (this todo's "also worth fixing while here") is its own
+todo — see `.planning/todos/pending/2026-07-17-readiness-is-blind-to-running-passive-windows.md`.
+It changes what a status chip *means* (a feature, not this bug) and would
+have muddied a 2-line correctness fix.
 
 ## Problem
 

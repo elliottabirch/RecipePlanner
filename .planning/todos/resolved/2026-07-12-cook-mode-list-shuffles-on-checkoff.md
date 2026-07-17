@@ -1,13 +1,45 @@
 ---
 created: 2026-07-12
-title: Cook mode list shuffles when you check off a step
+title: "[RESOLVED 2026-07-17] Cook mode list shuffles when you check off a step"
 area: ui
+severity: major
+source: 260717-25d Task 2
 files:
   - recipe-planner/src/pages/CookMode.tsx:298-308 (orderedByTime — sorts by schedule.starts)
   - recipe-planner/src/pages/CookMode.tsx:564-600 (handleToggleChecked — retimeSchedule + setSchedule)
   - recipe-planner/src/pages/CookMode.tsx:10-14 (header comment stating the violated invariant)
   - recipe-planner/src/lib/scheduler/retime.ts
 ---
+
+## Resolved — 2026-07-17
+
+**Fixed by freezing the display order at generation** — this todo's own
+preferred option, chosen over its "cheaper alternative" (sort by an initial
+`starts` snapshot) because both cost the same once the sort is extracted,
+and extraction is what made a real regression test possible at all
+(`display-order.test.ts`, no jsdom/component-test infrastructure — the
+`readiness.ts` precedent). This todo's warning was heeded: `orderedByTime`
+was **not** replaced by rendering `schedule.order` directly (which would
+restore the topological ordering the sort exists to correct) — the sort
+still happens, exactly once, at generation, via `freezeDisplayOrder`.
+
+**The thaw policy is a fixed user decision, not a heuristic**: the order
+thaws ONLY on an explicit Regenerate. No overrun threshold, no staleness
+detection, no partial re-sort. `handleGenerateSchedule` and
+`performRegenerate` are the only two `setSchedule` sites that also call
+`freezeDisplayOrder`; `handleToggleChecked` never touches the frozen order.
+
+**This todo's own prediction was measured and confirmed**: the residual
+shuffle it anticipated (independent of `checkoff-annihilates-passive-time-in-retime`)
+survives that other todo's passive-collapse fix — a genuine overrun (a
+5a/2p bake retimed to 40) still crosses a neighbour's start time after the
+passive fix lands. These were correctly diagnosed as two independent
+defects needing two independent fixes, exactly as this todo said.
+
+**Not exercisable this session**: the tablet human-check in `260717-25d`'s
+plan — the user has deferred deploying, and the NAS caches the JS bundle.
+The invariant is pinned in CI (`display-order.test.ts`); the hand-check is
+the confidence check for whenever a deploy happens.
 
 ## Problem
 

@@ -26,18 +26,20 @@ produces three separate defects:
 
 | Symptom | Where | Status |
 |---|---|---|
-| Check-off destroys the passive window in the retime math | `retime.ts:138-149` | **Fixed** under quick `260717-25d` Task A |
+| Check-off destroys the passive window in the retime math | `retime.ts:138-149` | **RESOLVED 2026-07-17** — `260717-25d` Task 1 |
 | Check-off destroys the passive window on screen (no timer) | `CookMode.tsx` | **This todo** |
-| Dependents go "ready" on tap, not when the timer elapses | `readiness.ts:29-38` | Deferred from the check-off todo — **same work as this** |
+| Dependents go "ready" on tap, not when the timer elapses | `readiness.ts:29-38` | Spun out to its own todo — **same work as this** |
 
-The `deriveReadiness` passive-aware enhancement (deferred out of
-`2026-07-12-checkoff-annihilates-passive-time-in-retime.md`) is the **model**; this todo is
-the **surface**. They are one feature and should be designed together, not bolted on
-separately.
+The `deriveReadiness` passive-aware enhancement (deferred out of the now-resolved
+`.planning/todos/resolved/2026-07-12-checkoff-annihilates-passive-time-in-retime.md`, and
+filed on its own honestly-titled todo,
+`.planning/todos/pending/2026-07-17-readiness-is-blind-to-running-passive-windows.md`) is
+the **model**; this todo is the **surface**. They are one feature and should be designed
+together, not bolted on separately — whichever is picked up first should re-read the other.
 
-## Ordering — this is why the prerequisite matters
+## Ordering — this is why the prerequisite mattered
 
-`260717-25d` Task A must land first, and does. **If retime destroys the passive window,
+`260717-25d` Task 1 landed first (2026-07-17). **If retime destroys the passive window,
 there is no timer left to display.** Fixing the math is what makes the timer surface
 buildable at all.
 
@@ -59,9 +61,12 @@ remaining`. Open questions worth deciding deliberately rather than defaulting:
 
 ## Related
 
-- `2026-07-12-checkoff-annihilates-passive-time-in-retime.md` — the math half. Carries the
-  deferred `deriveReadiness` piece, which is really this feature's model layer.
-- `2026-07-12-cook-mode-list-shuffles-on-checkoff.md` — same check-off code path
-  (`handleToggleChecked`), different defect.
+- `.planning/todos/resolved/2026-07-12-checkoff-annihilates-passive-time-in-retime.md`
+  (RESOLVED 2026-07-17) — the math half, now fixed. Its deferred `deriveReadiness` piece
+  lives on at `.planning/todos/pending/2026-07-17-readiness-is-blind-to-running-passive-windows.md`,
+  which is really this feature's model layer.
+- `.planning/todos/resolved/2026-07-12-cook-mode-list-shuffles-on-checkoff.md`
+  (RESOLVED 2026-07-17) — same check-off code path (`handleToggleChecked`), different
+  defect, also fixed by `260717-25d`.
 - The `create spaghetti` split (applied 2026-07-17) added a 1a/15p `Simmer meat sauce`, so
   there is now one more passive window a cook can lose track of.
