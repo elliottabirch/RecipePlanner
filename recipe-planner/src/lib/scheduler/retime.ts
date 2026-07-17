@@ -121,30 +121,51 @@ export function retimeSchedule(
     );
     const actualElapsed = actualCompletions.get(instance.id);
 
-    // Effective footprint. A checked-off step's real elapsed time replaces its
-    // estimate, but must NOT collapse to all-active: a step with a passive
-    // phase (bake, smoke) leaves the cook FREE during that phase, so other
-    // work still packs into it. Modeling a completed passive step as all-active
-    // busied the cook through its whole passive window and shoved every packed
-    // step later — the first-check-off reshuffle. So:
-    //   - a step with a passive phase keeps its (estimated) active window; any
-    //     overrun is absorbed by the passive tail (cook stays free there);
+    // Check-off contract (260717-25d — replaces a formula that assumed the
+    // opposite): checking off a step means the HANDS-ON work is finished, not
+    // that the whole step is over. `CookMode.tsx`'s "Now" anchor (`:336-340`)
+    // is set the instant a step becomes current, so `actualElapsed` measures
+    // the ACTIVE phase ONLY — passive continues unattended after check-off,
+    // physically, whether or not the cook is watching it. So:
+    //   - a step with a passive phase (bake, smoke, simmer) keeps its
+    //     (estimated) active window, and its passive window is FLOORED at
+    //     its estimate — never derived from how fast the cook worked. Any
+    //     genuine overrun is absorbed by the passive tail (cook stays free
+    //     there), so overrun propagation still works.
     //   - a pure hands-on step (no passive phase) counts the whole elapsed as
-    //     active (the cook really was busy the entire time).
-    // On-time completions therefore reproduce the estimate's footprint exactly,
-    // so nothing else moves; only a genuine overrun shifts true dependents.
-    // The step still runs the same feasibility search as an unstarted one, so
-    // its placement matches the GA decode.
+    //     active (the cook really was busy the entire time) and has no
+    //     passive window to floor.
+    // On-time completions therefore reproduce the estimate's footprint
+    // exactly, so nothing else moves; only a genuine overrun shifts true
+    // dependents. The step still runs the same feasibility search as an
+    // unstarted one, so its placement matches the GA decode.
+    //
+    // The PRIOR formula (`passive_minutes: Math.max(0, actualElapsed -
+    // activeOcc)`) derived passive from elapsed and was correct ONLY for the
+    // full-list check-off path, where `actualElapsed` records the full
+    // estimate (active + passive) — there, `actualElapsed - activeOcc`
+    // reduces to `estPassive` and nothing breaks. It was silently wrong for
+    // the Now-card path, where `actualElapsed` is active-only: whenever
+    // `actualElapsed <= estActive` (any prompt check-off), that formula
+    // evaluated to 0 and the ENTIRE passive window was deleted — collapsing a
+    // dependent's start forward AND phantom-freeing the resource (burner/oven)
+    // the step still physically occupies during that window (`resources.ts`
+    // meters stovetop/oven across the full active+passive span for exactly
+    // this reason). `retime.test.ts` could not see this: its only check-off
+    // test passes the full estimate as `actualElapsed`, exercising the
+    // full-list path where the old formula happened to be correct.
     let effStep = instance.step;
     if (actualElapsed !== undefined) {
       const estActive = instance.step.active_minutes ?? 0;
       const estPassive = instance.step.passive_minutes ?? 0;
       const activeOcc =
         estPassive > 0 ? Math.min(estActive, actualElapsed) : actualElapsed;
+      const passiveOcc =
+        estPassive > 0 ? Math.max(estPassive, actualElapsed - activeOcc) : 0;
       effStep = {
         ...instance.step,
         active_minutes: activeOcc,
-        passive_minutes: Math.max(0, actualElapsed - activeOcc),
+        passive_minutes: passiveOcc,
       };
     }
 

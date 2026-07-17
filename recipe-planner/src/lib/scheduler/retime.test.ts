@@ -149,6 +149,15 @@ describe("retimeSchedule — order-preserving recompute (D-01a.3)", () => {
     // Full Schedule shows [bake@0, indep@5]. Checking off the bake with its
     // estimated duration (what a full-list check-off records) must NOT shove
     // indep to 35 — the cook is free during the bake's passive window.
+    //
+    // 260717-25d NOTE: this test passes `actualElapsed = 35` — the bake's
+    // FULL estimate (5 active + 30 passive) — which is what a full-LIST
+    // check-off records. That is the path the old passive-collapse formula
+    // was actually correct on (`actualElapsed - activeOcc` reduces to
+    // `estPassive`), so this test alone could not (and did not) catch the
+    // Now-card bug below, where `actualElapsed` is active-only. Left
+    // unmodified — it still pins real, correct behaviour on the full-list
+    // path.
     const bake = makeInstance(
       "meal-1",
       makeRecipeStep("bake", { resource: "oven", oven_temp_f: 400, active_minutes: 5, passive_minutes: 30, rack_slots: 1 })
@@ -169,6 +178,134 @@ describe("retimeSchedule — order-preserving recompute (D-01a.3)", () => {
     // indep must stay at 5 — checking off a passive step does not busy the cook
     // through its passive window.
     expect(after.starts.get(indep.id)).toBe(5);
+  });
+
+  it("260717-25d: a PROMPT check-off of Simmer bourguignon (8a/35p, real prod shape) is a no-op — it still ends at 43 and its dependent still starts at 43, not 8 (the todo's own regression case)", () => {
+    // Real prod durations (planning_findings #10), verified read-only against
+    // recipe 5t10ugwgxb166ll on 2026-07-17: `Simmer bourguignon` 8a/35p
+    // stovetop, `Serve over noodles` 3a/0p. This is a SYNTHETIC arrangement
+    // of real durations, not a replay of the real week graph — in the real
+    // week graph both are just_in_time and excluded from the week graph
+    // entirely (week-graph.ts:158). The precedence edge here stands in for
+    // that relationship so the dependent-collapse symptom is exercisable.
+    //
+    // This exercises the `actualElapsed <= estActive` path — a PROMPT
+    // check-off (elapsed=8, the hands-on work only) — which
+    // retime.test.ts:146 above never touches (it passes the full 35-minute
+    // estimate, the full-list path that already worked). Under the OLD
+    // formula this test fails: both assertions below read 8, not 43.
+    const simmer = makeInstance(
+      "meal-1",
+      makeRecipeStep("simmer-bourguignon", {
+        resource: "stovetop",
+        active_minutes: 8,
+        passive_minutes: 35,
+      })
+    );
+    const serve = makeInstance(
+      "meal-1",
+      makeRecipeStep("serve-over-noodles", {
+        resource: "none",
+        active_minutes: 3,
+        passive_minutes: 0,
+      })
+    );
+    const edges = [{ from: simmer.id, to: serve.id }];
+    const config = baseConfig();
+    const fixedOrder = [simmer, serve];
+
+    const baseline = retimeSchedule(fixedOrder, new Map(), emptyTimeline(), config, edges);
+    expect(baseline.ends.get(simmer.id)).toBe(43);
+    expect(baseline.starts.get(serve.id)).toBe(43);
+
+    // Prompt check-off: hands-on work (8 min) is done, the pot is simmering.
+    const afterCheckoff = retimeSchedule(
+      fixedOrder,
+      new Map([[simmer.id, 8]]),
+      emptyTimeline(),
+      config,
+      edges
+    );
+    expect(afterCheckoff.ends.get(simmer.id)).toBe(43);
+    expect(afterCheckoff.starts.get(serve.id)).toBe(43);
+  });
+
+  it("260717-25d: THE PHANTOM-BURNER TEST — a prompt check-off must not free a burner the pot is still physically sitting on, even with NO precedence edge at all (the finding the todo missed)", () => {
+    // Real prod durations (planning_findings #10): `Simmer bourguignon`
+    // 8a/35p stovetop and `Brown mushrooms` 12a/0p stovetop, `burner_count:
+    // 1`. Deliberately NO precedence edge between them — this is what proves
+    // the defect is about RESOURCE OCCUPANCY, not precedence: `resources.ts`
+    // (`isFeasibleAt`, the stovetop branch) meters stovetop across a step's
+    // FULL active+passive window because a simmering pot still physically
+    // occupies its burner. Collapsing the simmer's passive window lies to
+    // that model and lets the scheduler place a second pot on an occupied
+    // burner — a PHYSICALLY IMPOSSIBLE schedule, not merely a wrong time.
+    // Synthetic arrangement of real durations, not a replay of the real week
+    // (both steps are just_in_time there and excluded from the week graph;
+    // in the real week graph `Brown mushrooms -> Simmer bourguignon` is
+    // actually the edge, in the opposite direction from this fixture).
+    const simmer = makeInstance(
+      "meal-1",
+      makeRecipeStep("simmer-bourguignon", {
+        resource: "stovetop",
+        active_minutes: 8,
+        passive_minutes: 35,
+      })
+    );
+    const mushrooms = makeInstance(
+      "meal-1",
+      makeRecipeStep("brown-mushrooms", {
+        resource: "stovetop",
+        active_minutes: 12,
+        passive_minutes: 0,
+      })
+    );
+    const fixedOrder = [simmer, mushrooms];
+    const config: SchedulerConfig = { ...baseConfig(), burner_count: 1 };
+
+    // Baseline: with one burner and no edge, mushrooms still can't start
+    // until the simmer's burner frees at 43 (its full active+passive span).
+    const baseline = retimeSchedule(fixedOrder, new Map(), emptyTimeline(), config, []);
+    expect(baseline.starts.get(mushrooms.id)).toBe(43);
+
+    // Prompt check-off of the simmer at elapsed=8 (hands-on done, pot still
+    // simmering). mushrooms must NOT move earlier — the burner is not free.
+    // Under the bug, the simmer's footprint collapses to [0,8), the burner
+    // reads free at t=8, and mushrooms starts at 8 — 35 minutes before the
+    // bourguignon pot actually comes off the stove.
+    const afterCheckoff = retimeSchedule(
+      fixedOrder,
+      new Map([[simmer.id, 8]]),
+      emptyTimeline(),
+      config,
+      []
+    );
+    expect(afterCheckoff.starts.get(mushrooms.id)).toBe(43);
+  });
+
+  it("260717-25d: genuine overrun absorption survives the fix — a simmer that really took 50 minutes still ends at 50, not 43 (the floor is a floor, not a pin)", () => {
+    const simmer = makeInstance(
+      "meal-1",
+      makeRecipeStep("simmer-bourguignon", {
+        resource: "stovetop",
+        active_minutes: 8,
+        passive_minutes: 35,
+      })
+    );
+    const config = baseConfig();
+    const fixedOrder = [simmer];
+
+    // The cook spent 42 real minutes hands-on-and-simmering past the "Now"
+    // anchor — an active overrun well past the 8-minute estimate, but the
+    // pot really did simmer the full 35 (passiveOcc = max(35, 42) = 42).
+    const retimed = retimeSchedule(
+      fixedOrder,
+      new Map([[simmer.id, 50]]),
+      emptyTimeline(),
+      config,
+      []
+    );
+    expect(retimed.ends.get(simmer.id)).toBe(50);
   });
 
   it("reproduces generateSchedule's start times exactly with no completions — the no-first-check-off-reshuffle guarantee", () => {
