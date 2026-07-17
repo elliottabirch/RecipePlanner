@@ -38,6 +38,7 @@ import {
   DialogContent,
   DialogActions,
 } from "@mui/material";
+import TimerOutlinedIcon from "@mui/icons-material/TimerOutlined";
 import { getAll, getOne, collections } from "../lib/api";
 import { applyVariantOverrides, type VariantOverride } from "../lib/aggregation";
 import {
@@ -146,7 +147,7 @@ export default function CookMode() {
   // refresh restarts anchors (checked-off progress itself still restores from
   // cook_progress via useCookProgress, independent of these anchors).
   const nowStartRef = useRef<Map<string, number>>(new Map());
-  const [, forceTick] = useState(0);
+  const [tick, forceTick] = useState(0);
   const [showAllSteps, setShowAllSteps] = useState(false);
   const [showWeightsPanel, setShowWeightsPanel] = useState(false);
   const [regenerateConfirmOpen, setRegenerateConfirmOpen] = useState(false);
@@ -369,15 +370,67 @@ export default function CookMode() {
     []
   );
 
+  // Running passive windows: steps already checked off (active part done) whose
+  // simmer/bake timer is still counting down. `getCountdown` reads the same
+  // `nowStartRef` anchor + wall clock the now-card uses; anchors survive
+  // check-off (the ref is only cleared on load/regenerate), so a checked-off
+  // timer is still computable — it just has nowhere to render until now. We walk
+  // `orderedByTime` (retains checked steps, unlike `visibleOrder`) and keep the
+  // ones whose window hasn't elapsed. Recomputes every second via `tick` so the
+  // strip counts down and a window drops the instant it hits 0:00.
+  const runningWindows = useMemo(() => {
+    void tick; // re-run each 1s forceTick so the wall-clock read stays live
+    return orderedByTime
+      .filter(
+        (inst) =>
+          checkedIds.has(inst.id) && (inst.step.passive_minutes ?? 0) > 0
+      )
+      .map((inst) => ({ instance: inst, countdown: getCountdown(inst) }))
+      .filter(
+        (w): w is { instance: StepInstance; countdown: { text: string; done: boolean } } =>
+          w.countdown !== null && !w.countdown.done
+      );
+  }, [orderedByTime, checkedIds, getCountdown, tick]);
+
+  // The set that makes `deriveReadiness` passive-aware: a producer in here is
+  // checked but still simmering, so it must NOT yet flip its dependents to
+  // "ready". Plus a label lookup so a blocked dependent can read the remaining
+  // time ("12:34 left on the simmer") instead of a bare "waiting".
+  const runningPassiveSet = useMemo(
+    () => new Set(runningWindows.map((w) => w.instance.id)),
+    [runningWindows]
+  );
+  const runningTextById = useMemo(
+    () =>
+      new Map(runningWindows.map((w) => [w.instance.id, w.countdown.text])),
+    [runningWindows]
+  );
+
   const getStatusChip = useCallback(
     (instance: StepInstance, isNowCard: boolean): StatusChip | null => {
       if (instance.step.step_type === StepType.Assembly) {
-        const readiness = deriveReadiness(instance.id, weekGraph, checkedIds);
+        const readiness = deriveReadiness(
+          instance.id,
+          weekGraph,
+          checkedIds,
+          runningPassiveSet
+        );
         if (readiness.state === "waiting") {
-          const labels = readiness.waitingOn.map(
-            (id) => stepLabelById.get(id) ?? id
-          );
-          return { state: "waiting", label: `waiting on: ${labels.join(", ")}` };
+          const parts: string[] = [];
+          if (readiness.waitingOn.length > 0) {
+            const labels = readiness.waitingOn.map(
+              (id) => stepLabelById.get(id) ?? id
+            );
+            parts.push(`waiting on: ${labels.join(", ")}`);
+          }
+          for (const id of readiness.simmering) {
+            const label = stepLabelById.get(id) ?? id;
+            const remaining = runningTextById.get(id);
+            parts.push(
+              remaining ? `${remaining} left on ${label}` : `${label} still cooking`
+            );
+          }
+          return { state: "waiting", label: parts.join(" · ") };
         }
       }
 
@@ -396,7 +449,14 @@ export default function CookMode() {
       }
       return null;
     },
-    [weekGraph, checkedIds, stepLabelById, getCountdown]
+    [
+      weekGraph,
+      checkedIds,
+      stepLabelById,
+      getCountdown,
+      runningPassiveSet,
+      runningTextById,
+    ]
   );
 
   const getScaledInputs = useCallback(
@@ -720,6 +780,46 @@ export default function CookMode() {
         <Alert severity="error" sx={{ mb: 2 }}>
           {scheduleError}
         </Alert>
+      )}
+
+      {/* Running-now strip: a checked-off timed step's simmer/bake keeps counting
+          here so it can never vanish just because its step was checked off
+          (2026-07-17 user report). Persistent + glanceable at the stove; a
+          window drops itself the instant its countdown hits 0:00. */}
+      {runningWindows.length > 0 && (
+        <Paper variant="outlined" sx={{ mb: 3, p: { xs: 1.5, md: 2 } }}>
+          <Typography
+            variant="overline"
+            color="text.secondary"
+            sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+          >
+            <TimerOutlinedIcon fontSize="small" /> Running now
+          </Typography>
+          <List dense disablePadding>
+            {runningWindows.map(({ instance, countdown }) => (
+              <ListItem
+                key={instance.id}
+                disablePadding
+                secondaryAction={
+                  <Box
+                    sx={{
+                      fontVariantNumeric: "tabular-nums",
+                      fontSize: 20,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {countdown.text}
+                  </Box>
+                }
+              >
+                <ListItemText
+                  primary={instance.step.name}
+                  secondary={instance.recipeName}
+                />
+              </ListItem>
+            ))}
+          </List>
+        </Paper>
       )}
 
       {!schedule ? (

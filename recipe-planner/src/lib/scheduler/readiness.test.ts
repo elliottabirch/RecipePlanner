@@ -83,5 +83,65 @@ describe("deriveReadiness — AND-semantics (RESEARCH A4)", () => {
     const result = deriveReadiness(standalone.id, weekGraph, new Set());
     expect(result.state).toBe("ready");
     expect(result.waitingOn).toEqual([]);
+    expect(result.simmering).toEqual([]);
+  });
+});
+
+describe("deriveReadiness — passive-window awareness (2026-07-17)", () => {
+  const consumer = makeInstance("meal-1", makeRecipeStep("consumer"));
+  const simmer = makeInstance("meal-1", makeRecipeStep("simmer"));
+  const weekGraph: WeekGraph = {
+    nodes: [consumer, simmer],
+    edges: [{ from: simmer.id, to: consumer.id }],
+  };
+
+  it("keeps a dependent 'waiting' when its sole producer is checked but still simmering", () => {
+    // Checked off the moment the pot went on the stove, but its passive window
+    // is still running — the dependent must NOT read 'ready' yet.
+    const result = deriveReadiness(
+      consumer.id,
+      weekGraph,
+      new Set([simmer.id]),
+      new Set([simmer.id])
+    );
+    expect(result.state).toBe("waiting");
+    expect(result.waitingOn).toEqual([]);
+    expect(result.simmering).toEqual([simmer.id]);
+  });
+
+  it("flips to 'ready' once the passive window elapses (producer leaves the running set)", () => {
+    const result = deriveReadiness(
+      consumer.id,
+      weekGraph,
+      new Set([simmer.id]),
+      new Set() // timer elapsed → no longer running
+    );
+    expect(result.state).toBe("ready");
+    expect(result.waitingOn).toEqual([]);
+    expect(result.simmering).toEqual([]);
+  });
+
+  it("reports an unchecked producer as waitingOn, not simmering, even if it appears in the running set", () => {
+    // A producer can only simmer once its active part is checked off; an
+    // unchecked producer is plain 'waitingOn' regardless of the passive set.
+    const result = deriveReadiness(
+      consumer.id,
+      weekGraph,
+      new Set(), // nothing checked
+      new Set([simmer.id])
+    );
+    expect(result.state).toBe("waiting");
+    expect(result.waitingOn).toEqual([simmer.id]);
+    expect(result.simmering).toEqual([]);
+  });
+
+  it("defaults to pre-passive behaviour when no running set is supplied", () => {
+    const result = deriveReadiness(
+      consumer.id,
+      weekGraph,
+      new Set([simmer.id])
+    );
+    expect(result.state).toBe("ready");
+    expect(result.simmering).toEqual([]);
   });
 });
