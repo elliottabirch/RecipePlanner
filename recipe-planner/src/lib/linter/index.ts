@@ -21,6 +21,7 @@
 import type { Product, Store, Section, ContainerType, RecipeStep } from "../types";
 import type { WeekGraph } from "../scheduler/types";
 import { lintCrossDimension } from "./rules/cross-dimension";
+import { lintMixedDenomination } from "./rules/mixed-denomination";
 import { lintPrepWords } from "./rules/prep-words";
 import { lintMissingStoreSection } from "./rules/missing-store-section";
 import { lintMissingCanonicalUnit } from "./rules/missing-canonical-unit";
@@ -42,10 +43,15 @@ export interface LintFinding {
   nodeId?: string;
 }
 
-/** A single recipe_product_nodes reference to this product, unit only. */
+/**
+ * A single recipe_product_nodes reference to this product. `quantity` is
+ * needed by the mixed-denomination rule, which reads the *spread* of counts
+ * across a product's nodes rather than any single unit.
+ */
 export interface LinterProductNode {
   id?: string;
   unit?: string;
+  quantity?: number;
 }
 
 /**
@@ -67,6 +73,11 @@ export interface ProductExpanded extends Product {
 export function runLint(products: ProductExpanded[]): LintFinding[] {
   return [
     ...lintCrossDimension(products),
+    // Only meaningful when `products` carries registry-wide nodes (the
+    // Products.tsx Lint button), since the two denominations it compares
+    // usually live in different recipes. Recipe-scoped callers pass one
+    // recipe's nodes and it finds nothing — same as cross-dimension.
+    ...lintMixedDenomination(products),
     ...lintPrepWords(products),
     ...lintMissingStoreSection(products),
     ...lintMissingCanonicalUnit(products),

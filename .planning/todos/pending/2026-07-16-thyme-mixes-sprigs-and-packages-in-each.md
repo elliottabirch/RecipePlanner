@@ -57,14 +57,27 @@ already gone from the DB**, so nothing can infer intent automatically (D-08).
    `scripts/audit-garlic-node-quantities.js` (dry-run default, PB backup + rollback
    worksheet before any write, rows seed `confirmed:false`). This is small enough
    to fold into any nearby data pass.
-3. **Consider the general guard.** Every sub-unit alias in `UNIT_ALIASES` that
-   collapses into `each` carries this hazard — `clove`, `cube`, `sprig`, `slices`,
-   `pitas`, `can`, `bunch`, `bu`, `whole`. The real fix is the product-level
-   purchase/portion model deferred to `single-purchase-unit-shopping-lines`; until
-   then, a lint rule flagging a raw `each` product whose node quantities are
-   bimodal (some ≤1, some ≥3) would catch the next one cheaply. See
-   `2026-07-12-authoring-skills-need-downstream-consequences-reference.md` — this
-   is another instance of the class it wants to prevent.
+3. **The general guard — PARTLY SHIPPED 2026-07-16.** Every sub-unit alias in
+   `UNIT_ALIASES` that collapses into `each` carries this hazard — `clove`,
+   `cube`, `sprig`, `slices`, `pitas`, `can`, `bunch`, `bu`, `whole`. The real fix
+   is the product-level purchase/portion model deferred to
+   `single-purchase-unit-shopping-lines`.
+
+   Shipped in the meantime: the `mixed-denomination` lint rule
+   (`src/lib/linter/rules/mixed-denomination.ts`), surfaced by the Products.tsx
+   Lint button. It flags a raw count-dimension product carrying BOTH a fractional
+   quantity and a count ≥3. Against live prod it returns exactly this thyme
+   finding and nothing else.
+
+   **Its known limitation is important: it would NOT have caught garlic.** Garlic's
+   nodes were `1,1,1,2,2,3,3` — all integers, with the wrong 3s indistinguishable
+   from correct 3s once the raw `clove` string was gone. Only recipe PROSE ("Pull
+   3 garlic cubes" beside a node reading 3) exposed garlic, and the product-scoped
+   linter input carries no step text. **A prose-based detector is the missing
+   companion guard and is not built** — worth adding if a third instance of this
+   class appears. See
+   `2026-07-12-authoring-skills-need-downstream-consequences-reference.md`; this is
+   another instance of the class it wants to prevent.
 
 ## Scope check (2026-07-16)
 

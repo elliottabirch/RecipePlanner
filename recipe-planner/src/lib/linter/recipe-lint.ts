@@ -62,7 +62,7 @@ export async function runRecipeLint(recipeId: string): Promise<LintFinding[]> {
     if (!node.product) continue;
     productIds.add(node.product);
     const list = nodesByProduct.get(node.product) ?? [];
-    list.push({ id: node.id, unit: node.unit });
+    list.push({ id: node.id, unit: node.unit, quantity: node.quantity });
     nodesByProduct.set(node.product, list);
   }
 

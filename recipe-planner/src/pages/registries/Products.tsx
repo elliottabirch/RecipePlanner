@@ -146,16 +146,22 @@ export default function Products() {
       setLinting(true);
       setError(null);
       // The cross-dimension rule needs each product's recipe_product_nodes
-      // unit values, which loadItems' product-only expand doesn't carry —
-      // fetch them separately and group by product id.
+      // unit values, and mixed-denomination needs their quantities, which
+      // loadItems' product-only expand doesn't carry — fetch them separately
+      // and group by product id. This fetch is registry-wide (no filter),
+      // which is what makes mixed-denomination meaningful here: it compares
+      // denominations across recipes.
       const nodes = await getAll<RecipeProductNode>(
         collections.recipeProductNodes
       );
-      const nodesByProduct = new Map<string, { unit?: string }[]>();
+      const nodesByProduct = new Map<
+        string,
+        { unit?: string; quantity?: number }[]
+      >();
       for (const node of nodes) {
         if (!node.product) continue;
         const list = nodesByProduct.get(node.product) ?? [];
-        list.push({ unit: node.unit });
+        list.push({ unit: node.unit, quantity: node.quantity });
         nodesByProduct.set(node.product, list);
       }
       const enriched = items.map((item) => ({
