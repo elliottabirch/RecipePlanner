@@ -5,7 +5,13 @@ import type {
   PlannedMealWithRecipe,
   AggregatedFlowProduct,
 } from "../types.js";
-import { canConvert, getDimension, scaleQuantity, type Unit } from "../../units";
+import {
+  canConvert,
+  getDimension,
+  normalizeUnit,
+  scaleQuantity,
+  type Unit,
+} from "../../units";
 import {
   createProductKey,
   shouldCreateInstances,
@@ -34,7 +40,12 @@ export function buildAggregatedProduct(
   instances: number;
 } {
   const quantity = node.quantity || 0;
-  const nodeUnit = node.unit || "";
+  // D-08: resolve aliases (e.g. "cube" -> "each") so the merge key and the
+  // discrete ceil below both see the canonical dimension. An unresolvable
+  // non-empty unit falls back to the RAW string (never "" and never
+  // silently discarded) — it stays honest, splits at the merge boundary,
+  // and gets surfaced there by resolveMergeTargetKey's console.warn.
+  const nodeUnit = normalizeUnit(node.unit ?? "") ?? node.unit ?? "";
   const totalQuantity = scaleQuantity(quantity, mealCount, nodeUnit as Unit);
 
   const baseProduct: AggregatedFlowProduct = {
@@ -99,6 +110,18 @@ function resolveMergeTargetKey(
   if (!base) return baseKey;
   if (canConvert(base.unit as Unit, newProduct.unit as Unit)) return baseKey;
   const dimension = getDimension(newProduct.unit as Unit);
+  // Loud failure (D-08): a non-empty unresolvable unit is about to be
+  // split to a key no surface renders. "" is the deliberate D-01
+  // cleared-container sentinel (104 live nodes) and must stay quiet — see
+  // planning_findings #8, a throw here would take down the shopping list.
+  // This is NOT a fix for the |undefined split (deliberately deferred, see
+  // planning_findings #6) — it only makes the existing split visible in
+  // logs.
+  if (dimension === undefined && newProduct.unit !== "") {
+    console.warn(
+      `[aggregation] product ${newProduct.productId} (${newProduct.productName}): unresolvable unit "${newProduct.unit}" is splitting into a separate line ("${baseKey}|${dimension}") instead of merging with the base line. This unit needs normalizing (D-08).`
+    );
+  }
   return `${baseKey}|${dimension}`;
 }
 

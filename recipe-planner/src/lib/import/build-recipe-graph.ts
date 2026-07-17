@@ -17,6 +17,7 @@
  */
 import type { RecordModel } from "pocketbase";
 import type { NormalizedGraph } from "./validate-import";
+import { normalizeUnit } from "../units";
 
 export type { NormalizedGraph } from "./validate-import";
 
@@ -129,7 +130,13 @@ export function planGraphWrites(
       // WR-01: clear on update — quantity is a number (→ null), meal_destination
       // is text (→ "").
       quantity: isUpdate ? pn.quantity ?? null : pn.quantity,
-      unit: pn.unit,
+      // D-08: normalize aliases (e.g. "cloves" -> "each") at the single
+      // write path shared by RecipeEditor.handleSave and the /import page
+      // (Phase 06-04) — this is the import-JSON-contract hole planning_findings
+      // #10 identifies (the editor's unit input is already enum-bound). Keeps
+      // existing empty semantics intact: "" stays "" (not a WR-01 clear
+      // sentinel, `unit` is already a plain required string).
+      unit: normalizeUnit(pn.unit) ?? pn.unit,
       meal_destination: isUpdate ? pn.mealDestination ?? "" : pn.mealDestination,
       position_x: 0,
       position_y: 0,
