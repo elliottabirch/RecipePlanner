@@ -5,14 +5,13 @@ milestone_name: Workflow Redesign
 current_phase: 6
 current_phase_name: Import Pipeline & Recipe Lifecycle
 status: executing
-stopped_at: Completed 06-11-PLAN.md
-last_updated: "2026-07-11T00:33:09.829Z"
+stopped_at: Completed quick 260716-u4p Tasks 1-4; blocking checkpoint (human prod --apply of create-spaghetti split) outstanding
+last_updated: "2026-07-17T05:58:10.901Z"
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 56
   completed_plans: 56
-  percent: 100
 ---
 
 # Project State
@@ -262,6 +261,7 @@ Recent decisions affecting current work:
 - [Phase ?]: planWriteBack keys remapSeed by reviewed-node ref; recipe id passed separately so the recipe record is never re-minted (D-10 write-back integrity)
 - [Phase ?]: recipe-import + /suggest-recipes emit D-01 JSON for the /import page (single write path); direct-write node scripts avoided since app api reads localStorage
 - [Phase ?]: /suggest constraints are a pure src/lib module; macro is soft (estimated:true, protein_g=0 across registry, D-08) — never a hard filter
+- [Phase ?]: 260716-u4p: bourguignon retag was already applied by hand (no commit/script) — the retag process itself, not just the data, was the finding
 
 ### Pending Todos
 
@@ -287,13 +287,15 @@ Recent decisions affecting current work:
 
 *(All Phase 2 re-verification blockers resolved — UAT approved 2026-07-06, verification passed 7/7.)*
 
+- 260716-u4p: create-spaghetti split script shipped + rehearsed on :8091, but the human-gated prod --apply has not run — meat spaghetti's create-spaghetti mega-step is still scheduled wholesale on Saturday in prod
+
 ### Quick Tasks Completed
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260710-jpw | Fix cook-mode Full Schedule reshuffle on first check-off (retimeSchedule over-serialization) + 0-elapsed quirk | 2026-07-10 | b91ac19 | [260710-jpw-fix-cook-mode-full-schedule-reshuffle-on](./quick/260710-jpw-fix-cook-mode-full-schedule-reshuffle-on/) |
 | 260716-rpp | Fix garlic over-pull data bug + harden aggregation merge against unresolvable-unit splits — **complete; prod garlic sweep applied (8 → 3 cubes/week, `5039568`)**. Follow-up sweep for the same bug class also landed: `mixed-denomination` linter rule (`ccd9c89`) + prod thyme fix, 2 nodes corrected (`1a3cbc9`) | 2026-07-16 | 1337c50 | [260716-rpp-fix-alias-unit-aggregation-split-garlic-](./quick/260716-rpp-fix-alias-unit-aggregation-split-garlic-/) |
-| 260716-u4p | Stop cook mode's false "All steps complete!" during day-of cooking; split `create spaghetti` behind a gated write (checkpoint pending human apply); `timing-coherence` linter rule (0 FP against 24 live JIT steps); backlog hygiene correcting the by-hand bourguignon retag process finding | 2026-07-16 | (pending) | [260716-u4p-jit-silent-end-and-mistag](./quick/260716-u4p-jit-silent-end-and-mistag/) |
+| 260716-u4p | Stop cook mode's false "All steps complete!" during day-of cooking; split `create spaghetti` behind a gated write (checkpoint pending human apply); `timing-coherence` linter rule (0 FP against 24 live JIT steps); backlog hygiene correcting the by-hand bourguignon retag process finding | 2026-07-16 | b6f009f | [260716-u4p-jit-silent-end-and-mistag](./quick/260716-u4p-jit-silent-end-and-mistag/) |
 
 ## Deferred Items
 
@@ -307,14 +309,20 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
+**Last session:** 2026-07-17T05:58:00.482Z
+
 Session resumed 2026-07-10: Phase 6 shipped + UAT'd. User elected to FIX ALL 4
 open UAT findings inline (not phase 6.1) — ALL DONE + LIVE:
+
 - #1 cook-mode note on merged-prep — button hidden on empty-recipe synthetic
   steps; AddNoteButton surfaces save errors via inline Alert.
+
 - #3 revision-draft publish duplicate — handlePublish guards on revision_of;
   Publish button → "Revision draft — approve via evolve" chip.
+
 - #2 note icon on all chips — Micah + week-spanning chips converted to the
   day-grid Box row with the note affordance.
+
 - #4 recipe_steps.source_node — nullable self-relation added to test+prod PB;
   RecipeStep type mirrors it. Schema mirror re-exported.
 Commit b1a1d55 pushed to origin/main; NAS redeployed (bundle
@@ -332,8 +340,8 @@ pushed/deployed): linter v2 on-demand wiring (PREP-06 close), connective-recipe
 pull-connector elision across cook mode + display surfaces, meatballs recipe
 graph fixed on PROD (form→cook split), and the cook-mode retime reshuffle bug
 (quick task 260710-jpw). Suite green at 194 tests, tsc clean.
-Stopped at: Completed 06-11-PLAN.md
+Stopped at: Completed quick 260716-u4p Tasks 1-4; blocking checkpoint (human prod --apply of create-spaghetti split) outstanding
 plan. No CONTEXT.md yet, so /gsd-discuss-phase 6 is the recommended entry.
 ⚠️ 15+ commits are unpushed (origin/main behind); the NAS deploys from GitHub,
 so none of this session's work is live on :3000 until pushed + rebuilt.
-Resume file: None
+Resume file: .planning/quick/260716-u4p-jit-silent-end-and-mistag/260716-u4p-PLAN.md
