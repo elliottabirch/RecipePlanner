@@ -8,8 +8,14 @@
  * week produces it — i.e. some edge in the week graph lands on the consuming
  * step instance. This resolves RESEARCH A6 in favor of week scope (the real
  * cross-recipe chicken-stock case: recipe A consumes the stock recipe B
- * makes) — a producer in a different recipe suppresses the finding. Only
- * flag when NO producer edge exists anywhere in the planned week.
+ * makes) — a producer in a different recipe suppresses the finding.
+ *
+ * 260717-fva: a sourceless (no in-plan producer) `Inventory` consumption is
+ * exempt — that is a legitimate freezer/pantry pull, prior-week/pantry stock
+ * that is never "made" this week by design. A sourceless `Stored` consumption
+ * is NOT exempt — a this-week fridge item nothing in the plan produces is a
+ * genuine missing make/pull step, the rule's teeth. See
+ * `isExemptSourcelessInventory` below.
  */
 import type { LintFinding } from "../index";
 import type { WeekGraph } from "../../scheduler/types";
@@ -22,6 +28,10 @@ export interface StoredInputConsumption {
   consumerId: string;
   productId: string;
   productName: string;
+  /** `stored` or `inventory` — carried so `lintMissingPullStep` can exempt a
+   * sourceless INVENTORY consumption (legit prior-week/pantry stock) while
+   * keeping a sourceless STORED consumption flagged (260717-fva). */
+  productType: ProductType;
 }
 
 /**
@@ -66,10 +76,25 @@ export function collectStoredInputConsumptions(
         consumerId,
         productId: inputProduct.id,
         productName: inputProduct.name,
+        productType: inputProduct.type,
       });
     }
   }
   return consumptions;
+}
+
+/**
+ * A sourceless (no in-plan producer) `Inventory` consumption is a legitimate
+ * freezer/pantry pull, not a miss: inventory is prior-week/pantry stock by
+ * design — you do not "make" it each week — so it having zero incoming
+ * producer edges is the EXPECTED shape, not a gap (260717-fva
+ * planning_findings #8). A sourceless `Stored` consumption stays flagged: a
+ * this-week fridge item (chicken stock, cooked pasta) that nothing in the
+ * plan produces IS a genuine missing make/pull step — the rule's teeth. This
+ * is a type check, never a name check or a step-type check.
+ */
+function isExemptSourcelessInventory(consumption: StoredInputConsumption): boolean {
+  return consumption.productType === ProductType.Inventory;
 }
 
 export function lintMissingPullStep(
@@ -80,6 +105,7 @@ export function lintMissingPullStep(
 
   return consumedStoredInputs
     .filter((consumption) => !consumerIdsWithProducer.has(consumption.consumerId))
+    .filter((consumption) => !isExemptSourcelessInventory(consumption))
     .map((consumption) => ({
       severity: "error",
       rule: "missing-pull-step",

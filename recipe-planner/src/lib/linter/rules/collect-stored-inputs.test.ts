@@ -117,8 +117,18 @@ describe("collectStoredInputConsumptions", () => {
 
     expect(result).toEqual(
       expect.arrayContaining([
-        { consumerId: "meal-a::assemble", productId: "stock", productName: "Stock" },
-        { consumerId: "meal-a::assemble", productId: "frozen", productName: "Frozen peas" },
+        {
+          consumerId: "meal-a::assemble",
+          productId: "stock",
+          productName: "Stock",
+          productType: ProductType.Stored,
+        },
+        {
+          consumerId: "meal-a::assemble",
+          productId: "frozen",
+          productName: "Frozen peas",
+          productType: ProductType.Inventory,
+        },
       ])
     );
     // The raw onion input is NOT a stored input — never listed.
@@ -186,6 +196,7 @@ describe("collectStoredInputConsumptions", () => {
       consumerId: "meal-a::assemble",
       productId: "stock",
       productName: "Stock",
+      productType: ProductType.Stored,
     });
   });
 });
