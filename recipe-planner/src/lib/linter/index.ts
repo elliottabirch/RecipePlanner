@@ -27,6 +27,7 @@ import { lintMissingStoreSection } from "./rules/missing-store-section";
 import { lintMissingCanonicalUnit } from "./rules/missing-canonical-unit";
 import { lintMissingDurations } from "./rules/missing-durations";
 import { lintMissingPrepAction } from "./rules/missing-prep-action";
+import { lintTimingCoherence } from "./rules/timing-coherence";
 import {
   lintMissingPullStep,
   type StoredInputConsumption,
@@ -86,7 +87,11 @@ export function runLint(products: ProductExpanded[]): LintFinding[] {
 
 /** Step-scoped linter v2 aggregator (PREP-06 rules b/c) — per-step rules only. */
 export function runStepLint(steps: RecipeStep[]): LintFinding[] {
-  return [...lintMissingDurations(steps), ...lintMissingPrepAction(steps)];
+  return [
+    ...lintMissingDurations(steps),
+    ...lintMissingPrepAction(steps),
+    ...lintTimingCoherence(steps),
+  ];
 }
 
 /**
