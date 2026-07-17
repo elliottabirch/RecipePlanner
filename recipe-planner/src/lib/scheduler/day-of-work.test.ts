@@ -152,13 +152,22 @@ describe("formatDayOfSummary", () => {
   });
 
   // (g) The live-plan fixture. Reconstructs week 7/13's four verified
-  // PRE-split day-of meals from planning_findings #11 (the real
-  // `buildWeekGraph`/`collectDayOfWork` output against prod plan
-  // `71ukhycp2v4s0fw`, probed 2026-07-16). Hand-built and offline — it
-  // must NOT read prod. Task 3's split later adds `meat spaghetti` as a
-  // FIFTH entry; that post-split behaviour is proven end-to-end at the
-  // plan's checkpoint against the real app, not pinned here.
-  const WEEK_7_13_PRE_SPLIT: MealKeyedRecipeData = new Map([
+  // day-of meals from planning_findings (the real `buildWeekGraph`/
+  // `collectDayOfWork` output against prod plan `71ukhycp2v4s0fw`, probed
+  // 2026-07-16 and re-verified 2026-07-17). Hand-built and offline — it
+  // must NOT read prod.
+  //
+  // A direct user interview (2026-07-17) established how meat spaghetti is
+  // actually cooked: the spaghetti is boiled on prep day, combined with
+  // the sauce, and stored combined. THERE IS NO DAY-OF WORK FOR THIS DISH.
+  // An earlier revision of this comment predicted the split would add
+  // `meat spaghetti` here as a fifth day-of item — that was based on a
+  // misreading of how the user cooks, not on the data, and is WRONG. Meat
+  // spaghetti carries ZERO `just_in_time` steps by design, both before and
+  // after the 4-step split (`260716-u4p` Task 1): its absence from this
+  // summary is a correctness property, not a gap. Do not restore the
+  // fifth-entry prediction.
+  const WEEK_7_13_DAY_OF: MealKeyedRecipeData = new Map([
     [
       "meal-harissa-cod",
       makeRecipeData(
@@ -204,15 +213,39 @@ describe("formatDayOfSummary", () => {
         "Creamy Tomato Soup"
       ),
     ],
+    // Meat spaghetti, POST-split (`260716-u4p` Task 1): four steps, every
+    // one `batch` — Cook spaghetti, Cook meat, Simmer meat sauce, Combine
+    // all. No day-of work for this dish, before or after the split. This
+    // entry turns the absence below into a PROVEN property rather than an
+    // incidental: an all-batch meal is never reported as day-of work.
+    [
+      "meal-meat-spaghetti",
+      makeRecipeData(
+        {
+          steps: [
+            makeStep("cook-spaghetti", { name: "Cook spaghetti", timing: Timing.Batch }),
+            makeStep("cook-meat", { name: "Cook meat", timing: Timing.Batch }),
+            makeStep("simmer-meat-sauce", { name: "Simmer meat sauce", timing: Timing.Batch }),
+            makeStep("combine-all", { name: "Combine all", timing: Timing.Batch }),
+          ],
+        },
+        "recipe-meat-spaghetti",
+        "meat spaghetti"
+      ),
+    ],
   ]);
 
-  it("(g) matches the verified pre-split week 7/13 summary exactly", () => {
-    const result = collectDayOfWork(WEEK_7_13_PRE_SPLIT);
+  it("(g) matches the verified week 7/13 summary exactly, and an all-batch meal (meat spaghetti, post-split) is provably absent", () => {
+    const result = collectDayOfWork(WEEK_7_13_DAY_OF);
     expect(result).toHaveLength(4);
-    expect(formatDayOfSummary(result)).toBe(
+    expect(result.some((m) => m.recipeName === "meat spaghetti")).toBe(false);
+
+    const summary = formatDayOfSummary(result);
+    expect(summary).toBe(
       "4 meals still need day-of cooking: Harissa Cod with Chickpeas (1 step), " +
         "Mushroom Bourguignon (Simple) (2 steps), salad and salmon (2 steps), " +
         "Creamy Tomato Soup (1 step)"
     );
+    expect(summary).not.toContain("meat spaghetti");
   });
 });
