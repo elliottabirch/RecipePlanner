@@ -1,6 +1,6 @@
 ---
 created: 2026-07-12
-title: Garlic cubes need a clove-to-cube conversion (3 cloves = 1 cube)
+title: "[RESOLVED 2026-07-16] Garlic cube over-pull — destroyed clove/cube data, fixed by sweep; ratio model deferred"
 area: database
 files:
   - recipe-planner/src/lib/units.ts:87-105 (UNIT_ALIASES — clove and cube both -> each)
@@ -9,6 +9,36 @@ files:
   - recipe-planner/scripts/audit-garlic-node-quantities.js (260716-rpp Task 1 — the read-only prod audit + gated --apply that fixes the DATA over-pull; run under 260716-rpp Task 4)
   - recipe-planner/scripts/dedup-output/garlic-node-quantities.json (260716-rpp Task 1 worksheet — human-confirmed corrections land here)
 ---
+
+## Resolved — 2026-07-16 (quick 260716-rpp Task 4)
+
+The DATA over-pull is fixed in prod. A human-confirmed sweep corrected the four
+mis-authored `garlic cubes (frozen)` nodes, each of which stored a clove count on
+a product measured in cubes:
+
+| Node | Recipe | Was | Now |
+|---|---|---|---|
+| `zoch88349g713g8` | Creamy Tomato Soup | 2 | 1 |
+| `towm23or3877720` | Honey-Garlic Roasted Broccolini | 3 | 1 |
+| `g996j1m2bbn13nm` | Indian Vegetarian (batch) | 2 | 1 |
+| `k2nn479wa423rrj` | Mushroom Bourguignon (Simple) | 3 | 1 |
+
+Verified end-to-end: `buildProductFlowGraph` on week `71ukhycp2v4s0fw` now yields
+`garlic cubes (frozen) total=3 each, sources=3` (was 8), and the merged pull step
+reads `Pull garlic cubes (+ 1 variants) — IN: garlic cubes (frozen) 3 each`. The
+three nodes already reading 1 (`bok choy`, `marry me chickpea`, `White Bean and
+Tomato Stew`) were left untouched, as were the `garlic cube (pulled)` transients
+(qty 0 is the transient convention, not an error — 60 of 129 transient nodes are 0).
+
+Pre-apply PB backup: `pre-garlic-quantities-2026-07-17t03-54-40-188z.zip`.
+Rollback worksheet: `recipe-planner/scripts/dedup-output/garlic-node-quantities.rollback.json`.
+Only `quantity` was written — never `unit`, no deletes.
+
+**The clove↔cube RATIO MODEL was deliberately NOT built and remains deferred to
+`single-purchase-unit-shopping-lines`.** It is not needed for correctness: every
+garlic node now stores a raw count in its own product's unit, so the 1:1 merge is
+right. Build the model only when the purchase-unit work needs it — and per the
+warning below, do not bolt a garlic special case onto `units.ts` in the meantime.
 
 ## Retracted (2026-07-16)
 
@@ -45,8 +75,8 @@ The app tells us to pull **3 garlic cubes** for Honey Garlic Broccolini. It
 should be roughly **1 cube** — the recipe was authored "3 cloves" and the
 Phase-01 sweep flattened the unit to `each` while keeping the `3`. We're
 over-pulling by up to 3x on multiple garlic recipes (confirmed live on the
-week of 7/13: the plan currently pulls 8 garlic cubes where the corrected
-total is roughly 4).
+week of 7/13: the plan pulled 8 garlic cubes where the corrected total is 3 —
+1 each from Broccolini, Creamy Tomato Soup, and Mushroom Bourguignon).
 
 `clove` and `cube` both alias to `each` (`units.ts:87-105`), and `convert()`
 (`units.ts:126-136`) is deliberately an identity for count units:

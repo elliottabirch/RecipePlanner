@@ -292,7 +292,7 @@ Recent decisions affecting current work:
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260710-jpw | Fix cook-mode Full Schedule reshuffle on first check-off (retimeSchedule over-serialization) + 0-elapsed quirk | 2026-07-10 | b91ac19 | [260710-jpw-fix-cook-mode-full-schedule-reshuffle-on](./quick/260710-jpw-fix-cook-mode-full-schedule-reshuffle-on/) |
-| 260716-rpp | Fix garlic over-pull data bug + harden aggregation merge against unresolvable-unit splits — **Tasks 1-3 done; Task 4 (gated prod `--apply`) OUTSTANDING, prod data untouched** | 2026-07-16 | 40d87ed | [260716-rpp-fix-alias-unit-aggregation-split-garlic-](./quick/260716-rpp-fix-alias-unit-aggregation-split-garlic-/) |
+| 260716-rpp | Fix garlic over-pull data bug + harden aggregation merge against unresolvable-unit splits — **complete; prod garlic sweep applied (8 → 3 cubes/week)** | 2026-07-16 | 1337c50 | [260716-rpp-fix-alias-unit-aggregation-split-garlic-](./quick/260716-rpp-fix-alias-unit-aggregation-split-garlic-/) |
 
 ## Deferred Items
 
