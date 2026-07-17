@@ -54,6 +54,7 @@ import type {
   RecipeGraphData,
 } from "../lib/aggregation";
 import { buildWeekGraph } from "../lib/scheduler/week-graph";
+import { collectDayOfWork, formatDayOfSummary } from "../lib/scheduler/day-of-work";
 import { generateSchedule } from "../lib/scheduler/genetic";
 import { retimeSchedule } from "../lib/scheduler/retime";
 import { emptyResourceTimeline } from "../lib/scheduler/resources";
@@ -272,6 +273,18 @@ export default function CookMode() {
     () => buildWeekGraph(mealKeyedRecipeData),
     [mealKeyedRecipeData]
   );
+
+  // The exact complement of week-graph.ts:158's just_in_time exclusion —
+  // `mealKeyedRecipeData` already holds every step unfiltered (the loader
+  // fetches `recipe_steps` unfiltered above; only `buildWeekGraph` filters
+  // them), so this needs no extra fetch. Names the day-of cooking that
+  // remains once the prep-day list is exhausted, instead of letting the
+  // "All steps complete!" Paper below assert something untrue.
+  const dayOfMeals = useMemo(
+    () => collectDayOfWork(mealKeyedRecipeData),
+    [mealKeyedRecipeData]
+  );
+  const dayOfSummary = useMemo(() => formatDayOfSummary(dayOfMeals), [dayOfMeals]);
 
   const stepLabelById = useMemo(() => {
     const map = new Map<string, string>();
@@ -701,7 +714,7 @@ export default function CookMode() {
             Generate Prep Schedule
           </Button>
         </Paper>
-      ) : visibleOrder.length === 0 ? (
+      ) : visibleOrder.length === 0 && dayOfMeals.length === 0 ? (
         <Paper sx={{ p: 4, textAlign: "center" }}>
           <Typography variant="subtitle1" fontWeight="bold">
             All steps complete!
@@ -709,6 +722,25 @@ export default function CookMode() {
           <Typography color="text.secondary">
             Every prep-day step in this plan has been checked off.
           </Typography>
+        </Paper>
+      ) : visibleOrder.length === 0 ? (
+        <Paper sx={{ p: 4, textAlign: "left" }}>
+          <Typography variant="subtitle1" fontWeight="bold" gutterBottom textAlign="center">
+            Prep day complete.
+          </Typography>
+          <Typography color="text.secondary" sx={{ mb: 2 }} textAlign="center">
+            {dayOfSummary}
+          </Typography>
+          <List dense>
+            {dayOfMeals.map((meal) => (
+              <ListItem key={meal.plannedMealId} sx={{ display: "block" }}>
+                <ListItemText
+                  primary={meal.recipeName}
+                  secondary={meal.steps.map((step) => step.name).join(", ")}
+                />
+              </ListItem>
+            ))}
+          </List>
         </Paper>
       ) : (
         <Box
