@@ -8,10 +8,15 @@
 // relying on in-memory router state), builds the week-graph, and lets the
 // cook generate a schedule, check off steps, and watch readiness/countdowns
 // update. Check-off always calls `retimeSchedule` — the fixed activity-list
-// order the GA (or a prior retime) decided is never permuted; only the
-// displayed times/countdowns recompute (D-01a.3 "order is authoritative, the
-// clock adapts"). This page builds NO affordance that implies a card's
-// position in the sequence can be manually changed.
+// order the GA (or a prior retime) decided is never permuted; only
+// `starts`/`ends` recompute (D-01a.3 "order is authoritative, the clock
+// adapts"). 260717-25d: that invariant covers `schedule.order`, not what
+// RENDERS — the rendered list comes from `orderedByTime`, which is a
+// **frozen display order** (`display-order.ts`) established once at
+// generation and never re-sorted by a retime's live `starts`. This page
+// builds NO affordance that implies a card's position in the sequence can
+// be manually changed; the only way the order changes is an explicit
+// Regenerate.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -57,6 +62,7 @@ import { buildWeekGraph } from "../lib/scheduler/week-graph";
 import { collectDayOfWork, formatDayOfSummary } from "../lib/scheduler/day-of-work";
 import { generateSchedule } from "../lib/scheduler/genetic";
 import { retimeSchedule } from "../lib/scheduler/retime";
+import { freezeDisplayOrder, applyDisplayOrder } from "../lib/scheduler/display-order";
 import { emptyResourceTimeline } from "../lib/scheduler/resources";
 import { loadSchedulerConfig } from "../lib/scheduler/scheduler-config";
 import type { Schedule, StepInstance, WeekGraph } from "../lib/scheduler/types";
@@ -127,6 +133,12 @@ export default function CookMode() {
   // functional updater form (see handleToggleChecked/handleGenerateSchedule)
   // so retimeSchedule always sees the latest map even across rapid taps.
   const [, setActualCompletions] = useState<Map<string, number>>(new Map());
+  // The FROZEN display order (260717-25d) — StepInstance ids in the sequence
+  // established at generation time. `null` means no schedule yet. Established
+  // at BOTH generation sites (`handleGenerateSchedule`, `performRegenerate`)
+  // and NEVER touched by `handleToggleChecked` — that is the entire fix for
+  // the display-order shuffle. See `display-order.ts` for the sort itself.
+  const [displayOrder, setDisplayOrder] = useState<string[] | null>(null);
 
   // Anchor (epoch ms) for when a StepInstance became the current "now" card —
   // drives both the live passive countdown and the real-elapsed-minutes input
@@ -308,17 +320,19 @@ export default function CookMode() {
   // is 20h out. Sorting by start time (tie-broken by activity-list position for
   // stable, deterministic display) restores the real interleaved timeline —
   // active prep packed into the smoke's passive window, bbq assembly last.
+  //
+  // 260717-25d: this sort now runs ONCE, at generation (`freezeDisplayOrder`,
+  // called from `handleGenerateSchedule`/`performRegenerate` below) — NOT on
+  // every render. `orderedByTime` just replays that frozen `displayOrder`
+  // against the current `schedule.order` via `applyDisplayOrder`, which sorts
+  // by frozen INDEX, never by live `schedule.starts`. A retime (check-off)
+  // still updates `schedule.starts`/`ends` — the cards' displayed times keep
+  // reading those directly below — but the SEQUENCE cannot move until the
+  // next explicit Regenerate re-establishes both together.
   const orderedByTime = useMemo(() => {
-    if (!schedule) return [];
-    const orderIndex = new Map(
-      schedule.order.map((inst, i) => [inst.id, i] as const)
-    );
-    return [...schedule.order].sort((a, b) => {
-      const sa = schedule.starts.get(a.id) ?? 0;
-      const sb = schedule.starts.get(b.id) ?? 0;
-      return sa - sb || (orderIndex.get(a.id) ?? 0) - (orderIndex.get(b.id) ?? 0);
-    });
-  }, [schedule]);
+    if (!schedule || !displayOrder) return [];
+    return applyDisplayOrder(schedule, displayOrder);
+  }, [schedule, displayOrder]);
 
   // Now/Next walk that same clock order, skipping checked-off steps — so after
   // you load the smoker you move straight to the next timed task rather than
@@ -497,6 +511,11 @@ export default function CookMode() {
       setScheduleError(null);
       const generated = generateSchedule(weekGraph, schedulerConfig);
       setSchedule(generated);
+      // Establishment, not a thaw (260717-25d): this button only renders
+      // inside the `!schedule` branch below, so it can never fire while a
+      // frozen order already exists — freeze alongside the same reset this
+      // site already performs for actualCompletions/nowStartRef.
+      setDisplayOrder(freezeDisplayOrder(generated));
       setActualCompletions(new Map());
       nowStartRef.current = new Map();
     } catch (err) {
@@ -524,6 +543,13 @@ export default function CookMode() {
       setSchedulerConfig(configToUse);
       const generated = generateSchedule(weekGraph, configToUse);
       setSchedule(generated);
+      // The ONE real thaw (260717-25d, user decision): re-freezing here in
+      // the same assignment as setSchedule collapses "clear + establish"
+      // into one step, so there is never a window where `schedule` exists
+      // without a matching `displayOrder`. This is the only place the
+      // sequence is allowed to change — the confirmation dialog already
+      // tells the cook so ("recalculate remaining timing").
+      setDisplayOrder(freezeDisplayOrder(generated));
       setActualCompletions(new Map());
       nowStartRef.current = new Map();
     } catch (err) {
