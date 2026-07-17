@@ -39,6 +39,19 @@
  * "none"` knife prep is merged, and summed active time is exact for a single
  * cook. Ingredients used by just one step are left untouched (nothing to
  * aggregate).
+ *
+ * A PARALLEL pull merge (260717-fva) collapses every single-inventory-input,
+ * `resource: "none"` pull step across the plan into ONE node per inventory
+ * product (`merged-pull::<productId>`) — the same problem, one level up the
+ * type lattice: three recipes each pulling the same `garlic cubes (frozen)`
+ * show three duplicate cards. This path is disjoint from the raw path
+ * (`singleRawInput` only matches `ProductType.Raw`, `singleInventoryInput`
+ * only `ProductType.Inventory`) and never reuses `makeMergedPrepStep` — a
+ * freezer pull is a `Pull {product}`, never a `Prep {product}`. Candidacy is
+ * additionally gated on the product NOT being produced anywhere in-plan
+ * (`producedProductIds`), which keeps this pass provably disjoint from pass
+ * (3b)'s spurious-in-plan-pull elision below (that pass's gate is the exact
+ * inverse: produced in-plan).
  */
 import type {
   ExpandedProductNode,
@@ -57,6 +70,11 @@ import type { StepInstance, WeekGraph, WeekGraphEdge } from "./types";
  * single planned meal. Cook Mode keys merged behaviour off `mergedMembers`, not
  * this value, so it only needs to be non-colliding with a real meal id. */
 const MERGED_PREP_MEAL_ID = "__merged_prep__";
+
+/** `plannedMealId` sentinel for a week-wide merged PULL node — parallel to
+ * `MERGED_PREP_MEAL_ID`, same reasoning: it belongs to no single planned
+ * meal. */
+const MERGED_PULL_MEAL_ID = "__merged_pull__";
 
 function instanceId(plannedMealId: string, stepId: string): string {
   return `${plannedMealId}::${stepId}`;
@@ -84,6 +102,27 @@ function singleRawInput(
   if (inputs.length !== 1) return null;
   const product = findProductNode(recipeData, inputs[0].source)?.expand?.product;
   if (product?.type !== ProductType.Raw) return null;
+  return { productId: product.id, productName: product.name };
+}
+
+/**
+ * If `stepId`'s ONLY input is a single INVENTORY product node — the signature
+ * of a one-ingredient freezer/pantry pull ("Pull garlic cubes") — return that
+ * product's id and name; otherwise `null`. Mirrors `singleRawInput` exactly,
+ * one type over: `singleRawInput` matches only `ProductType.Raw`, this
+ * matches only `ProductType.Inventory`, so the two are disjoint by
+ * construction and a step can never be a candidate for both merge paths. Do
+ * NOT modify `singleRawInput` — this is a parallel path, not a generalization
+ * of it (260717-fva planning_findings #1/#3).
+ */
+function singleInventoryInput(
+  recipeData: RecipeGraphData,
+  stepId: string
+): { productId: string; productName: string } | null {
+  const inputs = recipeData.productToStepEdges.filter((e) => e.target === stepId);
+  if (inputs.length !== 1) return null;
+  const product = findProductNode(recipeData, inputs[0].source)?.expand?.product;
+  if (product?.type !== ProductType.Inventory) return null;
   return { productId: product.id, productName: product.name };
 }
 
@@ -139,6 +178,39 @@ function makeMergedPrepStep(
   } as RecipeStep;
 }
 
+/** Synthetic `RecipeStep` for a merged PULL node — deliberately does NOT
+ * reuse `makeMergedPrepStep` (which hardcodes `StepType.Prep` and a
+ * `Prep {product}` name; reusing it would render a freezer pull as "Prep
+ * garlic cubes (frozen)", planning_findings #3). Name is `Pull {productName}`
+ * — no per-action breakdown, since pulls carry no cut-action vocabulary.
+ * `step_type` mirrors the members' shared type when they agree, defaulting to
+ * `StepType.Assembly` (pulls are pass-through connectors) when they don't;
+ * `active_minutes` sums the members' (most real pulls are 0-time, but this
+ * stays correct for any that aren't); resource is normalized to `"none"` —
+ * pulls are always resource-none by the time they reach this path. */
+function makeMergedPullStep(
+  mergedId: string,
+  productName: string,
+  members: StepInstance[]
+): RecipeStep {
+  const stepTypes = new Set(members.map((m) => m.step.step_type));
+  const step_type = stepTypes.size === 1 ? members[0].step.step_type : StepType.Assembly;
+  return {
+    id: mergedId,
+    created: "",
+    updated: "",
+    collectionId: "recipe_steps",
+    collectionName: "recipe_steps",
+    recipe: "",
+    name: `Pull ${productName}`,
+    step_type,
+    active_minutes: members.reduce((s, m) => s + (m.step.active_minutes ?? 0), 0),
+    passive_minutes: 0,
+    resource: "none",
+    rack_slots: 1,
+  } as RecipeStep;
+}
+
 export function buildWeekGraph(mealData: MealKeyedRecipeData): WeekGraph {
   const nodes: StepInstance[] = [];
   const edges: WeekGraphEdge[] = [];
@@ -153,6 +225,7 @@ export function buildWeekGraph(mealData: MealKeyedRecipeData): WeekGraph {
   // prep (the merge pass (4) below consumes this).
   const includedIds = new Set<string>();
   const mergeableInfo = new Map<string, { productId: string; productName: string }>();
+  const pullMergeableInfo = new Map<string, { productId: string; productName: string }>();
   for (const [plannedMealId, recipeData] of mealData) {
     for (const step of recipeData.steps) {
       if (step.timing === Timing.JustInTime) continue;
@@ -167,6 +240,8 @@ export function buildWeekGraph(mealData: MealKeyedRecipeData): WeekGraph {
       if (stepResource(step) === "none") {
         const raw = singleRawInput(recipeData, step.id);
         if (raw) mergeableInfo.set(id, raw);
+        const pull = singleInventoryInput(recipeData, step.id);
+        if (pull) pullMergeableInfo.set(id, pull);
       }
     }
   }
@@ -299,7 +374,45 @@ export function buildWeekGraph(mealData: MealKeyedRecipeData): WeekGraph {
     for (const m of members) originalToMerged.set(m.id, mergedId);
   }
 
-  // Nothing merged — return the per-instance graph unchanged.
+  // (4b) Week-wide PULL merge (260717-fva): group single-inventory-input pull
+  // nodes by their inventory product and collapse each 2+-member group into
+  // one merged node, sharing `originalToMerged` with the raw-prep merge above
+  // so the remap + edge-dedupe below handles both uniformly. Candidacy is
+  // gated on the product NOT being produced in-plan (`producedProductIds`,
+  // already computed above for pass 3b) — genuine prior-week stock, never
+  // something 3b would have elided — plus a defensive check that the node
+  // still exists in `nodeById` (provably disjoint from 3b per the file
+  // header, but cheap to guard structurally rather than by luck).
+  const pullMembersByProduct = new Map<string, StepInstance[]>();
+  for (const [nodeId, info] of pullMergeableInfo) {
+    if (producedProductIds.has(info.productId)) continue;
+    const node = nodeById.get(nodeId);
+    if (!node) continue;
+    const group = pullMembersByProduct.get(info.productId) ?? [];
+    group.push(node);
+    pullMembersByProduct.set(info.productId, group);
+  }
+
+  const pullMergedNodes: StepInstance[] = [];
+  for (const [productId, members] of pullMembersByProduct) {
+    if (members.length < 2) continue; // one occurrence — nothing to aggregate
+    const mergedId = `merged-pull::${productId}`;
+    const { productName } = pullMergeableInfo.get(members[0].id)!;
+    pullMergedNodes.push({
+      id: mergedId,
+      plannedMealId: MERGED_PULL_MEAL_ID,
+      step: makeMergedPullStep(mergedId, productName, members),
+      recipeName: "Prep day",
+      mergedMembers: members.map((m) => ({
+        plannedMealId: m.plannedMealId,
+        stepId: m.step.id,
+      })),
+    });
+    for (const m of members) originalToMerged.set(m.id, mergedId);
+  }
+
+  // Nothing merged (neither raw prep nor pulls) — return the per-instance
+  // graph unchanged.
   if (originalToMerged.size === 0) return { nodes, edges };
 
   const remap = (id: string) => originalToMerged.get(id) ?? id;
@@ -317,7 +430,7 @@ export function buildWeekGraph(mealData: MealKeyedRecipeData): WeekGraph {
 
   const mergedGraphNodes = nodes
     .filter((node) => !originalToMerged.has(node.id))
-    .concat(mergedNodes);
+    .concat(mergedNodes, pullMergedNodes);
 
   return { nodes: mergedGraphNodes, edges: mergedEdges };
 }

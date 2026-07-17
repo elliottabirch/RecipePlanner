@@ -496,3 +496,111 @@ describe("buildWeekGraph — cross-recipe edges", () => {
     expect(graph.nodes).toHaveLength(2);
   });
 });
+
+describe("buildWeekGraph — week-wide pull merge (260717-fva)", () => {
+  // Three recipes each pull the SAME prior-week-stock inventory item under
+  // drifted authored names — the merge keys on the input product id, never
+  // the step name, so all three collapse regardless
+  // (planning_findings #1/#2).
+  const garlic = makeProduct({
+    id: "garlic-frozen",
+    name: "garlic cubes (frozen)",
+    type: ProductType.Inventory,
+  });
+  const pulled = makeProduct({
+    id: "garlic-pulled",
+    name: "garlic cube (pulled)",
+    type: ProductType.Transient,
+  });
+
+  const mealWithGarlicPull = (suffix: string, pullStepName: string) => {
+    const garlicIn = makeProductNode(garlic, { id: `garlic-in-${suffix}` });
+    const pulledNode = makeProductNode(pulled, { id: `pulled-${suffix}` });
+    const pullStep = makeStep(`pull-${suffix}`, {
+      name: pullStepName,
+      step_type: StepType.Assembly,
+      active_minutes: 0,
+      passive_minutes: 0,
+      resource: "none",
+    });
+    const cookStep = makeStep(`cook-${suffix}`, { name: "cook", resource: "none" });
+    return makeRecipeData(
+      {
+        steps: [pullStep, cookStep],
+        productNodes: [garlicIn, pulledNode],
+        productToStepEdges: [
+          makeProductToStepEdge(`p2s-pull-${suffix}`, garlicIn.id, pullStep.id),
+          makeProductToStepEdge(`p2s-cook-${suffix}`, pulledNode.id, cookStep.id),
+        ],
+        stepToProductEdges: [
+          makeStepToProductEdge(`s2p-${suffix}`, pullStep.id, pulledNode.id),
+        ],
+      },
+      `recipe-${suffix}`,
+      `Recipe ${suffix}`
+    );
+  };
+
+  it("collapses three per-recipe garlic pulls (drifted names) into one merged-pull node, preserving each consumer's edge", () => {
+    const mealData: MealKeyedRecipeData = new Map([
+      ["meal-a", mealWithGarlicPull("a", "Pull garlic cubes")],
+      ["meal-b", mealWithGarlicPull("b", "Pull out garlic cubes")],
+      ["meal-c", mealWithGarlicPull("c", "Pull frozen garlic cube")],
+    ]);
+
+    const graph = buildWeekGraph(mealData);
+    const ids = graph.nodes.map((n) => n.id);
+
+    // FAILS before the fix: currently three separate pull nodes,
+    // `merged-pull` absent.
+    const merged = graph.nodes.find((n) => n.id === "merged-pull::garlic-frozen");
+    expect(merged).toBeDefined();
+    expect(ids).not.toContain("meal-a::pull-a");
+    expect(ids).not.toContain("meal-b::pull-b");
+    expect(ids).not.toContain("meal-c::pull-c");
+
+    // Precedence preserved: each meal's cook step still waits on the pull,
+    // now fanned out from the single merged node.
+    expect(graph.edges).toEqual(
+      expect.arrayContaining([
+        { from: "merged-pull::garlic-frozen", to: "meal-a::cook-a" },
+        { from: "merged-pull::garlic-frozen", to: "meal-b::cook-b" },
+        { from: "merged-pull::garlic-frozen", to: "meal-c::cook-c" },
+      ])
+    );
+  });
+
+  it("labels the merged pull node 'Pull {product}' — never a Prep-mislabelled name (does not go through makeMergedPrepStep)", () => {
+    const mealData: MealKeyedRecipeData = new Map([
+      ["meal-a", mealWithGarlicPull("a", "Pull garlic cubes")],
+      ["meal-b", mealWithGarlicPull("b", "Pull out garlic cubes")],
+    ]);
+    const graph = buildWeekGraph(mealData);
+    const merged = graph.nodes.find((n) => n.id === "merged-pull::garlic-frozen");
+    expect(merged).toBeDefined();
+    expect(merged!.step.name.startsWith("Pull ")).toBe(true);
+    expect(merged!.step.name.startsWith("Prep")).toBe(false);
+  });
+
+  it("keeps the merged pull node — it is NOT elided by the spurious-in-plan-pull pass (3b)", () => {
+    const mealData: MealKeyedRecipeData = new Map([
+      ["meal-a", mealWithGarlicPull("a", "Pull garlic cubes")],
+      ["meal-b", mealWithGarlicPull("b", "Pull out garlic cubes")],
+      ["meal-c", mealWithGarlicPull("c", "Pull frozen garlic cube")],
+    ]);
+    const graph = buildWeekGraph(mealData);
+    // Frozen garlic is produced by nothing in-plan, so it is a genuine merge
+    // candidate (disjoint from 3b's "produced in-plan" gate) and must survive.
+    expect(graph.nodes.some((n) => n.id === "merged-pull::garlic-frozen")).toBe(true);
+  });
+
+  it("leaves a single, un-merged garlic pull untouched (nothing to aggregate — mirrors the raw one-occurrence case)", () => {
+    const mealData: MealKeyedRecipeData = new Map([
+      ["meal-a", mealWithGarlicPull("a", "Pull garlic cubes")],
+    ]);
+    const graph = buildWeekGraph(mealData);
+    const ids = graph.nodes.map((n) => n.id);
+    expect(ids).toContain("meal-a::pull-a");
+    expect(graph.nodes.some((n) => n.id.startsWith("merged-pull::"))).toBe(false);
+  });
+});
