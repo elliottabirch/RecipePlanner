@@ -1,124 +1,155 @@
 ---
 created: 2026-07-12
-title: Alias units break cross-recipe aggregation (garlic cubes under-counted)
+title: Unresolvable-unit split mints an invisible duplicate line (`""`-driven, not alias-driven) — merge-semantics fix deferred
 area: general
 files:
-  - recipe-planner/src/lib/aggregation/builders/product-builder.ts:36-37 (nodeUnit — raw DB string, never normalized)
-  - recipe-planner/src/lib/aggregation/builders/product-builder.ts:88-101 (resolveMergeTargetKey — the split)
-  - recipe-planner/src/lib/aggregation/utils/product-utils.ts:43-64 (mergeQuantities — bails on !canConvert)
+  - recipe-planner/src/lib/aggregation/builders/product-builder.ts:36-52 (nodeUnit — now normalized via normalizeUnit; the read-boundary half of this todo SHIPPED under 260716-rpp)
+  - recipe-planner/src/lib/aggregation/builders/product-builder.ts:104-135 (resolveMergeTargetKey — the `|undefined` split; now console.warn's on a non-empty unresolvable unit, but the split itself is UNCHANGED and deliberately deferred)
+  - recipe-planner/src/lib/aggregation/builders/product-builder.ts:141-165 (addOrMergeProduct — the merge branch; the `if (merged)` guard at ~152 silently discards data if this is ever made order-independent naively)
+  - recipe-planner/src/lib/aggregation/builders/product-builder.test.ts (PIN: deferred "" split bug, both orderings — the executable record of what a real fix must handle)
+  - recipe-planner/src/lib/aggregation/utils/product-utils.ts:43-64 (mergeQuantities — bails on !canConvert, returns null for a dimensionless existing unit)
   - recipe-planner/src/lib/units.ts:38-53 (UNIT_DIMENSIONS — 15 canonical keys only)
-  - recipe-planner/src/lib/units.ts:87-105 (UNIT_ALIASES — 17 aliases, none in UNIT_DIMENSIONS)
-  - recipe-planner/src/lib/units.ts:111-122 (canConvert — unknown unit is never convertible)
-  - recipe-planner/src/lib/units.ts:148-153 (normalizeUnit — exists, but unused in the read path)
-  - recipe-planner/scripts/normalize-node-units.js
+  - recipe-planner/src/lib/units.ts:87-105 (UNIT_ALIASES — 17 aliases; now normalized at both the aggregation read boundary and the import/editor write boundary)
+  - recipe-planner/src/lib/units.ts:111-122 (canConvert — unknown unit is never convertible; the guard this todo's naive fix would need to deliberately relax)
+  - recipe-planner/src/lib/units.ts:148-153 (normalizeUnit — now called at both the aggregation read path and build-recipe-graph.ts's write path)
+  - recipe-planner/src/lib/import/build-recipe-graph.ts:132-138 (planGraphWrites — now normalizes unit on write, closing the import-JSON-contract hole; SHIPPED under 260716-rpp)
 ---
 
-## Problem
+## Retracted (2026-07-16)
 
-This week's plan used garlic cubes in **both** the tomato soup and the honey garlic
-broccolini, but the app only told us to pull **1 garlic cube**. The two recipes' quantities
-never got summed.
+A 2026-07-16 orchestrator probe ran the REAL aggregation code (`npx tsx`) against
+live prod and the live week plan `71ukhycp2v4s0fw` ("week of 7/13"). This
+retracts most of the original diagnosis below:
 
-**Root cause: the aggregation read path never normalizes a node's unit, so an alias unit
-fails to convert against itself and gets split into a second, invisible line.**
+- **The headline symptom is NOT reproducible.** This todo originally claimed
+  "the app only told us to pull 1 garlic cube" because two recipes' quantities
+  "never got summed." Week 7/13 plans Creamy Tomato Soup, Honey-Garlic
+  Broccolini, AND Mushroom Bourguignon on the same `garlic cubes (frozen)`
+  product, all unit `each` — `buildProductFlowGraph` merges them correctly into
+  ONE line, `total=8 each, sources=3`. There is no split and no under-count on
+  that product. The app was already merging correctly and faithfully reporting
+  a wrong number (see the sibling `garlic-cube-clove-unit-conversion` todo,
+  which carries the real, live 3x over-pull).
+- **Zero alias units exist in prod.** Full `recipe_product_nodes.unit`
+  histogram: `each`(199), `cup`(115), `""`(104), `tbsp`(49), `tsp`(30),
+  `lb`(19), `oz`(16), `qt`(11), `fl_oz`(2), `serving`(1). No `cube`, no
+  `clove`, no `ea`. The Phase 01-08 `normalize-node-units.js` sweep already
+  flattened every alias in `recipe_product_nodes.unit` to its canonical form.
+  This todo's proposed fix (`normalizeUnit(node.unit ?? "") ?? node.unit ?? ""`
+  at the read boundary) is real and worth having as a guard against a *future*
+  alias entering the data, but it fixes nothing live today.
+- **The proposed one-line fix would not have touched the live bug even before
+  the sweep.** `normalizeUnit("")` returns `null`, the expression falls back to
+  the raw `""`, and the line still splits. The `|undefined` split that actually
+  fires live is driven by the `""` D-01 sentinel, not by an alias.
+- The "⚠️ Interaction with `garlic-cube-clove-unit-conversion`" section below
+  is retracted in full: cloves and cubes cannot mis-merge at a wrong 1:1 ratio
+  today, because every live garlic node already uses `each` — there are no
+  cloves in prod to merge against. See the pointer at the bottom of this file
+  for where the ratio model actually lives now.
 
-### The chain
+**What shipped under 260716-rpp Task 2** (latent-bug prevention, zero visible
+effect on today's data — see files list above): `normalizeUnit` is now called
+at the aggregation read boundary AND the `planGraphWrites` write boundary (the
+single write path for both `RecipeEditor.handleSave` and the `/import` page).
+A non-empty unresolvable unit now `console.warn`s when it is about to split
+into an invisible second line. `""` stays quiet (it is a deliberate, frequent,
+live sentinel — see below). **The merge-semantics fix below was NOT shipped —
+it is the live-but-latent finding this todo now carries forward.**
 
-`buildAggregatedProduct` (`product-builder.ts:36-37`) takes the unit **straight off the DB
-row**:
+## Problem (rewritten 2026-07-16 to match the verified probe)
 
-```ts
-const quantity = node.quantity || 0;
-const nodeUnit = node.unit || "";          // <-- raw string; no normalizeUnit()
-```
+The `|undefined` split IS minted live today — but by the `""` D-01 sentinel,
+not by an alias. `canConvert("", "")` is false for the exact same reason
+`canConvert("cube", "cube")` was false before Task 2's normalize: two
+dimensionless units must never be treated as convertible (`units.ts:111-122`'s
+comment explains why — `undefined === undefined` would read as `true` and
+`convert` would return `NaN`, silently corrupting the merged quantity).
 
-`normalizeUnit` **exists** (`units.ts:148`) and correctly maps `cube → each`. But grep says it
-is called in exactly two places — the linter's `cross-dimension` rule and `Import.tsx:221`.
-**It is never called anywhere in the aggregation read path.** So `nodeUnit` stays `"cube"`.
+On week 7/13 the flow graph produces TWO lines for one transient product:
+`key="nth208298rbyj8h"` (`garlic cube (pulled)`, unit `each`, total 0) AND
+`key="nth208298rbyj8h|undefined"` (same product, unit `""`, total 0) — visible
+as two identical `garlic cube (pulled)` outputs on the pull step.
 
-`UNIT_DIMENSIONS` (`units.ts:38-53`) has only the **15 canonical** keys (`tsp … each`).
-`"cube"` is an *alias*, not a canonical `Unit`, so:
+**`""` is a deliberate D-01 sentinel on 104 live nodes** (all 5 raw `""` nodes
+have qty 0; `stored` is 59/76 `""`). It marks a cleared/not-yet-set unit, not
+an authoring error, and it must stay quiet — a throw here would crash the
+shopping list for every one of those 104 nodes.
 
-```ts
-getDimension("cube")  // undefined
-```
+**Currently manifesting only as a duplicate 0-qty transient line on a cook
+card.** `qty=0` on transients is the convention, not a bug (60 of 129 transient
+nodes are 0) — so the duplicate reads as noise on the cook card, not a wrong
+number. **Latent for 14 products with a mixed unresolvable+canonical unit
+spread** (`garlic cube (pulled)`, `onion (yellow) small-dice`, `onion (yellow)
+large dice`, `onion (red) large dice`, `sweet potato large dice`, `broccoli
+florets`, `parsley chopped`, `lemon juice`, `tahini sauce`, `cucumber sliced`,
+`broccoli patties`, `salt` (raw, tsp+`""`), `pepper black` (raw, tsp+`""`),
+`pork shoulder roast` (raw, `""`+each)) — these would split if one week planned
+the relevant recipes together, but verified on week 7/13 the shopping list
+currently shows exactly ONE `salt` line and ONE `pepper black` line, no
+duplicates. Do not overstate this as live shopping-list corruption — for
+raw/shopping-list products it is latent, not firing.
 
-and `canConvert` (`units.ts:111-122`) explicitly refuses unknown units:
+## Solution — what shipped, and what is DEFERRED (carried here for the next reader)
 
-```ts
-if (da === undefined || db === undefined) return false;
-```
+**Shipped (260716-rpp Task 2):** normalize at the read + write boundaries, plus
+the `console.warn` on a non-empty unresolvable unit's split. See the files list
+above for exact locations.
 
-So **`canConvert("cube", "cube") === false`** — a unit is not convertible with *itself*.
+**NOT shipped — deferred, this is the load-bearing finding to act on next.**
+The obvious candidate fix ("a dimensionless unit with quantity 0 absorbs into
+the base line — a D-01 sentinel carries no quantity to lose") is
+**order-dependent**, and the naive order-independent version silently destroys
+data:
 
-Now `resolveMergeTargetKey` (`product-builder.ts:88-101`):
+- `resolveMergeTargetKey` (`product-builder.ts:104-135`) returns `baseKey`
+  whenever no base exists yet. So the absorb rule only fires when the `""`
+  node arrives SECOND. If it arrives FIRST it claims the bare key with unit
+  `""`, and the later real `each` node hits `canConvert("", "each") === false`
+  → `getDimension("each") === "count"` → gets exiled to `${baseKey}|count`. The
+  duplicate line survives, now with the REAL quantity on the split key.
+- Making it order-independent requires the base line to YIELD to the incoming
+  — rewriting `addOrMergeProduct`'s merge branch (`~141-165`). That branch
+  rests on the documented invariant that `merged` is guaranteed non-null when
+  `resolveMergeTargetKey` returns an existing key. With a dimensionless
+  *existing* unit, `mergeQuantities` returns `null`
+  (`product-utils.ts:52`, `canConvert` guard), the `if (merged)` guard skips,
+  and **the incoming 8 `each` is silently discarded** — strictly worse than a
+  duplicate line.
+- That makes the honest fix a rewrite of the merge branch plus a deliberate
+  relaxation of DATA-01's convert-or-split contract, whose guard is explicitly
+  load-bearing (`units.ts:111-122`): two dimensionless units "must NOT be
+  treated as convertible — otherwise `undefined === undefined` reads as `true`
+  and `convert` returns NaN, silently corrupting the merged quantity."
+- **Blast radius vs. payoff:** this merge path runs for every product on every
+  surface, and 14 products carry a mixed unresolvable+canonical spread. The
+  live symptom it would fix is ONE duplicate `garlic cube (pulled) 0` line on a
+  cook card — and a `0` transient is the convention, so the duplicate reads as
+  noise, not a wrong number. Trading a silent-corruption risk across every
+  shopping line for a cosmetic dedup was judged a bad trade for a quick task.
 
-```ts
-const base = products.get(baseKey);
-if (!base) return baseKey;
-if (canConvert(base.unit, newProduct.unit)) return baseKey;   // false!
-const dimension = getDimension(newProduct.unit);              // undefined
-return `${baseKey}|${dimension}`;                             // "garlicId|undefined"
-```
+**Executable record of the finding:** `product-builder.test.ts`'s
+`"PIN: deferred \"\" (dimensionless) split bug, both orderings"` describe block
+pins BOTH orderings as CURRENT (known-wrong) behavior:
+- base-first (real unit arrives first, `""` second): duplicate line survives,
+  base holds the real quantity, no warn (`""` stays quiet).
+- sentinel-first (`""` arrives first, real unit second): the bare key holds
+  the `""` line, the real quantity is exiled to the dimension-suffixed split
+  key — proving it is NOT silently dropped, which is the failure mode any
+  order-independent fix must avoid.
 
-- **Tomato soup** arrives first → claims key `garlicId`, quantity 1.
-- **Honey garlic broccolini** arrives → `canConvert("cube","cube")` is false → routed to
-  `garlicId|undefined`, a **separate line**.
+Whoever picks this up must: (1) handle both orderings, (2) not let the
+null-merge guard at `addOrMergeProduct` drop a real quantity when the existing
+line is dimensionless, and (3) deliberately relax (not quietly bypass)
+`canConvert`'s convert-or-split guard for this one case. When that lands,
+rewrite the two pin tests to the new contract — their current failure at that
+point is expected, not a regression.
 
-Two lines instead of one summed line. The pull list shows the first, so you pull 1 cube and
-walk away short. The literal string `"undefined"` baked into the split key is the tell that
-this path was never meant to be reached.
+## Ratio model — pointer only
 
-### It is not just garlic
-
-**Every** alias in `UNIT_ALIASES` (`units.ts:87-105`) has this defect — `ea`, `cups`, `tbl`,
-`cu`, `quart`, `clove(s)`, `can`, `bu`, `bunch`, `whole`, `cube(s)`, `slices`, `pitas`,
-`sprig(s)`. Any recipe node authored with one of these **fails to aggregate with any other
-node of the same product**, silently, across the whole app — shopping list, pull lists,
-batch prep. Garlic is just where it got noticed. Note `ea` is in that list, so even the
-most common shorthand is affected.
-
-### Bonus defect on the same line
-
-`scaleQuantity(quantity, mealCount, nodeUnit as Unit)` (`product-builder.ts:38`) decides
-whether to ceil via `getDimension(unit) === "count"`. For `"cube"` that's `undefined`, so
-**`isDiscrete` is false and the ceil is skipped** — losing the deliberate "never under-buy an
-indivisible item" guarantee (`units.ts:205-211`). Alias-unit counts can come out fractional.
-
-## Solution
-
-**Normalize at the aggregation boundary.** In `buildAggregatedProduct`:
-
-```ts
-const nodeUnit = normalizeUnit(node.unit ?? "") ?? node.unit ?? "";
-```
-
-That single change makes `"cube"` → `"each"`, so the two garlic lines share a dimension,
-merge into one key, and sum. It also restores the discrete ceil.
-
-Defense in depth, since the read path shouldn't be the only guard:
-- **Normalize on write** too (`RecipeEditor` save + the import contract), so canonical units
-  are what actually land in `recipe_product_nodes`.
-- **Sweep the existing rows** — `scripts/normalize-node-units.js` already exists for exactly
-  this; check what it covers and re-run it.
-- **Make the failure loud.** A merge key containing `"undefined"` is never legitimate — assert
-  or log in `resolveMergeTargetKey` rather than silently minting a split line. This bug was
-  invisible precisely because the split is silent.
-
-Regression test in `product-builder.test.ts`: two planned meals, same product, both with unit
-`"cube"` → assert **one** line whose quantity is the sum, not two lines.
-
-## ⚠️ Interaction with `garlic-cube-clove-unit-conversion` — read before fixing
-
-These are **different bugs on the same product**, and fixing this one **without** the other
-makes garlic quantities wrong in a new way.
-
-That todo's finding: `clove` and `cube` **both** alias to `each`, and `convert()` is an
-identity for count units — so the system believes **1 clove = 1 cube**, when really
-**3 cloves = 1 cube**.
-
-So once units are normalized here, the tomato soup's cloves and the broccolini's cubes *will*
-finally merge — but they'll merge at a **1:1 ratio**, summing cloves and cubes as if they were
-the same thing. Under-counting becomes mis-counting. **Land the clove↔cube ratio (or at
-minimum the recipe-node data fix) together with this**, and add the combined case to the test:
-soup in cloves + broccolini in cubes → one line, correct cube count.
+Drop the retracted "⚠️ Interaction" section's premise entirely: cloves and
+cubes cannot mis-merge 1:1 today, because every live garlic node already uses
+`each` — see `garlic-cube-clove-unit-conversion` for the real, live 3x
+over-pull and its deferred ratio-model layer 2, which is where the
+clove↔cube conversion work actually belongs (tracked jointly with the pending
+`single-purchase-unit-shopping-lines` todo).
