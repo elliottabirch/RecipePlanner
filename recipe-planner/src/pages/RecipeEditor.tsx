@@ -78,22 +78,17 @@ import StepNode, {
 } from "../components/nodes/StepNode";
 import ProductForm, { useProductForm } from "../components/ProductForm";
 import { searchProducts } from "../lib/search/product-search";
+import { PREP_ACTION_KEYS, actionVerb } from "../lib/prep-actions";
 
 const nodeTypes = {
   product: ProductNode,
   step: StepNode,
 };
 
-// Step-metadata authoring vocab (Phase 5 Plan 03, D-05). prep_action reuses
-// the Phase-1 controlled prep-verb list verbatim (lib/linter/rules/prep-words.ts).
-const PREP_ACTION_OPTIONS = [
-  "sliced",
-  "diced",
-  "minced",
-  "chopped",
-  "grated",
-  "shredded",
-] as const;
+// Step-metadata authoring vocab (Phase 5 Plan 03, D-05; widened in E1). The
+// controlled prep-action keys are the single source of truth in
+// `lib/prep-actions.ts`; the Select shows each key's imperative verb form.
+const PREP_ACTION_OPTIONS = PREP_ACTION_KEYS;
 
 type ResourceValue = NonNullable<RecipeStep["resource"]>;
 
@@ -1472,11 +1467,14 @@ export default function RecipeEditor() {
                 label="Prep action"
                 onChange={(e) => setStepPrepAction(e.target.value)}
               >
-                {PREP_ACTION_OPTIONS.map((verb) => (
-                  <MenuItem key={verb} value={verb}>
-                    {verb.charAt(0).toUpperCase() + verb.slice(1)}
-                  </MenuItem>
-                ))}
+                {PREP_ACTION_OPTIONS.map((key) => {
+                  const verb = actionVerb(key);
+                  return (
+                    <MenuItem key={key} value={key}>
+                      {verb.charAt(0).toUpperCase() + verb.slice(1)}
+                    </MenuItem>
+                  );
+                })}
               </Select>
             </FormControl>
           )}

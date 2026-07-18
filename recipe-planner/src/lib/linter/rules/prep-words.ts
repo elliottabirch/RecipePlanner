@@ -6,6 +6,12 @@
  */
 import type { LintFinding, ProductExpanded } from "../index";
 
+// The classic knife-cut STATE words this rule flags when they leak into a RAW
+// product name. Deliberately kept as its own narrow list (NOT the full E1
+// `prep-actions` vocabulary): non-cut states like "peeled"/"pulled" legitimately
+// describe raw pantry products (e.g. "tomato whole peeled (canned)"), so widening
+// this set would produce false positives. This is a raw-name-hygiene concern,
+// distinct from the step-action vocabulary.
 const PREP_VERBS = [
   "sliced",
   "diced",

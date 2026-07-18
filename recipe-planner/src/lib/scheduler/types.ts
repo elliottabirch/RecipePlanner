@@ -48,6 +48,15 @@ export interface StepInstance {
   step: RecipeStep;
   recipeName: string;
   /**
+   * Cook-facing DISPLAY TITLE for this node (E1). For an ordinary per-recipe
+   * node this is `deriveStepLabel(step, singleInputName)` — the derived
+   * "{verb} {input}" for a controlled `prep_action`, else the authored
+   * `step.name` unchanged (hybrid model). Absent on merged nodes, whose
+   * synthetic `step.name` is already a derived label ("Prep onion (…)", "Pull
+   * garlic cubes (frozen)") — read sites use `displayName ?? step.name`.
+   */
+  displayName?: string;
+  /**
    * Set only on a week-wide merged prep node (`id === merged-prep::<productId>`,
    * built by `buildWeekGraph`): the `(plannedMealId, stepId)` pairs of the
    * original per-recipe single-raw-ingredient prep steps this node replaced.

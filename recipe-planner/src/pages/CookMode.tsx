@@ -345,7 +345,8 @@ export default function CookMode() {
 
   const stepLabelById = useMemo(() => {
     const map = new Map<string, string>();
-    for (const node of weekGraph.nodes) map.set(node.id, node.step.name);
+    for (const node of weekGraph.nodes)
+      map.set(node.id, node.displayName ?? node.step.name);
     return map;
   }, [weekGraph]);
 
@@ -579,7 +580,8 @@ export default function CookMode() {
           memberData,
           plannedMealQuantityById
         )[0];
-        const cutLabel = cut?.productName ?? instance.step.name;
+        const cutLabel =
+          cut?.productName ?? instance.displayName ?? instance.step.name;
         const cutKey = cut?.productId ?? cutLabel;
         const quantity = raw?.quantity ?? cut?.quantity ?? 0;
         const unit = raw?.unit ?? cut?.unit ?? "";
@@ -983,7 +985,7 @@ export default function CookMode() {
                     <IconButton
                       edge="end"
                       color="primary"
-                      aria-label={`Finish ${instance.step.name} now`}
+                      aria-label={`Finish ${instance.displayName ?? instance.step.name} now`}
                       onClick={() => handleCompletePassive(instance.id)}
                     >
                       <DoneIcon />
@@ -992,7 +994,7 @@ export default function CookMode() {
                 }
               >
                 <ListItemText
-                  primary={instance.step.name}
+                  primary={instance.displayName ?? instance.step.name}
                   secondary={instance.recipeName}
                 />
               </ListItem>
@@ -1168,7 +1170,7 @@ export default function CookMode() {
                         {formatOffset(start)}
                       </Box>
                       <ListItemText
-                        primary={inst.step.name}
+                        primary={inst.displayName ?? inst.step.name}
                         secondary={
                           passive > 0
                             ? `${inst.recipeName} · ${passive}m passive`

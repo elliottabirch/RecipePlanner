@@ -167,7 +167,7 @@ export function NowNextCard({
             flexWrap="wrap"
           >
             <Typography variant="subtitle1" fontWeight="bold">
-              {instance.step.name}
+              {instance.displayName ?? instance.step.name}
             </Typography>
             <Box display="flex" alignItems="center" gap={0.5}>
               {statusChip && (

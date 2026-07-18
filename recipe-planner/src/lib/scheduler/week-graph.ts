@@ -59,6 +59,7 @@ import type {
   RecipeGraphData,
 } from "../aggregation/types";
 import { ProductType, StepType, Timing, type RecipeStep } from "../types";
+import { deriveStepLabel, isPrepAction, actionVerb } from "../prep-actions";
 import {
   collectProducedProductIds,
   collectSpuriousPullInstanceIds,
@@ -126,12 +127,32 @@ function singleInventoryInput(
   return { productId: product.id, productName: product.name };
 }
 
+/**
+ * The single input product's NAME for a step, regardless of product type or
+ * step resource — used to derive the cook-facing display title (E1). Unlike
+ * `singleRawInput`/`singleInventoryInput` this is NOT gated on type or
+ * resource (a `process broccoli` step runs on the food_processor, yet still
+ * wants "process broccoli" derived from its raw input). Returns `null` when the
+ * step does not have exactly one input node (multi-input cook/assembly steps
+ * keep their authored prose).
+ */
+function singleInputProductName(
+  recipeData: RecipeGraphData,
+  stepId: string
+): string | null {
+  const inputs = recipeData.productToStepEdges.filter((e) => e.target === stepId);
+  if (inputs.length !== 1) return null;
+  return findProductNode(recipeData, inputs[0].source)?.expand?.product?.name ?? null;
+}
+
 /** The label a merged member contributes to the breakdown: its `prep_action`
- * when set (the clean enum vocabulary), else the leading verb of its step name
- * ("squeeze lemons" -> "squeeze") so actionless prep still gets counted. Uses
- * `||` (not `??`): PocketBase stores an un-set `prep_action` as `""`, which
- * `??` would wrongly keep. */
+ * when set (rendered via the controlled vocabulary's imperative verb, e.g.
+ * `grate` -> "grate"), else the leading verb of its step name ("squeeze lemons"
+ * -> "squeeze") so actionless prep still gets counted. Uses `||` (not `??`):
+ * PocketBase stores an un-set `prep_action` as `""`, which `??` would wrongly
+ * keep. */
 function memberActionLabel(step: RecipeStep): string {
+  if (isPrepAction(step.prep_action)) return actionVerb(step.prep_action);
   const fromName = step.name.trim().split(/\s+/)[0]?.toLowerCase();
   return step.prep_action || fromName || "prep";
 }
@@ -236,6 +257,10 @@ export function buildWeekGraph(mealData: MealKeyedRecipeData): WeekGraph {
         plannedMealId,
         step,
         recipeName: recipeData.recipe.name,
+        displayName: deriveStepLabel(
+          step,
+          singleInputProductName(recipeData, step.id)
+        ),
       });
       if (stepResource(step) === "none") {
         const raw = singleRawInput(recipeData, step.id);
