@@ -5,8 +5,23 @@
 // Tap-for-detail (MUI Collapse, no dialog) reveals scaled quantities +
 // instructions without blocking the check-off control underneath.
 import { useState } from "react";
-import { Box, Typography, Checkbox, Collapse } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Checkbox,
+  Collapse,
+  IconButton,
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Divider,
+} from "@mui/material";
+import { MenuBookOutlined as MenuBookIcon } from "@mui/icons-material";
 import type { StepInstance } from "../../lib/scheduler/types";
+import type { ConvergenceResult } from "../../lib/scheduler/convergence";
 import { ReadinessChip, type ReadinessChipState } from "./ReadinessChip";
 import AddNoteButton from "../AddNoteButton";
 
@@ -14,6 +29,19 @@ export interface ScaledIngredient {
   productName: string;
   quantity: number;
   unit: string;
+}
+
+/** The full-recipe payload backing the "view recipe" (book) button + dialog
+ * (full-recipe-text-on-cook-mode-card todo). Null on merged-prep nodes (no
+ * single recipe to show) — the caller omits it exactly as it omits the note
+ * affordance there. */
+export interface RecipeView {
+  recipeName: string;
+  /** `Recipe.notes` — the prose recipe. Empty/absent on recipes not yet
+   * authored; the dialog then leans on the scaled ingredient list. */
+  notes?: string | null;
+  /** This week's scaled ingredient list for the whole recipe. */
+  ingredients: ScaledIngredient[];
 }
 
 /** One recipe's contribution to a required cut on a merged prep card. */
@@ -47,12 +75,29 @@ export interface NowNextCardProps {
    * and exactly which products to have ready (PREP-04 follow-on,
    * user-directed 2026-07-10). Null/absent for ordinary per-recipe nodes. */
   mergedBreakdown?: MergedCutGroup[] | null;
+  /** Downstream convergence for this step: the other ingredients it combines
+   * with and the shared destination container (container-convergence-indicator
+   * todo). Null when the step converges with nothing (or on merged nodes). */
+  convergence?: ConvergenceResult | null;
+  /** Full-recipe payload for the "view recipe" book button. Null → no button
+   * (merged-prep / recipe-less nodes). */
+  recipeView?: RecipeView | null;
   checked: boolean;
   onToggleChecked: () => void;
   statusChip?: NowNextCardStatusChip | null;
   /** Live MM:SS remaining, Display size (20px/700) — "now" card passive
    * countdown only; null/undefined when not counting. */
   countdownText?: string | null;
+}
+
+function formatIngredient(i: ScaledIngredient): string {
+  const qty =
+    i.quantity && i.unit && i.unit !== "each"
+      ? ` (${formatQuantity(i.quantity)} ${i.unit})`
+      : i.quantity
+        ? ` (${formatQuantity(i.quantity)})`
+        : "";
+  return `${i.productName}${qty}`;
 }
 
 function formatQuantity(q: number): number {
@@ -66,12 +111,15 @@ export function NowNextCard({
   variant,
   scaledInputs,
   mergedBreakdown,
+  convergence,
+  recipeView,
   checked,
   onToggleChecked,
   statusChip,
   countdownText,
 }: NowNextCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const [recipeOpen, setRecipeOpen] = useState(false);
   const isNow = variant === "now";
 
   // Merged prep summary for the caption + to switch the detail body to the
@@ -124,6 +172,24 @@ export function NowNextCard({
               {/* Week-wide merged-prep nodes carry a synthetic step with an
                   empty `recipe` (spans multiple recipes — a note has no single
                   target), so omit the note affordance there (06 UAT #1). */}
+              {/* Read the whole recipe from the card (full-recipe-text todo).
+                  Same recipe-less guard as the note button — a merged-prep
+                  node spans multiple recipes, so `recipeView` is null there. */}
+              {recipeView && (
+                <Tooltip title="View full recipe">
+                  <IconButton
+                    size="small"
+                    aria-label="View full recipe"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setRecipeOpen(true);
+                    }}
+                    sx={{ minWidth: 44, minHeight: 44 }}
+                  >
+                    <MenuBookIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
               {instance.step.recipe && (
                 <AddNoteButton
                   recipeId={instance.step.recipe}
@@ -153,6 +219,30 @@ export function NowNextCard({
 
           <Collapse in={expanded}>
             <Box mt={1}>
+              {/* Downstream convergence: what this ingredient ends up combined
+                  with, and into which container (container-convergence todo).
+                  Placed first — it is the "where does my work go" context the
+                  cook is asking for. */}
+              {convergence && convergence.combinesWith.length > 0 && (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    mb: 1,
+                    px: 1,
+                    py: 0.5,
+                    borderLeft: "3px solid",
+                    borderColor: "primary.main",
+                    backgroundColor: "action.hover",
+                    borderRadius: 0.5,
+                  }}
+                >
+                  <Box component="span" sx={{ fontWeight: 600 }}>
+                    Combines with:
+                  </Box>{" "}
+                  {convergence.combinesWith.join(", ")}
+                  {convergence.destination ? ` → ${convergence.destination}` : ""}
+                </Typography>
+              )}
               {cutCount > 0 ? (
                 // Grouped by required cut: the cut (the exact product to have
                 // ready) is a full-width section header, so each recipe below
@@ -225,6 +315,52 @@ export function NowNextCard({
           </Collapse>
         </Box>
       </Box>
+
+      {/* Full recipe reader (full-recipe-text-on-cook-mode-card todo): the
+          whole recipe in one place — prose (Recipe.notes) when authored, plus
+          this week's scaled ingredient list, which the graph always has. */}
+      {recipeView && (
+        <Dialog
+          open={recipeOpen}
+          onClose={() => setRecipeOpen(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>{recipeView.recipeName}</DialogTitle>
+          <DialogContent dividers>
+            {recipeView.notes && recipeView.notes.trim() ? (
+              <Typography
+                variant="body1"
+                sx={{ whiteSpace: "pre-wrap", mb: recipeView.ingredients.length ? 2 : 0 }}
+              >
+                {recipeView.notes.trim()}
+              </Typography>
+            ) : (
+              <Typography variant="body2" color="text.secondary" sx={{ mb: recipeView.ingredients.length ? 2 : 0 }}>
+                No written recipe yet — showing this week&apos;s ingredients.
+              </Typography>
+            )}
+            {recipeView.ingredients.length > 0 && (
+              <>
+                {recipeView.notes && recipeView.notes.trim() && <Divider sx={{ mb: 2 }} />}
+                <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                  Ingredients (this week)
+                </Typography>
+                <Box component="ul" sx={{ m: 0, pl: 3 }}>
+                  {recipeView.ingredients.map((i, idx) => (
+                    <Typography component="li" variant="body2" key={idx}>
+                      {formatIngredient(i)}
+                    </Typography>
+                  ))}
+                </Box>
+              </>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setRecipeOpen(false)}>Close</Button>
+          </DialogActions>
+        </Dialog>
+      )}
     </Box>
   );
 }

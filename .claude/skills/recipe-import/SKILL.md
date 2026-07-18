@@ -241,7 +241,7 @@ problem is surfaced inline for the user to fix; it can never produce a partial w
 {
   "recipe": {
     "name": "Creamy Tomato Soup",
-    "notes": "optional human-facing blurb",
+    "notes": "the full prose recipe — see the recipe.notes rule below",
     "recipe_type": "batch_prep",
     "status": "draft"
   },
@@ -305,6 +305,14 @@ problem is surfaced inline for the user to fix; it can never produce a partial w
 - **Edges** are `{ "from": ref, "to": ref }`. Direction is inferred from the ref prefix:
   `product-* → step-*` is an input; `step-* → product-*` is an output. NEVER
   `product → product`.
+- **`recipe.notes`**: carry the **full prose recipe** here — the source's written
+  description and method, as originally typed, in one readable block. Cook mode surfaces it
+  behind the Now/Next card's "view recipe" (book) button so the cook can read the whole dish
+  in one place (full-recipe-text-on-cook-mode-card). This is NOT a one-line blurb: preserve
+  the source's instructions/narrative (ASCII only, `\n` for paragraph breaks — the same
+  copy-safety rules as `instructions`). Omit only when the source genuinely has no prose
+  (e.g. a bare ingredient list); the per-step `instructions` field is separate and still
+  carries each step's own directions.
 - **`recipe.status`**: set `"draft"` (the import page lands drafts). It's the default even
   if omitted.
 - **`tags`**: an array of existing tag **ids**, matched per "Match tags" above. Include

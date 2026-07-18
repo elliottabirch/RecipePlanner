@@ -56,7 +56,7 @@ import type {
   MealVariantOverrideExpanded,
   SchedulerConfig,
 } from "../lib/types";
-import { StepType } from "../lib/types";
+import { StepType, ProductType } from "../lib/types";
 import type {
   PlannedMealWithRecipe,
   RecipeGraphData,
@@ -70,6 +70,7 @@ import { emptyResourceTimeline } from "../lib/scheduler/resources";
 import { loadSchedulerConfig } from "../lib/scheduler/scheduler-config";
 import type { Schedule, StepInstance, WeekGraph } from "../lib/scheduler/types";
 import { deriveReadiness } from "../lib/scheduler/readiness";
+import { deriveConvergence } from "../lib/scheduler/convergence";
 import {
   runStepLint,
   runWeekLint,
@@ -80,6 +81,8 @@ import { useCookProgress } from "../hooks/useCookProgress";
 import {
   NowNextCard,
   type MergedCutGroup,
+  type RecipeView,
+  type ScaledIngredient,
 } from "../components/cook-mode/NowNextCard";
 import type { ReadinessChipState } from "../components/cook-mode/ReadinessChip";
 import { WeightsPanel } from "../components/cook-mode/WeightsPanel";
@@ -631,6 +634,65 @@ export default function CookMode() {
     [mealKeyedRecipeData, plannedMealQuantityById]
   );
 
+  // Downstream convergence for the card (container-convergence-indicator todo):
+  // which other ingredients this step's output combines with, and into which
+  // container. Intra-recipe walk on the step's own RecipeGraphData; null on
+  // week-wide merged-prep nodes (they span several recipes with per-recipe
+  // destinations — deferred), which have no `plannedMealId` recipe entry.
+  const getConvergence = useCallback(
+    (instance: StepInstance) => {
+      if (instance.mergedMembers) return null;
+      const recipeData = mealKeyedRecipeData.get(instance.plannedMealId);
+      if (!recipeData) return null;
+      return deriveConvergence(instance.step.id, recipeData);
+    },
+    [mealKeyedRecipeData]
+  );
+
+  // Full-recipe payload for the card's "view recipe" book button
+  // (full-recipe-text-on-cook-mode-card todo): the recipe's prose (Recipe.notes)
+  // plus this week's scaled ingredient list (its raw/inventory inputs across all
+  // steps, deduped). Null on merged/recipe-less nodes — no single recipe to
+  // show, matching the note-button guard.
+  const getRecipeView = useCallback(
+    (instance: StepInstance): RecipeView | null => {
+      if (instance.mergedMembers) return null;
+      const recipeData = mealKeyedRecipeData.get(instance.plannedMealId);
+      if (!recipeData) return null;
+      const byId = new Map<string, ScaledIngredient>();
+      for (const step of recipeData.steps) {
+        for (const input of extractStepInputs(
+          step.id,
+          recipeData,
+          plannedMealQuantityById
+        )) {
+          if (
+            input.productType !== ProductType.Raw &&
+            input.productType !== ProductType.Inventory
+          ) {
+            continue;
+          }
+          const existing = byId.get(input.productId);
+          if (existing && existing.unit === input.unit) {
+            existing.quantity += input.quantity;
+          } else if (!existing) {
+            byId.set(input.productId, {
+              productName: input.productName,
+              quantity: input.quantity,
+              unit: input.unit,
+            });
+          }
+        }
+      }
+      return {
+        recipeName: recipeData.recipe.name,
+        notes: recipeData.recipe.notes ?? null,
+        ingredients: [...byId.values()],
+      };
+    },
+    [mealKeyedRecipeData, plannedMealQuantityById]
+  );
+
   const handleGenerateSchedule = useCallback(() => {
     if (!schedulerConfig) return;
     try {
@@ -984,6 +1046,8 @@ export default function CookMode() {
                 variant="now"
                 scaledInputs={getScaledInputs(nowInstance)}
                 mergedBreakdown={getMergedBreakdown(nowInstance)}
+                convergence={getConvergence(nowInstance)}
+                recipeView={getRecipeView(nowInstance)}
                 checked={checkedIds.has(nowInstance.id)}
                 onToggleChecked={() => handleToggleChecked(nowInstance)}
                 statusChip={getStatusChip(nowInstance, true)}
@@ -1001,6 +1065,8 @@ export default function CookMode() {
                 variant="next"
                 scaledInputs={getScaledInputs(nextInstance)}
                 mergedBreakdown={getMergedBreakdown(nextInstance)}
+                convergence={getConvergence(nextInstance)}
+                recipeView={getRecipeView(nextInstance)}
                 checked={checkedIds.has(nextInstance.id)}
                 onToggleChecked={() => handleToggleChecked(nextInstance)}
                 statusChip={getStatusChip(nextInstance, false)}
