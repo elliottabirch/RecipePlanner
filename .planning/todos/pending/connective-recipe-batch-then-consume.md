@@ -77,3 +77,16 @@ detected and dropped. A shared detector (`aggregation/utils/connective.ts`,
   instead of authored "…frozen"/"pull out…" strings. Blocked on the Phase 6
   import pipeline (not yet built); the current fix is a heuristic detector, not
   a data-model change. Revisit when Phase 6 import lands.
+
+---
+
+## Thread 3 update — 2026-07-18 (260718-e1a, E1-a)
+
+Thread 3 (contextual naming) is **partially addressed**. The pull-connector side
+is fixed: a surviving pull step now renders a derived `pull {input}` title
+instead of authored "pull out …" drift (E1 derived step labels — see
+`swap-aware-prep-naming` partial-resolution note and
+`.planning/notes/E1-derived-step-labels-proposal.md`). The producer OUTPUT naming
+("…frozen" baked into the inventory product name) is the layer-2 output-product
+concern, folded into **E1-b** and deferred (user, 2026-07-18). Thread 4
+(import-time model) remains blocked on Phase 6.

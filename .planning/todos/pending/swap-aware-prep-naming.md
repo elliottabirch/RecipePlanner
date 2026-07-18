@@ -29,3 +29,25 @@ Design threads to figure out (Phase 5, alongside PREP-01 step metadata +
   rather than each prep-state node carrying an authored product.
 - This intersects the recipe graph model, so treat as a modeling decision, not a
   cosmetic tweak. See Phase 2 discussion (2026-07-06) and `9cf9206`.
+
+---
+
+## Partial resolution — 2026-07-18 (260718-e1a, E1-a + E1-a.2)
+
+**Layer 1 (step titles) DONE + swap-aware.** This todo names two authored-text
+layers; the first is resolved. Step titles now derive `"{verb} {input}"` from a
+controlled `prep_action` (`src/lib/prep-actions.ts`) + the step's single input
+product, on all step surfaces (cook mode, batch prep, editor). Because the label
+reads the input product node — which a swap re-points (`applyVariantOverrides`) —
+the title re-derives on swap for free: swapping sweet potato → potato turns
+"dice sweet potato" into "dice potato (russet)" with no rename. Design +
+locked decisions: `.planning/notes/E1-derived-step-labels-proposal.md`.
+
+**Layer 2 (prep-state OUTPUT product nodes) STILL OPEN — deferred (user, 2026-07-18).**
+The output product a prep step emits (`onion (yellow) small-dice`, `diced sweet
+potato`) still carries an authored name, so a swap does not yet re-derive the
+downstream output/consumer name. Planned as **E1-b**: derive the output node's
+display name at GRAPH time from its producing step's (post-swap) input +
+`prep_action` (no `base_product` schema field needed — that would not be
+swap-aware; the graph-time derivation is). Held until the verbosity proves worth
+it in use.

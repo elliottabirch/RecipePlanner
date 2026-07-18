@@ -225,3 +225,24 @@ classifier from this agent → you run them). Deploy per DEPLOYMENT.md; hard-ref
 
 (String forms centralized in one map — easy to tweak later. `pull` renders the title as
 `Pull {input}`.)
+
+---
+
+## 12. Status + refinement (2026-07-18)
+
+- **E1-a + E1-a.2 SHIPPED** (260718-e1a, commits fae37f4 + f7126e8): derived step
+  titles on cook mode, batch prep, and the recipe-editor canvas. Prod migration
+  applied (99 steps set, 0 legacy remaining). Cook mode user-verified.
+- **Layer-2 refinement — graph-time beats schema Option A.** Implementing Option A
+  as a `base_product` field on the product record would **not** be swap-aware: a
+  swap is a per-plan node override (`applyVariantOverrides` re-points a
+  `recipe_product_nodes.product`), while a product-record field is global. The
+  correct implementation derives the output node's display name **at graph time**
+  from its producing step's (post-swap) input + `prep_action` — same mechanism as
+  E1-a's `displayName`, no schema field, swap-aware for free. This supersedes §6
+  Option A's "add a base_product link" wording.
+- **E1-b DEFERRED (user, 2026-07-18, "verify first").** Scope fork when picked up:
+  local surfaces (batch-prep outputs, fridge/freezer stored, editor output nodes)
+  vs. also cross-recipe consumers (a recipe consuming another's prep-state product
+  — the connective-recipe case). Local-only is medium/low-risk; cross-recipe is the
+  high-value, higher-complexity half.

@@ -1,6 +1,6 @@
 ---
 created: 2026-07-17
-title: Pull-step names drift across recipes for the same product ("Pull garlic cubes" / "Pull out garlic cubes" / "Pull frozen garlic cube")
+title: "[RESOLVED 2026-07-18] Pull-step names drift across recipes for the same product (\"Pull garlic cubes\" / \"Pull out garlic cubes\" / \"Pull frozen garlic cube\")"
 area: data
 severity: minor
 source: 260717-fva — surfaced while fixing the week-graph pull merge + missing-pull-step false positives
@@ -62,3 +62,25 @@ Not urgent — cosmetic, and the merge already hides it on the one surface (cook
 most visible. When picked up: normalize the three recipes' pull-step names to one canonical form
 ("Pull garlic cubes (frozen)" or similar), and consider whether a shared step-authoring convention
 (kin to `swap-aware-prep-naming`) should be established so this class of drift stops recurring.
+
+---
+
+## Resolution — 2026-07-18 (260718-e1a, E1-a + E1-a.2)
+
+Resolved by the E1 derived-step-label rework, not a per-recipe hand-rename. Step
+titles are now **derived** `"{verb} {input}"` from a controlled `prep_action` +
+the step's single input product, so all three drifted pull names collapse to one
+canonical **`pull garlic cubes (frozen)`** on every surface — cook mode
+(NowNextCard + running-now list), batch prep (BatchPrepTab + print view), and the
+recipe-editor canvas. The migration set `prep_action=pull` on all 19 pull/take
+steps (`scripts/apply-e1-prep-actions.mjs`, name-first inference), and because the
+label derives from the input product, the drift can no longer recur — the authored
+`name` free-text is no longer what's shown.
+
+The deeper "authored names don't reflect the graph" layer for **output-product**
+names (`garlic cube (pulled)` downstream) is tracked separately as E1-b (layer 2),
+deliberately deferred (user, 2026-07-18) until the verbosity proves worth it. That
+does not block this todo: the step-name drift this todo is about is gone.
+
+Cook mode verified on the tablet by the user; batch-prep/editor pending tablet
+verification. See `.planning/notes/E1-derived-step-labels-proposal.md`.

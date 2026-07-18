@@ -5,7 +5,7 @@ fresh session can pick a coherent chunk instead of re-deriving the map. Each
 group notes the member todo files, the shared root cause, rough size, and
 whether the members are genuinely knockable-together or just adjacent.
 
-_Last updated: 2026-07-18 (after Groups B, D, and A shipped)._
+_Last updated: 2026-07-18 (after Groups B, D, A, E3-usda, and E1 layer-1 shipped)._
 
 ## How to work a group (conventions this repo uses)
 
@@ -82,22 +82,31 @@ up in a clean session.
   `PB_SUPERUSER_*`); the NAS-deploy-env half still needs doing. See
   [[prod-pb-write-creds-env]].
 
-### Group E1 — Naming consistency via controlled vocab  _(medium)_
-- `2026-07-17-pull-step-names-drift-across-recipes.md`  _(cosmetic on its own)_
-- `swap-aware-prep-naming.md`
-- `connective-recipe-batch-then-consume.md` — **thread 3 (naming) only**
+### Group E1 — Naming consistency via controlled vocab  _(medium)_ — 🟡 LAYER 1 SHIPPED (2026-07-18)
+- ✅ `2026-07-17-pull-step-names-drift-across-recipes.md` — **RESOLVED** (E1-a).
+- 🟡 `swap-aware-prep-naming.md` — **PARTIAL**: layer-1 step titles done + swap-aware; layer-2 output-product names = E1-b (deferred).
+- 🟡 `connective-recipe-batch-then-consume.md` thread 3 — **PARTIAL**: pull-connector naming done; producer OUTPUT naming = E1-b (deferred). Thread 4 still Phase-6-blocked.
 
-One root: authored free-text step/product names don't reflect the graph. Do the
-Phase-5 step-metadata `prep_action` controlled-vocab + derived-label rework once
-and all three fall out. (Thread 4 of the connective todo — an import-time model —
-is **blocked on Phase 6 import**, skip.)
+**Shipped E1-a + E1-a.2 (260718-e1a):** `prep_action` promoted to a single flat
+controlled vocab (`src/lib/prep-actions.ts`, `{verb,state}` forms); `deriveStepLabel`
+renders `"{verb} {input}"` only where set (hybrid — instructional steps keep prose),
+swap-aware because it reads the input node. Wired cook mode + batch prep + editor.
+Prod migration applied (99 steps set, 0 legacy). Design + LOCKED decisions +
+graph-time-vs-schema refinement: `.planning/notes/E1-derived-step-labels-proposal.md`.
+
+**E1-b DEFERRED (user, 2026-07-18, "verify first"):** layer-2 output-product names
+(`onion (yellow) small-dice` → `small-diced onion`), to be derived at GRAPH time
+(NOT a `base_product` schema field — that would not be swap-aware). Scope fork
+(local surfaces vs cross-recipe consumers) captured in the proposal. Pick up if the
+output-name verbosity (`pull salmon frozen`) proves worth it in use.
 
 ### Group E3 — Data hygiene  _(small, quick wins; mechanically unrelated)_
-- `usda-search-plain-rename.md` — verbose SR-Legacy names leak into products.
+- ✅ `usda-search-plain-rename.md` — **SHIPPED 2026-07-18 (260718-upn)**: cleaned the
+  Search-USDA PREFILL only (`plainNameFromUsda`), left the 7.8k index verbose for
+  search/disambiguation (user chose). Optional prod `Kumquats, raw`→`kumquat` rename
+  scripted (`scripts/rename-kumquat-product.mjs`), user-run pending.
 - `improve-recipe-tagging-for-wizard-pools.md` — thin wizard slot suggestions;
-  "not a code gap," ongoing manual tagging.
-
-Bundle only for convenience.
+  "not a code gap," ongoing manual tagging. Only remaining E3 item.
 
 ---
 
@@ -142,6 +151,13 @@ radius. Low urgency.
 
 ## Recommendation for next session
 
-**Group F is deferred** (blocked on other-server orchestration — see its section).
-Until that prereq lands, the next clean pickup is **Group E1** (naming controlled-vocab)
-or **Group E3** (data-hygiene quick wins). Neither needs a design decision.
+**Group F is deferred** (other-server orchestration prereq). **E1 layer-1 + E3-usda
+shipped** this session. Remaining clean-ish pickups:
+- **E1-b** (layer-2 output-product names) — designed, deferred pending real-use
+  need; graph-time derivation, scope fork in the proposal doc. Only pick up if the
+  output-name verbosity actually bothers the user.
+- **Group C / E2** — still need a design decision (store-step marker; authoring lint
+  severity). See their sections.
+- `improve-recipe-tagging` (E3) — non-code, ongoing manual tagging.
+
+Everything code-shaped that didn't need a design decision is now shipped.
