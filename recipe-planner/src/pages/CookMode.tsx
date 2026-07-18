@@ -33,12 +33,14 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
+  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
 } from "@mui/material";
 import TimerOutlinedIcon from "@mui/icons-material/TimerOutlined";
+import DoneIcon from "@mui/icons-material/Done";
 import { getAll, getOne, collections } from "../lib/api";
 import { applyVariantOverrides, type VariantOverride } from "../lib/aggregation";
 import {
@@ -148,6 +150,15 @@ export default function CookMode() {
   // cook_progress via useCookProgress, independent of these anchors).
   const nowStartRef = useRef<Map<string, number>>(new Map());
   const [tick, forceTick] = useState(0);
+  // Passive windows the cook has finished EARLY (tapped ✓ before the clock ran
+  // out) — e.g. a simmer that reduced faster than its estimate. These drop out
+  // of `runningWindows` immediately so a phantom timer never keeps blocking a
+  // dependent. Session-local like `nowStartRef` (both reset on load/regenerate),
+  // since the running-window surface is itself derived from wall-clock anchors
+  // that do not survive a reload.
+  const [passiveCompletedIds, setPassiveCompletedIds] = useState<Set<string>>(
+    new Set()
+  );
   const [showAllSteps, setShowAllSteps] = useState(false);
   const [showWeightsPanel, setShowWeightsPanel] = useState(false);
   const [regenerateConfirmOpen, setRegenerateConfirmOpen] = useState(false);
@@ -383,14 +394,28 @@ export default function CookMode() {
     return orderedByTime
       .filter(
         (inst) =>
-          checkedIds.has(inst.id) && (inst.step.passive_minutes ?? 0) > 0
+          checkedIds.has(inst.id) &&
+          (inst.step.passive_minutes ?? 0) > 0 &&
+          !passiveCompletedIds.has(inst.id)
       )
       .map((inst) => ({ instance: inst, countdown: getCountdown(inst) }))
       .filter(
         (w): w is { instance: StepInstance; countdown: { text: string; done: boolean } } =>
           w.countdown !== null && !w.countdown.done
       );
-  }, [orderedByTime, checkedIds, getCountdown, tick]);
+  }, [orderedByTime, checkedIds, getCountdown, tick, passiveCompletedIds]);
+
+  // Finish a running passive window early: the timer allotted N minutes but the
+  // pot is done now, so mark it complete so it stops blocking later steps. Drops
+  // it from `runningWindows` → `runningPassiveSet`, flipping any dependent that
+  // was only waiting on this window to "ready".
+  const handleCompletePassive = useCallback((stepInstanceId: string) => {
+    setPassiveCompletedIds((prev) => {
+      const next = new Set(prev);
+      next.add(stepInstanceId);
+      return next;
+    });
+  }, []);
 
   // The set that makes `deriveReadiness` passive-aware: a producer in here is
   // checked but still simmering, so it must NOT yet flip its dependents to
@@ -578,6 +603,7 @@ export default function CookMode() {
       setDisplayOrder(freezeDisplayOrder(generated));
       setActualCompletions(new Map());
       nowStartRef.current = new Map();
+      setPassiveCompletedIds(new Set());
     } catch (err) {
       console.error("Failed to generate cook-mode schedule:", err);
       setScheduleError(
@@ -612,6 +638,7 @@ export default function CookMode() {
       setDisplayOrder(freezeDisplayOrder(generated));
       setActualCompletions(new Map());
       nowStartRef.current = new Map();
+      setPassiveCompletedIds(new Set());
     } catch (err) {
       console.error("Failed to regenerate cook-mode schedule:", err);
       setScheduleError(
@@ -665,6 +692,17 @@ export default function CookMode() {
       if (!schedule || !schedulerConfig) return;
       const nextChecked = !checkedIds.has(instance.id);
       cookProgress.setChecked(instance.id, nextChecked);
+
+      if (!nextChecked) {
+        // Un-checking re-opens the step: drop any early-complete mark so a fresh
+        // passive window can start if it is checked off again.
+        setPassiveCompletedIds((prev) => {
+          if (!prev.has(instance.id)) return prev;
+          const next = new Set(prev);
+          next.delete(instance.id);
+          return next;
+        });
+      }
 
       setActualCompletions((prev) => {
         const next = new Map(prev);
@@ -795,20 +833,33 @@ export default function CookMode() {
           >
             <TimerOutlinedIcon fontSize="small" /> Running now
           </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Tap ✓ to finish a timer early — its later steps unblock right away.
+          </Typography>
           <List dense disablePadding>
             {runningWindows.map(({ instance, countdown }) => (
               <ListItem
                 key={instance.id}
                 disablePadding
                 secondaryAction={
-                  <Box
-                    sx={{
-                      fontVariantNumeric: "tabular-nums",
-                      fontSize: 20,
-                      fontWeight: 600,
-                    }}
-                  >
-                    {countdown.text}
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Box
+                      sx={{
+                        fontVariantNumeric: "tabular-nums",
+                        fontSize: 20,
+                        fontWeight: 600,
+                      }}
+                    >
+                      {countdown.text}
+                    </Box>
+                    <IconButton
+                      edge="end"
+                      color="primary"
+                      aria-label={`Finish ${instance.step.name} now`}
+                      onClick={() => handleCompletePassive(instance.id)}
+                    >
+                      <DoneIcon />
+                    </IconButton>
                   </Box>
                 }
               >
