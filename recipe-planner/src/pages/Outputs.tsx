@@ -39,6 +39,7 @@ import {
   buildProductFlowGraph,
   buildShoppingListFromFlow,
   buildBatchPrepListFromFlow,
+  buildWeekPullList,
   buildStoredItemsListFromFlow,
   buildMealContainersList,
   getReadyToEatInventory,
@@ -480,6 +481,10 @@ export default function Outputs() {
   const batchPrepSteps = useMemo(
     () => buildBatchPrepListFromFlow(productFlowGraph, recipeData),
     [productFlowGraph, recipeData]
+  );
+  const weekPullList = useMemo(
+    () => buildWeekPullList(productFlowGraph),
+    [productFlowGraph]
   );
   const storedItems = useMemo(
     () => buildStoredItemsListFromFlow(productFlowGraph),
@@ -977,6 +982,7 @@ export default function Outputs() {
               <Paper sx={{ p: 2 }} id="batch-prep-list">
                 <BatchPrepTab
                   batchPrepSteps={batchPrepSteps}
+                  weekPullList={weekPullList}
                   checkedItems={checkedItems}
                   onToggleChecked={toggleChecked}
                 />

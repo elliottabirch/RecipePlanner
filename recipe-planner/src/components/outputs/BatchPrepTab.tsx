@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import { Print as PrintIcon } from "@mui/icons-material";
 import { useReactToPrint } from "react-to-print";
-import type { AggregatedStep } from "../../lib/aggregation";
+import type { AggregatedStep, WeekPullListItem } from "../../lib/aggregation";
 import { EmptyState } from "../EmptyState";
 import {
   UI_TEXT,
@@ -25,12 +25,14 @@ import { BatchPrepPrintView } from "./BatchPrepPrintView";
 
 interface BatchPrepTabProps {
   batchPrepSteps: AggregatedStep[];
+  weekPullList: WeekPullListItem[];
   checkedItems: Set<string>;
   onToggleChecked: (key: string) => void;
 }
 
 export function BatchPrepTab({
   batchPrepSteps,
+  weekPullList,
   checkedItems,
   onToggleChecked,
 }: BatchPrepTabProps) {
@@ -152,7 +154,11 @@ export function BatchPrepTab({
 
       {/* Hidden print view */}
       <Box sx={{ display: "none" }}>
-        <BatchPrepPrintView ref={printRef} batchPrepSteps={batchPrepSteps} />
+        <BatchPrepPrintView
+          ref={printRef}
+          batchPrepSteps={batchPrepSteps}
+          weekPullList={weekPullList}
+        />
       </Box>
     </>
   );

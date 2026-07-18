@@ -290,6 +290,85 @@ export function buildShoppingListFromFlow(
 }
 
 /**
+ * One line on the week pull list — a product to physically gather before prep.
+ */
+export interface WeekPullListItem {
+  productId: string;
+  productName: string;
+  productType: ProductType;
+  totalQuantity: number;
+  unit: string;
+  storageLocation: StorageLocation | "pantry";
+}
+
+/**
+ * Resolve a flow product's storage bucket from the fields the flow graph
+ * already carries (`isPantry`, `storageLocation`) — mirrors
+ * `determineStorageLocation(Product)` without needing the raw PocketBase record.
+ */
+function resolveFlowStorageLocation(
+  product: AggregatedFlowProduct
+): StorageLocation | "pantry" {
+  if (product.productType === ProductType.Raw && product.isPantry) {
+    return "pantry";
+  }
+  if (product.storageLocation) return product.storageLocation;
+  return StorageLocation.Fridge;
+}
+
+/**
+ * Build the WEEK pull list — everything you physically gather before prep: every
+ * product CONSUMED in the week that no in-plan step produces (raw ingredients to
+ * buy, plus prior-week stored/inventory stock you take out of the fridge), ready
+ * to group by storage location.
+ *
+ * Distinct from `buildPullLists` (per-meal just-in-time assembly). Sources from
+ * `flowGraph.products` — the same all-nodes map the shopping list reads — NOT
+ * from the batch-prep step array, so JIT-only and original-packaging ingredients
+ * are included (the old `aggregateInputs` step walk dropped exactly those). The
+ * people-multiplier and per-meal quantity are already baked into `totalQuantity`
+ * upstream (`buildProductFlowGraph`).
+ *
+ * Excludes: products produced by an in-plan step (you make them, you don't pull
+ * them) and `Transient` intermediates (made mid-process; an unproduced transient
+ * is a separate finding — see the unproduced-non-raw-inputs todo — not a pull-
+ * list line). Stored/inventory products are INSTANCED per meal in the flow map,
+ * so quantities are summed across instances by `productId|unit`.
+ */
+export function buildWeekPullList(
+  flowGraph: ProductFlowGraphData
+): WeekPullListItem[] {
+  const producedIds = new Set(
+    flowGraph.stepToProductFlows.map((flow) => flow.productId)
+  );
+  const byKey = new Map<string, WeekPullListItem>();
+
+  flowGraph.products.forEach((product) => {
+    if (producedIds.has(product.productId)) return;
+    if (product.productType === ProductType.Transient) return;
+
+    const key = `${product.productId}|${product.unit}`;
+    const existing = byKey.get(key);
+    if (existing) {
+      existing.totalQuantity += product.totalQuantity;
+    } else {
+      byKey.set(key, {
+        productId: product.productId,
+        productName: product.productName,
+        productType: product.productType,
+        totalQuantity: product.totalQuantity,
+        unit: product.unit,
+        storageLocation: resolveFlowStorageLocation(product),
+      });
+    }
+  });
+
+  return Array.from(byKey.values()).sort((a, b) =>
+    a.productName.localeCompare(b.productName)
+  );
+}
+
+/**
  * Build batch prep list from the product flow graph
  * Includes all prep and batch assembly steps
  * Excludes steps where outputs have container type "original packaging"

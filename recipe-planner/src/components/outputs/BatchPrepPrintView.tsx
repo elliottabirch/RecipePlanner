@@ -1,17 +1,14 @@
 import { forwardRef } from "react";
 import { Box, Typography, Divider } from "@mui/material";
-import type { AggregatedStep } from "../../lib/aggregation";
-import { StepType, ProductType, StorageLocation } from "../../lib/types";
+import type { AggregatedStep, WeekPullListItem } from "../../lib/aggregation";
+import { StepType, StorageLocation } from "../../lib/types";
 
 interface BatchPrepPrintViewProps {
   batchPrepSteps: AggregatedStep[];
-}
-
-interface AggregatedInput {
-  productName: string;
-  totalQuantity: number;
-  unit: string;
-  storageLocation: StorageLocation | "pantry";
+  /** Pre-built week pull list (`buildWeekPullList`) — everything to physically
+   * gather before prep, sourced from the flow graph (raw + prior stored/
+   * inventory, JIT and original-packaging ingredients included). */
+  weekPullList: WeekPullListItem[];
 }
 
 interface GroupedSteps {
@@ -20,7 +17,9 @@ interface GroupedSteps {
 }
 
 /**
- * Storage location display order and labels
+ * Storage location display order and labels. Anything whose location is not one
+ * of these known buckets is rendered under an explicit "Other" heading rather
+ * than silently dropped (it used to fall into the void at render time).
  */
 const STORAGE_LOCATION_ORDER: (StorageLocation | "pantry")[] = [
   StorageLocation.Fridge,
@@ -37,45 +36,14 @@ const STORAGE_LOCATION_LABELS: Record<StorageLocation | "pantry", string> = {
 };
 
 /**
- * Aggregate all inputs across all steps into a single pull list
- * Only includes raw products (ingredients to pull from storage)
- */
-function aggregateInputs(steps: AggregatedStep[]): AggregatedInput[] {
-  const inputMap = new Map<string, AggregatedInput>();
-
-  steps.forEach((step) => {
-    step.inputs.forEach((input) => {
-      // Only include raw products - these are items we need to pull from storage
-      if (input.productType !== ProductType.Raw) return;
-
-      const key = `${input.productName}|${input.unit || ""}`;
-      const existing = inputMap.get(key);
-
-      if (existing) {
-        existing.totalQuantity += input.quantity || 0;
-      } else {
-        inputMap.set(key, {
-          productName: input.productName,
-          totalQuantity: input.quantity || 0,
-          unit: input.unit || "",
-          storageLocation: input.storageLocation,
-        });
-      }
-    });
-  });
-
-  return Array.from(inputMap.values()).sort((a, b) =>
-    a.productName.localeCompare(b.productName)
-  );
-}
-
-/**
- * Group inputs by storage location
+ * Group pull-list items by storage location. Key type is widened to `string`
+ * so an unexpected location still lands in a real bucket (surfaced under
+ * "Other") instead of being dropped.
  */
 function groupInputsByLocation(
-  inputs: AggregatedInput[]
-): Map<StorageLocation | "pantry", AggregatedInput[]> {
-  const grouped = new Map<StorageLocation | "pantry", AggregatedInput[]>();
+  inputs: WeekPullListItem[]
+): Map<string, WeekPullListItem[]> {
+  const grouped = new Map<string, WeekPullListItem[]>();
 
   inputs.forEach((input) => {
     const location = input.storageLocation;
@@ -124,16 +92,82 @@ function formatQuantity(quantity?: number, unit?: string): string {
 export const BatchPrepPrintView = forwardRef<
   HTMLDivElement,
   BatchPrepPrintViewProps
->(({ batchPrepSteps }, ref) => {
+>(({ batchPrepSteps, weekPullList }, ref) => {
   const prepSteps = batchPrepSteps.filter((s) => s.stepType === StepType.Prep);
   const assemblySteps = batchPrepSteps.filter(
     (s) => s.stepType === StepType.Assembly
   );
 
-  const pullList = aggregateInputs(batchPrepSteps);
-  const groupedPullList = groupInputsByLocation(pullList);
+  const groupedPullList = groupInputsByLocation(weekPullList);
+  // Any grouped location not in the known order gets a visible "Other" bucket
+  // instead of being dropped when we render only STORAGE_LOCATION_ORDER.
+  const knownLocations = new Set<string>(STORAGE_LOCATION_ORDER as string[]);
+  const otherLocations = Array.from(groupedPullList.keys())
+    .filter((loc) => !knownLocations.has(loc))
+    .sort();
   const groupedPrep = groupStepsByInput(prepSteps);
   const groupedAssembly = groupStepsByInput(assemblySteps);
+
+  const renderLocationBlock = (location: string, label: string) => {
+    const items = groupedPullList.get(location);
+    if (!items || items.length === 0) return null;
+    return (
+      <Box key={location} sx={{ mb: 2 }}>
+        <Typography
+          variant="subtitle2"
+          sx={{
+            fontWeight: "bold",
+            color: "#555",
+            textTransform: "uppercase",
+            fontSize: "0.75rem",
+            mb: 0.5,
+            pb: 0.25,
+            borderBottom: "1px solid #ddd",
+          }}
+        >
+          {label}
+        </Typography>
+
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: 0.5,
+          }}
+        >
+          {items.map((item, idx) => (
+            <Box
+              key={idx}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                py: 0.25,
+              }}
+            >
+              <Box
+                sx={{
+                  width: 14,
+                  height: 14,
+                  border: "1.5px solid #666",
+                  borderRadius: 0.5,
+                  flexShrink: 0,
+                }}
+              />
+              <Typography variant="body2" sx={{ fontSize: "0.8rem" }}>
+                <strong>{item.productName}</strong>
+                {item.totalQuantity > 0 && (
+                  <span style={{ color: "#666", marginLeft: 4 }}>
+                    ({formatQuantity(item.totalQuantity, item.unit)})
+                  </span>
+                )}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
+      </Box>
+    );
+  };
 
   return (
     <div ref={ref}>
@@ -143,67 +177,12 @@ export const BatchPrepPrintView = forwardRef<
           Batch Prep — Pull List
         </Typography>
 
-        {STORAGE_LOCATION_ORDER.map((location) => {
-          const items = groupedPullList.get(location);
-          if (!items || items.length === 0) return null;
-
-          return (
-            <Box key={location} sx={{ mb: 2 }}>
-              <Typography
-                variant="subtitle2"
-                sx={{
-                  fontWeight: "bold",
-                  color: "#555",
-                  textTransform: "uppercase",
-                  fontSize: "0.75rem",
-                  mb: 0.5,
-                  pb: 0.25,
-                  borderBottom: "1px solid #ddd",
-                }}
-              >
-                {STORAGE_LOCATION_LABELS[location]}
-              </Typography>
-
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3, 1fr)",
-                  gap: 0.5,
-                }}
-              >
-                {items.map((item, idx) => (
-                  <Box
-                    key={idx}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
-                      py: 0.25,
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 14,
-                        height: 14,
-                        border: "1.5px solid #666",
-                        borderRadius: 0.5,
-                        flexShrink: 0,
-                      }}
-                    />
-                    <Typography variant="body2" sx={{ fontSize: "0.8rem" }}>
-                      <strong>{item.productName}</strong>
-                      {item.totalQuantity > 0 && (
-                        <span style={{ color: "#666", marginLeft: 4 }}>
-                          ({formatQuantity(item.totalQuantity, item.unit)})
-                        </span>
-                      )}
-                    </Typography>
-                  </Box>
-                ))}
-              </Box>
-            </Box>
-          );
-        })}
+        {STORAGE_LOCATION_ORDER.map((location) =>
+          renderLocationBlock(location, STORAGE_LOCATION_LABELS[location])
+        )}
+        {otherLocations.map((location) =>
+          renderLocationBlock(location, "Other")
+        )}
       </Box>
 
       {/* PAGE 2+: Prep & Assembly Steps */}
