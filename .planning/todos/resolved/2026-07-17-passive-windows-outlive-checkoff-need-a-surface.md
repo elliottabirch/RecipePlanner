@@ -1,12 +1,39 @@
 ---
 created: 2026-07-17
-title: Passive windows outlive check-off and have no surface — need a timer bar/list
+title: "[RESOLVED 2026-07-17] Passive windows outlive check-off and have no surface — need a timer bar/list"
 area: ui
 files:
   - recipe-planner/src/lib/scheduler/readiness.ts:29-38 (deriveReadiness — purely `checked`-based, no notion of a running passive window)
   - recipe-planner/src/lib/scheduler/retime.ts:138-149 (the passive-collapse bug — PREREQUISITE, fixed under 260717-25d Task A)
   - recipe-planner/src/pages/CookMode.tsx (NowNextCard / getStatusChip — where a timer surface would live)
 ---
+
+## Resolved — 2026-07-17 (260717-pwr)
+
+Built as one feature with its model-layer sibling
+(`readiness-is-blind-to-running-passive-windows`), deployed to the NAS and
+human-verified at the stove.
+
+- **Surface** — a persistent "Running now" strip below the cook-mode toolbar
+  (`CookMode.tsx`). It walks `orderedByTime` (which retains checked steps,
+  unlike `visibleOrder`) for checked-off steps whose `passive_minutes > 0` and
+  whose `getCountdown` hasn't hit zero, and renders each as `Step name … MM:SS`.
+  The enabling insight: `getCountdown`'s `nowStartRef` anchors already survive
+  check-off (cleared only on load/regenerate), so a checked-off timer was
+  computable all along — it just had nowhere to render. Recomputes each second
+  off the existing 1s `forceTick`; a window drops itself at 0:00.
+- **Chip** — `getStatusChip` now feeds `deriveReadiness` a `runningPassiveSet`
+  (see the sibling todo) so a dependent reads `MM:SS left on <producer>` instead
+  of a premature "ready".
+- **One tap, not two** — check-off stays a single action; the running window is
+  inferred, exactly as the solution sketch predicted.
+- **Early finish** (user follow-up, commit b23899d) — each strip row has a ✓ to
+  complete a window ahead of its estimate; it drops from `runningPassiveSet`
+  immediately so a pot that reduced early stops blocking later steps.
+- **No alarm** — passive display only, per the sketch ("passive display enough").
+
+Session-local surfaces (the anchors and the early-complete set both reset on
+load/regenerate). Commits cdc14c6 + b23899d. 344/344 tests green.
 
 ## Problem
 

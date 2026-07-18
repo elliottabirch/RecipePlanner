@@ -1,6 +1,6 @@
 ---
 created: 2026-07-17
-title: deriveReadiness is blind to a running passive window — a dependent reads "ready" the instant its predecessor is checked off, not when its simmer/bake actually finishes
+title: "[RESOLVED 2026-07-17] deriveReadiness is blind to a running passive window — a dependent reads \"ready\" the instant its predecessor is checked off, not when its simmer/bake actually finishes"
 area: general
 severity: minor
 source: deferred from 2026-07-12-checkoff-annihilates-passive-time-in-retime.md (spun out honestly by 260717-25d Task 3, not forgotten)
@@ -10,6 +10,26 @@ files:
   - recipe-planner/src/pages/CookMode.tsx:358-386 (getStatusChip — where the chip text/state would change)
   - recipe-planner/src/lib/scheduler/readiness.test.ts
 ---
+
+## Resolved — 2026-07-17 (260717-pwr)
+
+Built as the model layer of the passive-window feature, alongside its surface
+sibling (`passive-windows-outlive-checkoff-need-a-surface`).
+
+- `deriveReadiness` takes an optional 4th param `runningPassiveSet` — the ids of
+  checked-off producers whose passive window is still counting down. A producer
+  in that set no longer satisfies its dependents. Default-empty, so every prior
+  caller/test keeps its pre-passive behaviour (4 new tests pin the passive path).
+- `ReadinessResult` now splits blockers into `waitingOn` (unchecked) vs
+  `simmering` (checked but running), so `getStatusChip` can render
+  `MM:SS left on <producer>` instead of a bare "waiting on: …" or a premature
+  "ready". CookMode derives the set from `getCountdown` against the live wall
+  clock and threads it (plus a remaining-time label map) into the chip.
+- The load-bearing signal noted below (frozen list order → chip is the ONLY
+  startability cue) is now correct: a dependent stays "waiting" until the simmer
+  actually elapses (or the cook taps ✓ to finish it early).
+
+Commit cdc14c6 (+ early-finish b23899d). 344/344 tests green, deployed + verified.
 
 ## Problem
 
