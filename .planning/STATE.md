@@ -5,8 +5,8 @@ milestone_name: Workflow Redesign
 current_phase: 6
 current_phase_name: Import Pipeline & Recipe Lifecycle
 status: executing
-stopped_at: "Group A (260718-cca) COMPLETE + deployed + user-confirmed: cook-card convergence indicator + full-recipe reader (both handle merged-prep nodes), import-skill notes contract, and the notes data pass (31 recipes authored to prod). Both source todos resolved → .planning/todos/resolved/. BACKLOG-GROUPS updated (A shipped). Next candidates: Group F (deploy/infra — .env seed already created) or Group E1 (naming vocab)."
-last_updated: "2026-07-18T10:40:00.000Z"
+stopped_at: "Group A (260718-cca) COMPLETE + deployed + user-confirmed + committed (dc39bb1); both todos resolved. Then LOOKED AT Group F but DEFERRED it (user: blocked on prerequisite orchestration work on another server that will coordinate it). Captured Group F probe findings in BACKLOG-GROUPS.md so a clean session starts warm: NAS is already on the tailnet (openmediavault.taila99e54.ts.net), remaining F1 work is just the db-config.ts URL switch + CORS/serve verify; F2 needs .env.local/.env reconciliation + NAS deploy env. Next clean pickup (until F's prereq lands): Group E1 (naming vocab) or E3 (data hygiene)."
+last_updated: "2026-07-18T10:50:00.000Z"
 progress:
   total_phases: 6
   completed_phases: 6

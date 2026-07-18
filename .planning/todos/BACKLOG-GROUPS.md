@@ -51,13 +51,36 @@ _Last updated: 2026-07-18 (after Groups B, D, and A shipped)._
 
 ## Ready to pick up
 
-### Group F — Deploy / infra pair  _(small)_
+### Group F — Deploy / infra pair  _(small)_ — ⏸️ DEFERRED (2026-07-18)
 - `nas-pocketbase-tailnet.md`  _(priority: high)_
 - `deploy-pb-superuser-env.md`
 
 Same NAS deploy surface; both route config through `~/code/windows-dev-setup`.
 `deploy-pb-superuser-env` explicitly says "do in one pass with the tailnet one."
 Config/infra, not app code. **Clean pair.**
+
+**Deferred (user, 2026-07-18):** blocked on prerequisite orchestration work on
+another server that will coordinate this — do NOT start F until that lands. Pick
+up in a clean session.
+
+**Probe findings (2026-07-18, saves rediscovery):**
+- The NAS is **already joined to the tailnet** — MagicDNS name
+  `openmediavault.taila99e54.ts.net` (tailnet `taila99e54.ts.net`, Tailscale IP
+  `100.125.105.121`). So F1's "join the NAS to the tailnet" step is already done;
+  remaining F1 work is just the app-config switch + verify.
+- App config lives in `recipe-planner/src/lib/db-config.ts`: prod/test URLs come
+  from `VITE_POCKETBASE_URL` / `VITE_POCKETBASE_TEST_URL` env (build-time), else
+  hardcoded `http://192.168.50.95:8090` / `:8091`. The switch = point these at
+  `http://openmediavault.taila99e54.ts.net:8090` / `:8091` (via the Vite env at
+  build time on the NAS, or by changing the fallback). Then verify PB CORS + the
+  `serve` origin still allow the app. NOTE: tailnet is HTTP here (no TLS on the
+  `:8090/:8091` origins) — a mixed-content check may matter if the app is ever
+  served over https.
+- F2: `recipe-planner/.env.local` already exists (422 B, the local-script creds
+  the todo references) AND Group A added a gitignored root `.env` + `.env.example`
+  for the same purpose. Reconcile these two when doing F2 (one source of truth for
+  `PB_SUPERUSER_*`); the NAS-deploy-env half still needs doing. See
+  [[prod-pb-write-creds-env]].
 
 ### Group E1 — Naming consistency via controlled vocab  _(medium)_
 - `2026-07-17-pull-step-names-drift-across-recipes.md`  _(cosmetic on its own)_
@@ -119,6 +142,6 @@ radius. Low urgency.
 
 ## Recommendation for next session
 
-**Group F** (knock out the high-priority infra fast — and the `.env` created during
-Group A's notes pass is already the seed of `deploy-pb-superuser-env`) or **Group E1**
-(naming controlled-vocab). Group F is clean, low-risk, and doesn't need a design decision.
+**Group F is deferred** (blocked on other-server orchestration — see its section).
+Until that prereq lands, the next clean pickup is **Group E1** (naming controlled-vocab)
+or **Group E3** (data-hygiene quick wins). Neither needs a design decision.
