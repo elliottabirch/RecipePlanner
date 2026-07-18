@@ -1,6 +1,6 @@
 ---
 created: 2026-07-12
-title: Restore the week pull list on the prep print view
+title: "[RESOLVED 2026-07-18] Restore the week pull list on the prep print view"
 area: ui
 files:
   - recipe-planner/src/components/outputs/BatchPrepPrintView.tsx:40-70 (aggregateInputs)
@@ -12,6 +12,34 @@ files:
   - recipe-planner/src/pages/Outputs.tsx:480 (batchPrepSteps useMemo)
   - recipe-planner/src/styles/printStyles.css
 ---
+
+## Resolved — 2026-07-18 (260718-wpl), human-verified
+
+New `buildWeekPullList(flowGraph)` in `aggregation.ts` sources the page-1 pull
+list from `flowGraph.products` — the same all-nodes map the shopping list reads —
+instead of `aggregateInputs(batchPrepSteps)`. This fixes causes #1 and #2 in one
+move: product nodes are not step-filtered, so JIT-only and original-packaging
+ingredients reappear, and the raw-only filter is gone (non-raw prior stored/
+inventory stock is included). It keeps every consumed product that no in-plan
+step produces (excludes in-plan-produced products and `transient` intermediates),
+sums instanced stored/inventory across meals, and the people-multiplier is
+already baked into `totalQuantity` upstream. The print view groups by storage
+location with an explicit **"Other" bucket** so an unknown location is surfaced,
+not silently dropped at render. Wired Outputs → BatchPrepTab → BatchPrepPrintView.
+6 new tests (`week-pull-list.test.ts`), 350/350 green. Deployed + user-confirmed
+the print view is populated.
+
+**Deliberately NOT done (out of scope / deferred):**
+- **Cause #3 (`display:none` print mount)** — left unchanged. The prep/assembly
+  pages already print through that same mount, so `react-to-print` cloning works;
+  the empty list was fully explained by the data-sourcing bug. Revisit only if a
+  whole-page-blank print is reported.
+- **Mark already-in-inventory items** — deferred; would need inventory-stock data
+  threaded into the (currently pure, flow-graph-only) builder. A complete list is
+  never wrong, just occasionally redundant. Related work: the make-or-buy surface
+  in `unproduced-non-raw-inputs-are-invisible` (Group D part 2).
+
+Commit 56a3abf.
 
 ## Problem
 
