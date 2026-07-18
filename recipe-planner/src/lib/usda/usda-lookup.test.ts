@@ -15,6 +15,7 @@ const FIXTURE = [
 vi.mock("../../assets/usda-sr-legacy.json", () => ({ default: FIXTURE }));
 
 const { searchUsda } = await import("./usda-lookup");
+const { plainNameFromUsda } = await import("./plain-name");
 const { sectionIdForCategory } = await import("./category-section-map");
 
 describe("searchUsda — REG-03 bundled Search-USDA index lookup", () => {
@@ -31,6 +32,47 @@ describe("searchUsda — REG-03 bundled Search-USDA index lookup", () => {
 
   it("returns [] for a whitespace-only query", () => {
     expect(searchUsda("   ")).toEqual([]);
+  });
+});
+
+describe("plainNameFromUsda — plain editable name for Quick-Create prefill", () => {
+  it("singularizes the head noun and drops the trailing preparation state", () => {
+    // The canonical case from the usda-search-plain-rename todo.
+    expect(plainNameFromUsda("Kumquats, raw")).toBe("kumquat");
+  });
+
+  it("keeps only the head segment for comma-inverted produce", () => {
+    expect(plainNameFromUsda("Beans, snap, green, raw")).toBe("bean");
+    expect(plainNameFromUsda("Tomatoes, red, ripe, raw")).toBe("tomato");
+  });
+
+  it("singularizes -oes/-ies head nouns correctly", () => {
+    expect(plainNameFromUsda("Potatoes, baked, skin, without salt")).toBe(
+      "potato"
+    );
+    expect(plainNameFromUsda("Berries, mixed, frozen")).toBe("berry");
+  });
+
+  it("preserves a multi-word head noun and lowercases it", () => {
+    expect(plainNameFromUsda("Sweet potato, raw, unprepared")).toBe(
+      "sweet potato"
+    );
+  });
+
+  it("drops a parenthetical aside in the head segment", () => {
+    expect(
+      plainNameFromUsda("Pork, fresh, loin, sirloin (roasts), boneless")
+    ).toBe("pork");
+    expect(plainNameFromUsda("Oil (partially hydrogenated), soy")).toBe("oil");
+  });
+
+  it("leaves a comma-free plain description essentially as-is (lowercased)", () => {
+    expect(plainNameFromUsda("Pretzels")).toBe("pretzel");
+  });
+
+  it("does not mangle a double-s word or a short head token", () => {
+    expect(plainNameFromUsda("Watercress, raw")).toBe("watercress");
+    expect(plainNameFromUsda("Egg, whole, raw, fresh")).toBe("egg");
   });
 });
 

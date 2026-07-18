@@ -29,6 +29,7 @@ import { ProductType } from "../../lib/types";
 import { UNIT_DIMENSIONS, type Unit } from "../../lib/units";
 import { sectionIdForCategory } from "../../lib/usda/category-section-map";
 import type { UsdaEntry } from "../../lib/usda/usda-lookup";
+import { plainNameFromUsda } from "../../lib/usda/plain-name";
 
 const UNIT_OPTIONS = Object.keys(UNIT_DIMENSIONS) as Unit[];
 
@@ -147,7 +148,9 @@ export function QuickCreateProductDialog({
   };
 
   const handleSelectUsdaMatch = (entry: UsdaEntry) => {
-    setName(entry.name);
+    // Prefill a plain, editable name (e.g. "kumquat") rather than the verbose
+    // SR-Legacy description ("Kumquats, raw") — see plainNameFromUsda.
+    setName(plainNameFromUsda(entry.name));
     const sectionName = sectionIdForCategory(entry.foodCategory);
     if (sectionName) {
       const matchedSection = sections.find(
