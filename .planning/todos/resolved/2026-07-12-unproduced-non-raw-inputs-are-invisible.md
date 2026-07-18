@@ -1,6 +1,6 @@
 ---
 created: 2026-07-12
-title: Consumed-but-never-produced non-raw inputs are invisible (soba peanut sauce)
+title: "[RESOLVED 2026-07-18] Consumed-but-never-produced non-raw inputs are invisible (soba peanut sauce)"
 area: general
 files:
   - recipe-planner/src/lib/scheduler/week-graph.ts:20-28 (header — "left as a graph SOURCE (no edge)")
@@ -12,6 +12,46 @@ files:
   - recipe-planner/src/pages/Outputs.tsx:504,894-900 (OutOfStockSection banner)
   - recipe-planner/src/lib/types.ts:57-59 (Product.source_recipe / store_bought_product)
 ---
+
+## Resolved — 2026-07-18 (260718-uni), user-confirmed
+
+**Ground truth (probed 2026-07-18):** the culprit is `asian peanut dressing`
+(id `98x86ue3ffa12zu`), type **`transient`**, with **neither `source_recipe`
+nor `store_bought_product`** — the worst case. "Peanut Soba Salad with Shrimp"
+consumes it with no producing step. A library-wide probe found **exactly one**
+such sourceless-transient consume edge and **zero false positives**: intra-recipe
+production yields a week-graph edge for ANY product type (`week-graph.ts` section
+2), and transients never cross recipes, so extending detection to transient is
+safe.
+
+All four surfaces the user requested were built on one shared detection layer:
+
+1. **Detection (solution #1).** `collectStoredInputConsumptions` now also collects
+   `transient` inputs; `lintMissingPullStep` flags a sourceless transient (Inventory
+   stays exempt, Stored + Transient flagged) and the finding carries `productId`.
+2. **Cook-mode readiness (solution #3).** A step consuming an unmade input now
+   reads a red **"blocked: nothing makes X"** chip (new `ReadinessChip` "blocked"
+   state) instead of "ready" — no longer "precisely backwards." `CookMode`
+   computes a `blockedInfoById` map from the same week lint, continuously.
+3. **Outputs plan-time surface + make-or-buy (solutions #1 surface + #2).** New
+   `UnmadeInputsSection` on the shopping list (parallel to `OutOfStockSection`),
+   fed by a `runWeekLint` memo in Outputs and enriched from the consuming meal's
+   product node (source_recipe / store_bought_product expands). Renders **Make it**
+   (source_recipe) / **Buy it** (store_bought) buttons reusing the existing
+   `handleAddRecipeToPlan` / `handleAddToShoppingList` handlers, or — when neither
+   is set — a red "fix this recipe" finding (the todo's "that itself is the finding").
+4. **Publish gate.** New RECIPE-scoped `unmade-transient` rule threaded into
+   `composeRecipeFindings`/`runRecipeLint` (optional 3rd `graph` arg, back-compat
+   preserved): blocks publishing a recipe that consumes a transient it never makes
+   and has no make/buy escape hatch.
+
+Verified the rule fires against real prod data on the soba recipe. 356/356 tests
+green (10 new). Commit dd80e37, deployed + user-confirmed.
+
+**The remaining fix is DATA, not code:** give `asian peanut dressing` a
+`source_recipe` or `store_bought_product`, or add a make-step to the soba recipe —
+which the new surfaces now prompt for. Related inverse case still open:
+`connective-recipe-batch-then-consume`.
 
 ## Problem
 
