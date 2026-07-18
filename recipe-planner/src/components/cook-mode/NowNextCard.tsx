@@ -49,6 +49,12 @@ export interface MergedCutRow {
   recipeName: string;
   quantity: number;
   unit: string;
+  /** Per-recipe downstream convergence for this contribution (merged nodes
+   * span several recipes, so convergence is per-row, not one shared line —
+   * see the container-convergence todo's merged-prep caveat). Absent when this
+   * recipe's portion converges with nothing. */
+  combinesWith?: string[];
+  destination?: string;
 }
 
 /** The per-recipe breakdown for ONE distinct required output (cut) of a
@@ -79,9 +85,10 @@ export interface NowNextCardProps {
    * with and the shared destination container (container-convergence-indicator
    * todo). Null when the step converges with nothing (or on merged nodes). */
   convergence?: ConvergenceResult | null;
-  /** Full-recipe payload for the "view recipe" book button. Null → no button
-   * (merged-prep / recipe-less nodes). */
-  recipeView?: RecipeView | null;
+  /** Full-recipe payloads for the "view recipe" book button. One entry for an
+   * ordinary node; several for a merged-prep node (one per contributing
+   * recipe). Empty/absent → no button (recipe-less node). */
+  recipeViews?: RecipeView[] | null;
   checked: boolean;
   onToggleChecked: () => void;
   statusChip?: NowNextCardStatusChip | null;
@@ -112,7 +119,7 @@ export function NowNextCard({
   scaledInputs,
   mergedBreakdown,
   convergence,
-  recipeView,
+  recipeViews,
   checked,
   onToggleChecked,
   statusChip,
@@ -173,9 +180,9 @@ export function NowNextCard({
                   empty `recipe` (spans multiple recipes — a note has no single
                   target), so omit the note affordance there (06 UAT #1). */}
               {/* Read the whole recipe from the card (full-recipe-text todo).
-                  Same recipe-less guard as the note button — a merged-prep
-                  node spans multiple recipes, so `recipeView` is null there. */}
-              {recipeView && (
+                  A merged-prep node lists each contributing recipe in the
+                  dialog; a recipe-less node passes no views → no button. */}
+              {recipeViews && recipeViews.length > 0 && (
                 <Tooltip title="View full recipe">
                   <IconButton
                     size="small"
@@ -266,25 +273,38 @@ export function NowNextCard({
                         {g.cutLabel.charAt(0).toUpperCase() + g.cutLabel.slice(1)}
                       </Typography>
                       {g.rows.map((r, ri) => (
-                        <Box
-                          key={`${g.cutKey}-${ri}`}
-                          sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "baseline",
-                            gap: 1.5,
-                            py: 0.1,
-                          }}
-                        >
-                          <Typography variant="body2">{r.recipeName}</Typography>
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{ whiteSpace: "nowrap", flexShrink: 0 }}
+                        <Box key={`${g.cutKey}-${ri}`} sx={{ py: 0.1 }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "baseline",
+                              gap: 1.5,
+                            }}
                           >
-                            {formatQuantity(r.quantity)}
-                            {r.unit && r.unit !== "each" ? ` ${r.unit}` : ""}
-                          </Typography>
+                            <Typography variant="body2">{r.recipeName}</Typography>
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{ whiteSpace: "nowrap", flexShrink: 0 }}
+                            >
+                              {formatQuantity(r.quantity)}
+                              {r.unit && r.unit !== "each" ? ` ${r.unit}` : ""}
+                            </Typography>
+                          </Box>
+                          {/* Per-recipe convergence: this recipe's cucumber
+                              ends up here (merged-prep caveat — destinations
+                              differ per recipe). */}
+                          {r.combinesWith && r.combinesWith.length > 0 && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ display: "block", pl: 1 }}
+                            >
+                              ↳ with {r.combinesWith.join(", ")}
+                              {r.destination ? ` → ${r.destination}` : ""}
+                            </Typography>
+                          )}
                         </Box>
                       ))}
                     </Box>
@@ -318,43 +338,65 @@ export function NowNextCard({
 
       {/* Full recipe reader (full-recipe-text-on-cook-mode-card todo): the
           whole recipe in one place — prose (Recipe.notes) when authored, plus
-          this week's scaled ingredient list, which the graph always has. */}
-      {recipeView && (
+          this week's scaled ingredient list, which the graph always has. A
+          merged-prep node stacks every contributing recipe (title per section);
+          an ordinary node shows the single recipe's name as the title. */}
+      {recipeViews && recipeViews.length > 0 && (
         <Dialog
           open={recipeOpen}
           onClose={() => setRecipeOpen(false)}
           maxWidth="sm"
           fullWidth
         >
-          <DialogTitle>{recipeView.recipeName}</DialogTitle>
+          <DialogTitle>
+            {recipeViews.length === 1
+              ? recipeViews[0].recipeName
+              : "Recipes in this prep"}
+          </DialogTitle>
           <DialogContent dividers>
-            {recipeView.notes && recipeView.notes.trim() ? (
-              <Typography
-                variant="body1"
-                sx={{ whiteSpace: "pre-wrap", mb: recipeView.ingredients.length ? 2 : 0 }}
-              >
-                {recipeView.notes.trim()}
-              </Typography>
-            ) : (
-              <Typography variant="body2" color="text.secondary" sx={{ mb: recipeView.ingredients.length ? 2 : 0 }}>
-                No written recipe yet — showing this week&apos;s ingredients.
-              </Typography>
-            )}
-            {recipeView.ingredients.length > 0 && (
-              <>
-                {recipeView.notes && recipeView.notes.trim() && <Divider sx={{ mb: 2 }} />}
-                <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
-                  Ingredients (this week)
-                </Typography>
-                <Box component="ul" sx={{ m: 0, pl: 3 }}>
-                  {recipeView.ingredients.map((i, idx) => (
-                    <Typography component="li" variant="body2" key={idx}>
-                      {formatIngredient(i)}
+            {recipeViews.map((view, vi) => (
+              <Box key={vi} sx={{ mb: vi < recipeViews.length - 1 ? 3 : 0 }}>
+                {recipeViews.length > 1 && (
+                  <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                    {view.recipeName}
+                  </Typography>
+                )}
+                {view.notes && view.notes.trim() ? (
+                  <Typography
+                    variant="body1"
+                    sx={{ whiteSpace: "pre-wrap", mb: view.ingredients.length ? 2 : 0 }}
+                  >
+                    {view.notes.trim()}
+                  </Typography>
+                ) : (
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: view.ingredients.length ? 2 : 0 }}
+                  >
+                    No written recipe yet — showing this week&apos;s ingredients.
+                  </Typography>
+                )}
+                {view.ingredients.length > 0 && (
+                  <>
+                    {view.notes && view.notes.trim() && <Divider sx={{ mb: 2 }} />}
+                    <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                      Ingredients (this week)
                     </Typography>
-                  ))}
-                </Box>
-              </>
-            )}
+                    <Box component="ul" sx={{ m: 0, pl: 3 }}>
+                      {view.ingredients.map((i, idx) => (
+                        <Typography component="li" variant="body2" key={idx}>
+                          {formatIngredient(i)}
+                        </Typography>
+                      ))}
+                    </Box>
+                  </>
+                )}
+                {recipeViews.length > 1 && vi < recipeViews.length - 1 && (
+                  <Divider sx={{ mt: 3 }} />
+                )}
+              </Box>
+            ))}
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setRecipeOpen(false)}>Close</Button>

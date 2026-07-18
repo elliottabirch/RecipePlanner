@@ -593,12 +593,18 @@ export default function CookMode() {
           (r) => r.recipeName === memberData.recipe.name && r.unit === unit
         );
         if (existing) existing.quantity += quantity;
-        else
+        else {
+          // Per-recipe convergence (merged-prep caveat): this recipe's portion
+          // of the shared cut has its OWN downstream destination.
+          const conv = deriveConvergence(member.stepId, memberData);
           group.rows.push({
             recipeName: memberData.recipe.name,
             quantity,
             unit,
+            combinesWith: conv?.combinesWith,
+            destination: conv?.destination,
           });
+        }
       }
       const result = [...groups.values()];
       if (result.length === 0) return null;
@@ -649,16 +655,14 @@ export default function CookMode() {
     [mealKeyedRecipeData]
   );
 
-  // Full-recipe payload for the card's "view recipe" book button
+  // Full-recipe payloads for the card's "view recipe" book button
   // (full-recipe-text-on-cook-mode-card todo): the recipe's prose (Recipe.notes)
   // plus this week's scaled ingredient list (its raw/inventory inputs across all
-  // steps, deduped). Null on merged/recipe-less nodes — no single recipe to
-  // show, matching the note-button guard.
-  const getRecipeView = useCallback(
-    (instance: StepInstance): RecipeView | null => {
-      if (instance.mergedMembers) return null;
-      const recipeData = mealKeyedRecipeData.get(instance.plannedMealId);
-      if (!recipeData) return null;
+  // steps, deduped). One view per contributing recipe — an ordinary node yields
+  // one; a merged-prep node yields one per distinct recipe it spans (the todo's
+  // "offer a list of the contributing recipes" resolution). Empty → no button.
+  const buildRecipeView = useCallback(
+    (recipeData: RecipeGraphData): RecipeView => {
       const byId = new Map<string, ScaledIngredient>();
       for (const step of recipeData.steps) {
         for (const input of extractStepInputs(
@@ -690,7 +694,28 @@ export default function CookMode() {
         ingredients: [...byId.values()],
       };
     },
-    [mealKeyedRecipeData, plannedMealQuantityById]
+    [plannedMealQuantityById]
+  );
+
+  const getRecipeViews = useCallback(
+    (instance: StepInstance): RecipeView[] => {
+      if (instance.mergedMembers) {
+        // One view per distinct recipe this merged prep spans (dedupe by the
+        // recipe record id — the same recipe planned twice must not repeat).
+        const seen = new Set<string>();
+        const views: RecipeView[] = [];
+        for (const member of instance.mergedMembers) {
+          const memberData = mealKeyedRecipeData.get(member.plannedMealId);
+          if (!memberData || seen.has(memberData.recipe.id)) continue;
+          seen.add(memberData.recipe.id);
+          views.push(buildRecipeView(memberData));
+        }
+        return views;
+      }
+      const recipeData = mealKeyedRecipeData.get(instance.plannedMealId);
+      return recipeData ? [buildRecipeView(recipeData)] : [];
+    },
+    [mealKeyedRecipeData, buildRecipeView]
   );
 
   const handleGenerateSchedule = useCallback(() => {
@@ -1047,7 +1072,7 @@ export default function CookMode() {
                 scaledInputs={getScaledInputs(nowInstance)}
                 mergedBreakdown={getMergedBreakdown(nowInstance)}
                 convergence={getConvergence(nowInstance)}
-                recipeView={getRecipeView(nowInstance)}
+                recipeViews={getRecipeViews(nowInstance)}
                 checked={checkedIds.has(nowInstance.id)}
                 onToggleChecked={() => handleToggleChecked(nowInstance)}
                 statusChip={getStatusChip(nowInstance, true)}
@@ -1066,7 +1091,7 @@ export default function CookMode() {
                 scaledInputs={getScaledInputs(nextInstance)}
                 mergedBreakdown={getMergedBreakdown(nextInstance)}
                 convergence={getConvergence(nextInstance)}
-                recipeView={getRecipeView(nextInstance)}
+                recipeViews={getRecipeViews(nextInstance)}
                 checked={checkedIds.has(nextInstance.id)}
                 onToggleChecked={() => handleToggleChecked(nextInstance)}
                 statusChip={getStatusChip(nextInstance, false)}
