@@ -5,7 +5,7 @@ fresh session can pick a coherent chunk instead of re-deriving the map. Each
 group notes the member todo files, the shared root cause, rough size, and
 whether the members are genuinely knockable-together or just adjacent.
 
-_Last updated: 2026-07-18 (after Groups B and D shipped)._
+_Last updated: 2026-07-18 (after Groups B, D, and A shipped)._
 
 ## How to work a group (conventions this repo uses)
 
@@ -27,6 +27,14 @@ _Last updated: 2026-07-18 (after Groups B and D shipped)._
 
 ## ✅ Completed this session (2026-07-17 → 07-18)
 
+- **Group A — Cook-mode card information architecture** (`260718-cca`): designed the
+  Now/Next card's IA once, covering both sibling todos. **Convergence indicator**: pure
+  `deriveConvergence` walks the graph downstream (step → assembly → co-inputs → container),
+  rendered as a "Combines with: … → destination" call-out; merged-prep nodes show it
+  per-recipe. **Full-recipe reader**: 📖 button opens a dialog with `Recipe.notes` prose +
+  scaled ingredients (lists every recipe on merged nodes). **Data**: authored tight prose for
+  31 recipes (56/67 were empty) via `apply-recipe-notes.mjs`. **Import skill**: notes contract
+  now carries full source prose. Both todos resolved. Deployed + user-confirmed.
 - **Group B — Passive time / readiness** (`260717-pwr`): "Running now" timer
   strip + passive-aware `deriveReadiness` + early-finish ✓. Both source todos
   resolved.
@@ -42,15 +50,6 @@ _Last updated: 2026-07-18 (after Groups B and D shipped)._
 ---
 
 ## Ready to pick up
-
-### Group A — Cook-mode card information architecture  _(medium, code-only, no schema)_
-- `2026-07-12-container-convergence-indicator-on-cook-card.md`
-- `2026-07-12-full-recipe-text-on-cook-mode-card.md`
-
-Both live in `NowNextCard`; each todo says "design the card's IA once, covering
-both." Show which ingredients end up in the same container (graph-convergence
-query, no schema change), and let the cook read the full recipe prose
-(`Recipe.notes`/import contract already plumbed). **Genuinely one task.**
 
 ### Group F — Deploy / infra pair  _(small)_
 - `nas-pocketbase-tailnet.md`  _(priority: high)_
@@ -120,6 +119,6 @@ radius. Low urgency.
 
 ## Recommendation for next session
 
-**Group A** (another self-contained cook-mode win) or **Group F** (knock out the
-high-priority infra fast). Both are clean, low-risk, and don't need a design
-decision.
+**Group F** (knock out the high-priority infra fast — and the `.env` created during
+Group A's notes pass is already the seed of `deploy-pb-superuser-env`) or **Group E1**
+(naming controlled-vocab). Group F is clean, low-risk, and doesn't need a design decision.

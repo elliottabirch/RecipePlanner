@@ -1,6 +1,6 @@
 ---
 created: 2026-07-12
-title: Show the full recipe text from the cook mode card
+title: "[RESOLVED 2026-07-18] Show the full recipe text from the cook mode card"
 area: ui
 files:
   - recipe-planner/src/components/cook-mode/NowNextCard.tsx:118-133 (button slot — AddNoteButton lives here)
@@ -11,6 +11,27 @@ files:
   - recipe-planner/src/lib/import/build-recipe-graph.ts:108 (notes on write)
   - .claude/skills/recipe-import/SKILL.md
 ---
+
+## Resolution (2026-07-18, `260718-cca`)
+
+Surfaced + populated, both halves done.
+
+- **Surface**: a 📖 "view recipe" button beside `AddNoteButton` on `NowNextCard` opens a
+  dialog with the recipe's prose (`Recipe.notes`) plus this week's scaled ingredient list
+  (always available from the graph — the empty-notes fallback). The merged-prep constraint
+  called out below is handled the better way suggested here: the dialog **lists every
+  contributing recipe** (one section each), rather than omitting the button. `recipeView`
+  generalized to `recipeViews[]`.
+- **Populate (data)**: `notes` was empty on 56/67 published recipes. Authored tight,
+  glanceable prose (user's style: base steps, result-based, no technique timings) for the 31
+  substantive recipes; trivial pull/store entries left to the ingredient-list fallback.
+  Written to prod via `recipe-planner/apply-recipe-notes.mjs` (exact-name match, empty-only,
+  dry-run-then-apply) from `recipe-notes-drafts.json`. Two (Creamy Tomato Soup, Shawarma
+  Pitas) came from user-supplied source; the rest curated from each recipe's step graph.
+- **Import path**: the `recipe-import` skill's `notes` contract now instructs carrying the
+  full source prose going forward (not a one-line blurb).
+
+Deployed + user-confirmed. `notes` reads live from prod — no deploy needed for the data.
 
 ## Problem
 

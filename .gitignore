@@ -5,3 +5,8 @@ node_modules/pocketbase/dist/**/*
 
 # GSD research fetch cache (ephemeral, hash-named blobs)
 .planning/research/.cache/
+
+# Local secrets (PocketBase superuser creds for prod data scripts)
+.env
+.env.*
+!.env.example

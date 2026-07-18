@@ -1,6 +1,6 @@
 ---
 created: 2026-07-12
-title: Show on the cook card which ingredients end up in the same container
+title: "[RESOLVED 2026-07-18] Show on the cook card which ingredients end up in the same container"
 area: ui
 files:
   - recipe-planner/src/components/cook-mode/NowNextCard.tsx:13-40 (ScaledIngredient / MergedCutRow / MergedCutGroup)
@@ -10,6 +10,21 @@ files:
   - recipe-planner/src/lib/types.ts:95-108 (RecipeProductNode — meal_destination)
   - recipe-planner/src/lib/aggregation.ts:386 (buildMealContainersList)
 ---
+
+## Resolution (2026-07-18, `260718-cca`)
+
+Shipped exactly as scoped — a downstream-convergence query, no schema change. New pure
+`deriveConvergence` (`recipe-planner/src/lib/scheduler/convergence.ts`, alongside
+`readiness.ts`) walks the graph: step → output node → consuming assembly step → its other
+inputs (the co-ingredients) → shared container (`container_type`, falling back to the stored
+product's own name when unset). Co-inputs resolve to base ingredient names (`green onion`,
+not `green onion sliced`). Rendered as a "Combines with: … → destination" call-out in
+`NowNextCard`'s tap-to-expand body. The merged-prep caveat flagged here IS handled: a
+week-wide merged node shows convergence **per recipe** (each row in the cut table gets its own
+`↳ with … → destination`), since destinations differ per recipe. 8 unit tests mirror the real
+Peanut Soba Salad subgraph probed from prod. Deployed + user-confirmed ("this looks good").
+Reconciliation with `buildMealContainersList` left as-is — they answer different questions
+(productKey grouping vs graph convergence) and did not disagree in practice.
 
 ## Problem
 
