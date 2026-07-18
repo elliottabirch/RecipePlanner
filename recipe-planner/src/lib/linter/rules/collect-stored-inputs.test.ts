@@ -122,12 +122,14 @@ describe("collectStoredInputConsumptions", () => {
           productId: "stock",
           productName: "Stock",
           productType: ProductType.Stored,
+          producedInPlan: false,
         },
         {
           consumerId: "meal-a::assemble",
           productId: "frozen",
           productName: "Frozen peas",
           productType: ProductType.Inventory,
+          producedInPlan: false,
         },
       ])
     );
@@ -197,6 +199,7 @@ describe("collectStoredInputConsumptions", () => {
       productId: "stock",
       productName: "Stock",
       productType: ProductType.Stored,
+      producedInPlan: false,
     });
   });
 });

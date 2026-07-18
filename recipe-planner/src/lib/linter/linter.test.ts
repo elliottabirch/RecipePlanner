@@ -279,10 +279,12 @@ describe("missing-pull-step rule (week-scoped, D-07)", () => {
         consumerId: assembleInstance.id,
         productId: "chicken-stock",
         productName: "Chicken Stock",
+        productType: ProductType.Stored,
+        producedInPlan: false,
       },
     ];
 
-    const findings = lintMissingPullStep(weekGraph, consumedStoredInputs).filter(
+    const findings = lintMissingPullStep(consumedStoredInputs).filter(
       (f: LintFinding) => f.rule === "missing-pull-step"
     );
     expect(findings).toHaveLength(1);
@@ -300,15 +302,21 @@ describe("missing-pull-step rule (week-scoped, D-07)", () => {
       nodes: [stockInstance, assembleInstance],
       edges: [{ from: stockInstance.id, to: assembleInstance.id }],
     };
+    // Cross-recipe reuse is now expressed per-input: the collector marks this
+    // consumption producedInPlan=true because another planned meal makes the
+    // stock (formerly modeled by the week-graph edge; the producer check moved
+    // per-input in 260718).
     const consumedStoredInputs: StoredInputConsumption[] = [
       {
         consumerId: assembleInstance.id,
         productId: "chicken-stock",
         productName: "Chicken Stock",
+        productType: ProductType.Stored,
+        producedInPlan: true,
       },
     ];
 
-    const findings = lintMissingPullStep(weekGraph, consumedStoredInputs).filter(
+    const findings = lintMissingPullStep(consumedStoredInputs).filter(
       (f: LintFinding) => f.rule === "missing-pull-step"
     );
     expect(findings).toHaveLength(0);

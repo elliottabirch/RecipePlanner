@@ -169,7 +169,7 @@ describe("lintMissingPullStep — sourceless INVENTORY exemption (260717-fva)", 
     const consumptions = collectStoredInputConsumptions(mealData, includedIds);
 
     // FAILS before the fix: currently flagged (no producer edge exists).
-    const findings = lintMissingPullStep(weekGraph, consumptions);
+    const findings = lintMissingPullStep(consumptions);
     expect(findings.filter((f) => f.nodeId.endsWith("::pull-peas"))).toHaveLength(0);
   });
 
@@ -195,7 +195,7 @@ describe("lintMissingPullStep — sourceless INVENTORY exemption (260717-fva)", 
 
     // Passes before AND after the fix — proves the rule keeps teeth for a
     // genuinely missing STORED input; not a RED test, but must be present.
-    const findings = lintMissingPullStep(weekGraph, consumptions);
+    const findings = lintMissingPullStep(consumptions);
     expect(findings).toHaveLength(1);
     expect(findings[0].nodeId).toBe("meal-b::assemble-soup");
   });
@@ -223,7 +223,7 @@ describe("lintMissingPullStep — sourceless INVENTORY exemption (260717-fva)", 
     const includedIds = new Set(weekGraph.nodes.map((n) => n.id));
     const consumptions = collectStoredInputConsumptions(mealData, includedIds);
 
-    const findings = lintMissingPullStep(weekGraph, consumptions);
+    const findings = lintMissingPullStep(consumptions);
     expect(findings).toHaveLength(1);
     expect(findings[0].nodeId).toBe("meal-soba::combine-salad");
     expect(findings[0].productId).toBe("peanut-dressing");
@@ -253,8 +253,50 @@ describe("lintMissingPullStep — sourceless INVENTORY exemption (260717-fva)", 
     const includedIds = new Set(weekGraph.nodes.map((n) => n.id));
     const consumptions = collectStoredInputConsumptions(mealData, includedIds);
 
-    const findings = lintMissingPullStep(weekGraph, consumptions);
+    const findings = lintMissingPullStep(consumptions);
     expect(findings).toHaveLength(0);
+  });
+
+  it("flags an unmade input on a MULTI-input assembly step whose OTHER inputs are produced (the soba masking bug, 260718)", () => {
+    // `Toss the salad` consumes cooked soba (produced by a cook step) AND an
+    // unmade dressing. The per-STEP check cleared the whole step because it had
+    // a producer edge; the per-INPUT check must still flag the dressing.
+    const cookedSoba = makeProduct({
+      id: "cooked-soba",
+      name: "cooked soba",
+      type: ProductType.Transient,
+    });
+    const dressing = makeProduct({
+      id: "dressing",
+      name: "asian peanut dressing",
+      type: ProductType.Transient,
+    });
+    const sobaNode = makeProductNode(cookedSoba, { id: "soba-node" });
+    const dressingNode = makeProductNode(dressing, { id: "dressing-node" });
+    const cookSoba = makeStep("cook-soba", { name: "Cook & chill soba", resource: "none" });
+    const toss = makeStep("toss", { name: "Toss the salad", resource: "none" });
+
+    const recipeData = makeRecipeData({
+      steps: [cookSoba, toss],
+      productNodes: [sobaNode, dressingNode],
+      productToStepEdges: [
+        makeProductToStepEdge("p2s-soba", sobaNode.id, toss.id),
+        makeProductToStepEdge("p2s-dressing", dressingNode.id, toss.id),
+      ],
+      // cook-soba produces the soba; NOTHING produces the dressing.
+      stepToProductEdges: [makeStepToProductEdge("s2p-soba", cookSoba.id, sobaNode.id)],
+    });
+
+    const mealData: MealKeyedRecipeData = new Map([["meal-soba", recipeData]]);
+    const weekGraph = buildWeekGraph(mealData);
+    const includedIds = new Set(weekGraph.nodes.map((n) => n.id));
+    const consumptions = collectStoredInputConsumptions(mealData, includedIds);
+
+    const findings = lintMissingPullStep(consumptions);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].productId).toBe("dressing");
+    // cooked soba (produced by cook-soba) is NOT flagged.
+    expect(findings.some((f) => f.productId === "cooked-soba")).toBe(false);
   });
 
   it("composition: the REAL buildWeekGraph over the three-garlic-pull plan yields exactly one merged-pull node AND zero garlic findings", () => {

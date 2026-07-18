@@ -4,11 +4,18 @@
  * rule precedent: it consumes a `WeekGraph` (the scheduler's cross-recipe
  * producer→consumer edges, built by `scheduler/week-graph.ts`) plus a flat
  * list of stored/inventory input consumptions, not a single recipe's step
- * array. A stored/inventory input is satisfied if ANY recipe in the planned
- * week produces it — i.e. some edge in the week graph lands on the consuming
- * step instance. This resolves RESEARCH A6 in favor of week scope (the real
- * cross-recipe chicken-stock case: recipe A consumes the stock recipe B
+ * array. An input is satisfied if it is produced in the planned week — checked
+ * PER INPUT (`producedInPlan`, computed in the collector): the consumed product
+ * node is made in its own recipe, OR (stored/inventory) the product is made in
+ * another planned meal. This resolves RESEARCH A6 in favor of week scope (the
+ * real cross-recipe chicken-stock case: recipe A consumes the stock recipe B
  * makes) — a producer in a different recipe suppresses the finding.
+ *
+ * 260718: the check is per-input, NOT per-consumer-step. The earlier "does the
+ * consumer step have ANY incoming producer edge" test wrongly cleared a step
+ * the moment one of its inputs was produced, masking an unmade input on a
+ * multi-input assembly step (`Toss the salad` consumes produced soba/shrimp/
+ * veg AND an unmade dressing — the dressing must still be flagged).
  *
  * 260717-fva: a sourceless (no in-plan producer) `Inventory` consumption is
  * exempt — that is a legitimate freezer/pantry pull, prior-week/pantry stock
@@ -29,9 +36,8 @@
  * transients are never shared that way by design).
  */
 import type { LintFinding } from "../index";
-import type { WeekGraph } from "../../scheduler/types";
 import type { MealKeyedRecipeData } from "../../aggregation/types";
-import { ProductType } from "../../types";
+import { ProductType, Timing } from "../../types";
 
 /** A single stored/inventory/transient input consumed by an assembly step. */
 export interface StoredInputConsumption {
@@ -44,6 +50,20 @@ export interface StoredInputConsumption {
    * stock) while keeping a sourceless STORED or TRANSIENT consumption flagged
    * (260717-fva; transient added 260718). */
   productType: ProductType;
+  /**
+   * Whether THIS specific input is produced in the planned week — the per-input
+   * satisfaction check (260718 fix). True if the consumed product node is made
+   * by an in-plan step in its own recipe (intra-recipe, matched by node id) OR,
+   * for stored/inventory, the product is made by a step in another planned meal
+   * (cross-recipe, matched by product id) — mirroring the two edge-building
+   * passes in `week-graph.ts` (sections 2 and 3).
+   *
+   * This replaces the old "does the consumer STEP have any incoming producer
+   * edge" heuristic, which wrongly marked a step satisfied whenever ANY of its
+   * inputs was produced — masking an unmade input on a multi-input assembly step
+   * (e.g. `Toss the salad` consumes produced soba/shrimp AND an unmade dressing).
+   */
+  producedInPlan: boolean;
 }
 
 /**
@@ -64,6 +84,31 @@ export function collectStoredInputConsumptions(
   mealData: MealKeyedRecipeData,
   includedConsumerIds: ReadonlySet<string>
 ): StoredInputConsumption[] {
+  // Producer sets, mirroring week-graph.ts's two producer passes. A JIT
+  // (day-of) producer is excluded, exactly as the week graph excludes it — a
+  // prep-day consumer can't be fed by a step that runs day-of.
+  //   - producedNodeIds: intra-recipe production (step -> node), by node id.
+  //   - producedProductByMeal: per-meal set of produced product ids, for the
+  //     cross-recipe stored/inventory case (a producer in ANOTHER meal).
+  const producedNodeIds = new Set<string>();
+  const producedProductByMeal = new Map<string, Set<string>>();
+  for (const [mealId, recipeData] of mealData) {
+    const jitStepIds = new Set(
+      recipeData.steps
+        .filter((step) => step.timing === Timing.JustInTime)
+        .map((step) => step.id)
+    );
+    const nodeById = new Map(recipeData.productNodes.map((n) => [n.id, n]));
+    const producedProducts = new Set<string>();
+    for (const produceEdge of recipeData.stepToProductEdges) {
+      if (jitStepIds.has(produceEdge.source)) continue;
+      producedNodeIds.add(produceEdge.target);
+      const producedProductId = nodeById.get(produceEdge.target)?.product;
+      if (producedProductId) producedProducts.add(producedProductId);
+    }
+    producedProductByMeal.set(mealId, producedProducts);
+  }
+
   const seen = new Set<string>();
   const consumptions: StoredInputConsumption[] = [];
   for (const [consumerMealId, recipeData] of mealData) {
@@ -85,11 +130,22 @@ export function collectStoredInputConsumptions(
       const dedupeKey = `${consumerId}::${inputProduct.id}`;
       if (seen.has(dedupeKey)) continue;
       seen.add(dedupeKey);
+
+      const intraProduced = producedNodeIds.has(inputNode.id);
+      const crossProduced =
+        (inputProduct.type === ProductType.Stored ||
+          inputProduct.type === ProductType.Inventory) &&
+        [...producedProductByMeal].some(
+          ([mealId, products]) =>
+            mealId !== consumerMealId && products.has(inputProduct.id)
+        );
+
       consumptions.push({
         consumerId,
         productId: inputProduct.id,
         productName: inputProduct.name,
         productType: inputProduct.type,
+        producedInPlan: intraProduced || crossProduced,
       });
     }
   }
@@ -111,13 +167,10 @@ function isExemptSourcelessInventory(consumption: StoredInputConsumption): boole
 }
 
 export function lintMissingPullStep(
-  weekGraph: WeekGraph,
   consumedStoredInputs: StoredInputConsumption[]
 ): LintFinding[] {
-  const consumerIdsWithProducer = new Set(weekGraph.edges.map((edge) => edge.to));
-
   return consumedStoredInputs
-    .filter((consumption) => !consumerIdsWithProducer.has(consumption.consumerId))
+    .filter((consumption) => !consumption.producedInPlan)
     .filter((consumption) => !isExemptSourcelessInventory(consumption))
     .map((consumption) => ({
       severity: "error" as const,

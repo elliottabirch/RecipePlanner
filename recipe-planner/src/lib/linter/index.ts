@@ -104,5 +104,10 @@ export function runWeekLint(
   weekGraph: WeekGraph,
   consumedStoredInputs: StoredInputConsumption[]
 ): LintFinding[] {
-  return [...lintMissingPullStep(weekGraph, consumedStoredInputs)];
+  // `weekGraph` is retained in the signature (callers build it to derive the
+  // included-consumer set for collectStoredInputConsumptions, and future
+  // week-scoped rules may need it) but the missing-pull-step producer check now
+  // lives per-input on each consumption (260718), so it isn't passed down.
+  void weekGraph;
+  return [...lintMissingPullStep(consumedStoredInputs)];
 }
