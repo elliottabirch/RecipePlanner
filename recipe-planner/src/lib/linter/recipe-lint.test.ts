@@ -69,3 +69,73 @@ describe("composeRecipeFindings — step + product only, week excluded (D-06, IM
     expect(composeRecipeFindings(steps, products)).toEqual([]);
   });
 });
+
+describe("composeRecipeFindings — unmade-transient recipe rule (260718)", () => {
+  it("flags a consumed transient with no in-recipe producer and no make/buy source", () => {
+    const dressing = makeProduct({
+      id: "dressing",
+      name: "asian peanut dressing",
+      type: ProductType.Transient,
+    });
+    const graph = {
+      nodes: [{ id: "node-dressing", product: "dressing" }],
+      productToStepEdges: [{ source: "node-dressing" }], // consumed
+      stepToProductEdges: [], // nothing produces it
+    };
+    const findings = composeRecipeFindings([], [dressing], graph);
+    const flagged = findings.filter((f) => f.rule === "unmade-transient");
+    expect(flagged).toHaveLength(1);
+    expect(flagged[0].productId).toBe("dressing");
+    expect(flagged[0].severity).toBe("error");
+  });
+
+  it("does NOT flag a transient that a step in the recipe produces", () => {
+    const sauce = makeProduct({
+      id: "sauce",
+      name: "meat sauce",
+      type: ProductType.Transient,
+    });
+    const graph = {
+      nodes: [{ id: "node-sauce", product: "sauce" }],
+      productToStepEdges: [{ source: "node-sauce" }],
+      stepToProductEdges: [{ target: "node-sauce" }], // produced in-recipe
+    };
+    expect(
+      composeRecipeFindings([], [sauce], graph).some(
+        (f) => f.rule === "unmade-transient"
+      )
+    ).toBe(false);
+  });
+
+  it("does NOT flag an unmade transient that has a make (source_recipe) escape hatch", () => {
+    const dressing = makeProduct({
+      id: "dressing",
+      name: "peanut dressing",
+      type: ProductType.Transient,
+      source_recipe: "some-recipe",
+    });
+    const graph = {
+      nodes: [{ id: "node-dressing", product: "dressing" }],
+      productToStepEdges: [{ source: "node-dressing" }],
+      stepToProductEdges: [],
+    };
+    expect(
+      composeRecipeFindings([], [dressing], graph).some(
+        (f) => f.rule === "unmade-transient"
+      )
+    ).toBe(false);
+  });
+
+  it("does NOT run the transient rule when no graph is supplied (2-arg back-compat)", () => {
+    const dressing = makeProduct({
+      id: "dressing",
+      name: "peanut dressing",
+      type: ProductType.Transient,
+    });
+    expect(
+      composeRecipeFindings([], [dressing]).some(
+        (f) => f.rule === "unmade-transient"
+      )
+    ).toBe(false);
+  });
+});

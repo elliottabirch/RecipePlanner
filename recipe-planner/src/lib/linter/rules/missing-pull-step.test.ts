@@ -200,6 +200,63 @@ describe("lintMissingPullStep — sourceless INVENTORY exemption (260717-fva)", 
     expect(findings[0].nodeId).toBe("meal-b::assemble-soup");
   });
 
+  it("flags a sourceless TRANSIENT consumption — a consumed sauce nothing in the plan makes (260718)", () => {
+    // The asian-peanut-dressing case: a transient consumed by an assembly step
+    // that no step produces anywhere in the plan. Previously invisible.
+    const dressing = makeProduct({
+      id: "peanut-dressing",
+      name: "asian peanut dressing",
+      type: ProductType.Transient,
+    });
+    const dressingNode = makeProductNode(dressing, { id: "dressing-node" });
+    const combine = makeStep("combine-salad", { name: "Combine salad" });
+
+    const recipeData = makeRecipeData({
+      steps: [combine],
+      productNodes: [dressingNode],
+      productToStepEdges: [makeProductToStepEdge("e1", dressingNode.id, combine.id)],
+      // NOTE: no stepToProductEdge — nothing makes the dressing.
+    });
+
+    const mealData: MealKeyedRecipeData = new Map([["meal-soba", recipeData]]);
+    const weekGraph = buildWeekGraph(mealData);
+    const includedIds = new Set(weekGraph.nodes.map((n) => n.id));
+    const consumptions = collectStoredInputConsumptions(mealData, includedIds);
+
+    const findings = lintMissingPullStep(weekGraph, consumptions);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].nodeId).toBe("meal-soba::combine-salad");
+    expect(findings[0].productId).toBe("peanut-dressing");
+    expect(findings[0].message).toMatch(/make or buy/i);
+  });
+
+  it("does NOT flag a TRANSIENT that a step in the same recipe produces (intra-recipe edge suppresses it)", () => {
+    // Meat sauce made by a cook step, consumed by a combine step — normal.
+    const sauce = makeProduct({
+      id: "meat-sauce",
+      name: "meat sauce",
+      type: ProductType.Transient,
+    });
+    const sauceNode = makeProductNode(sauce, { id: "sauce-node" });
+    const cook = makeStep("cook-sauce", { name: "Cook sauce", resource: "none" });
+    const combine = makeStep("combine", { name: "Combine", resource: "none" });
+
+    const recipeData = makeRecipeData({
+      steps: [cook, combine],
+      productNodes: [sauceNode],
+      productToStepEdges: [makeProductToStepEdge("p2s", sauceNode.id, combine.id)],
+      stepToProductEdges: [makeStepToProductEdge("s2p", cook.id, sauceNode.id)],
+    });
+
+    const mealData: MealKeyedRecipeData = new Map([["meal-x", recipeData]]);
+    const weekGraph = buildWeekGraph(mealData);
+    const includedIds = new Set(weekGraph.nodes.map((n) => n.id));
+    const consumptions = collectStoredInputConsumptions(mealData, includedIds);
+
+    const findings = lintMissingPullStep(weekGraph, consumptions);
+    expect(findings).toHaveLength(0);
+  });
+
   it("composition: the REAL buildWeekGraph over the three-garlic-pull plan yields exactly one merged-pull node AND zero garlic findings", () => {
     // Pins Task A + Task B together. Garlic is cleared by Task A's merge +
     // the includedIds gate (planning_findings #5) — NOT by Task B's

@@ -298,6 +298,36 @@ export default function CookMode() {
     [mealKeyedRecipeData]
   );
 
+  // Steps blocked by a missing source: they consume a stored/transient input
+  // that nothing in the planned week produces and that isn't prior stock (the
+  // missing-pull-step finding — e.g. a combine step whose peanut dressing no
+  // step makes). Such a step can never become "ready" no matter what the cook
+  // checks off, so its chip must say so instead of reading "ready"
+  // (unproduced-non-raw-inputs, 260718). Maps consumer StepInstance.id -> the
+  // product name(s) it has no source for. Runs the same week lint as the
+  // "Check plan" dialog, but continuously so the chip is always honest.
+  const blockedInfoById = useMemo(() => {
+    const includedIds = new Set(weekGraph.nodes.map((node) => node.id));
+    const consumptions = collectStoredInputConsumptions(
+      mealKeyedRecipeData,
+      includedIds
+    );
+    const nameByProductId = new Map(
+      consumptions.map((c) => [c.productId, c.productName])
+    );
+    const map = new Map<string, string[]>();
+    for (const finding of runWeekLint(weekGraph, consumptions)) {
+      if (finding.rule !== "missing-pull-step" || !finding.nodeId) continue;
+      const name = finding.productId
+        ? nameByProductId.get(finding.productId) ?? finding.productId
+        : "an input";
+      const list = map.get(finding.nodeId) ?? [];
+      list.push(name);
+      map.set(finding.nodeId, list);
+    }
+    return map;
+  }, [weekGraph, mealKeyedRecipeData]);
+
   // The exact complement of week-graph.ts:158's just_in_time exclusion —
   // `mealKeyedRecipeData` already holds every step unfiltered (the loader
   // fetches `recipe_steps` unfiltered above; only `buildWeekGraph` filters
@@ -433,6 +463,16 @@ export default function CookMode() {
 
   const getStatusChip = useCallback(
     (instance: StepInstance, isNowCard: boolean): StatusChip | null => {
+      // Blocked wins over every other state: this step consumes something no
+      // step in the plan makes, so it can never become ready (260718).
+      const blockedNames = blockedInfoById.get(instance.id);
+      if (blockedNames && blockedNames.length > 0) {
+        return {
+          state: "blocked",
+          label: `blocked: nothing makes ${blockedNames.join(", ")}`,
+        };
+      }
+
       if (instance.step.step_type === StepType.Assembly) {
         const readiness = deriveReadiness(
           instance.id,
@@ -481,6 +521,7 @@ export default function CookMode() {
       getCountdown,
       runningPassiveSet,
       runningTextById,
+      blockedInfoById,
     ]
   );
 

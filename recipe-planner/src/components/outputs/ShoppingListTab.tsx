@@ -23,6 +23,7 @@ import type { OverlaidShoppingItem } from "../../lib/shopping-overlay";
 import { CheckableListItem } from "../CheckableListItem";
 import { EmptyState } from "../EmptyState";
 import { OutOfStockSection } from "./OutOfStockSection";
+import { UnmadeInputsSection, type UnmadeInput } from "./UnmadeInputsSection";
 import {
   UI_TEXT,
   getPantryCheckboxKey,
@@ -116,6 +117,8 @@ interface ShoppingListTabProps {
   recipeData?: Map<string, RecipeGraphData>;
   onAddRecipeToPlan?: (recipeId: string) => void;
   onAddToShoppingList?: (item: ManualShoppingItem) => void;
+  /** Consumed inputs no in-plan step makes (missing-pull-step, 260718). */
+  unmadeInputs?: UnmadeInput[];
   manualShoppingItems?: ManualShoppingItem[];
   // Store-time swap/make-it entry points (SHOP-03/04, D-10). Handlers and
   // dialogs live in Outputs (02-08); the per-line buttons that call these
@@ -148,6 +151,7 @@ export function ShoppingListTab({
   recipeData,
   onAddRecipeToPlan,
   onAddToShoppingList,
+  unmadeInputs,
   manualShoppingItems,
   onSwap,
   onMakeIt,
@@ -387,6 +391,17 @@ export function ShoppingListTab({
             stockWarnings={stockWarnings}
             plannedMeals={plannedMeals}
             recipeData={recipeData}
+            onAddRecipeToPlan={onAddRecipeToPlan}
+            onAddToShoppingList={onAddToShoppingList}
+          />
+        )}
+
+      {unmadeInputs &&
+        unmadeInputs.length > 0 &&
+        onAddRecipeToPlan &&
+        onAddToShoppingList && (
+          <UnmadeInputsSection
+            unmadeInputs={unmadeInputs}
             onAddRecipeToPlan={onAddRecipeToPlan}
             onAddToShoppingList={onAddToShoppingList}
           />

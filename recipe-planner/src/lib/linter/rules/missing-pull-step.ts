@@ -16,21 +16,33 @@
  * is NOT exempt — a this-week fridge item nothing in the plan produces is a
  * genuine missing make/pull step, the rule's teeth. See
  * `isExemptSourcelessInventory` below.
+ *
+ * 260718 (unproduced-non-raw-inputs): `Transient` inputs join stored in the
+ * collection and stay non-exempt. A transient is a recipe-internal intermediate
+ * (a sauce, a cooked component) that MUST be produced by a step; intra-recipe
+ * production yields a week-graph edge (week-graph.ts section 2, any type), so a
+ * normally-made transient is never sourceless. A sourceless transient is the
+ * real hole — a consumed sauce nothing in the plan makes (e.g. `asian peanut
+ * dressing`), previously invisible to every guard. A library-wide probe found
+ * exactly one such case and zero false positives, because transients don't
+ * cross recipes (section 3 cross-recipe edges are stored/inventory only, but
+ * transients are never shared that way by design).
  */
 import type { LintFinding } from "../index";
 import type { WeekGraph } from "../../scheduler/types";
 import type { MealKeyedRecipeData } from "../../aggregation/types";
 import { ProductType } from "../../types";
 
-/** A single stored/inventory input consumed by an assembly step instance. */
+/** A single stored/inventory/transient input consumed by an assembly step. */
 export interface StoredInputConsumption {
   /** StepInstance.id of the consuming assembly step */
   consumerId: string;
   productId: string;
   productName: string;
-  /** `stored` or `inventory` — carried so `lintMissingPullStep` can exempt a
-   * sourceless INVENTORY consumption (legit prior-week/pantry stock) while
-   * keeping a sourceless STORED consumption flagged (260717-fva). */
+  /** `stored`, `inventory`, or `transient` — carried so `lintMissingPullStep`
+   * can exempt a sourceless INVENTORY consumption (legit prior-week/pantry
+   * stock) while keeping a sourceless STORED or TRANSIENT consumption flagged
+   * (260717-fva; transient added 260718). */
   productType: ProductType;
 }
 
@@ -63,7 +75,8 @@ export function collectStoredInputConsumptions(
       if (!inputProduct) continue;
       if (
         inputProduct.type !== ProductType.Stored &&
-        inputProduct.type !== ProductType.Inventory
+        inputProduct.type !== ProductType.Inventory &&
+        inputProduct.type !== ProductType.Transient
       ) {
         continue;
       }
@@ -107,9 +120,13 @@ export function lintMissingPullStep(
     .filter((consumption) => !consumerIdsWithProducer.has(consumption.consumerId))
     .filter((consumption) => !isExemptSourcelessInventory(consumption))
     .map((consumption) => ({
-      severity: "error",
+      severity: "error" as const,
       rule: "missing-pull-step",
-      message: `${consumption.productName}: no pull/thaw/make step produces this stored input anywhere in the planned week`,
+      message:
+        consumption.productType === ProductType.Transient
+          ? `${consumption.productName}: consumed in the plan but no step makes it — decide whether to make or buy it`
+          : `${consumption.productName}: no pull/thaw/make step produces this stored input anywhere in the planned week`,
+      productId: consumption.productId,
       nodeId: consumption.consumerId,
     }));
 }

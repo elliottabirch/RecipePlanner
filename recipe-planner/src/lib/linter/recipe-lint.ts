@@ -10,7 +10,13 @@
  * (Pitfall 4, threat T-06-03b). Letting it participate would either crash or
  * emit a spurious block, so composition is step + product only.
  */
-import type { RecipeStep, RecipeProductNode, Product } from "../types";
+import type {
+  RecipeStep,
+  RecipeProductNode,
+  Product,
+  ProductToStepEdge,
+  StepToProductEdge,
+} from "../types";
 import {
   runStepLint,
   runLint,
@@ -18,17 +24,31 @@ import {
   type ProductExpanded,
   type LinterProductNode,
 } from "./index";
+import {
+  lintUnmadeTransient,
+  type RecipeGraphInputs,
+} from "./rules/unmade-transient";
 
 /**
- * Pure, unit-testable core of the publish gate. Returns exactly
+ * Pure, unit-testable core of the publish gate. Returns
  * `runStepLint(steps) ++ runLint(products)` — step-rule and product-rule
- * findings only, never a week/pull-step finding for any input.
+ * findings only, never a WEEK/pull-step finding for any input.
+ *
+ * When the recipe's own graph (`graph`) is supplied, also runs the RECIPE-scoped
+ * `unmade-transient` rule (a consumed transient this recipe never makes and has
+ * no make/buy source). This is NOT the week rule — it needs only this recipe's
+ * nodes/edges — so it legitimately participates in the publish gate. Omitting
+ * `graph` keeps the pre-260718 behaviour, so existing 2-arg callers/tests are
+ * unchanged.
  */
 export function composeRecipeFindings(
   steps: RecipeStep[],
-  products: ProductExpanded[]
+  products: ProductExpanded[],
+  graph?: RecipeGraphInputs
 ): LintFinding[] {
-  return [...runStepLint(steps), ...runLint(products)];
+  const base = [...runStepLint(steps), ...runLint(products)];
+  if (!graph) return base;
+  return [...base, ...lintUnmadeTransient(graph, products)];
 }
 
 /**
@@ -81,5 +101,19 @@ export async function runRecipeLint(recipeId: string): Promise<LintFinding[]> {
     nodes: nodesByProduct.get(product.id) ?? [],
   }));
 
-  return composeRecipeFindings(steps, enriched);
+  // The recipe's own graph edges, for the recipe-scoped unmade-transient rule.
+  const [productToStepEdges, stepToProductEdges] = await Promise.all([
+    getAll<ProductToStepEdge>(collections.productToStepEdges, {
+      filter: recipeFilter,
+    }),
+    getAll<StepToProductEdge>(collections.stepToProductEdges, {
+      filter: recipeFilter,
+    }),
+  ]);
+
+  return composeRecipeFindings(steps, enriched, {
+    nodes: nodes.map((n) => ({ id: n.id, product: n.product })),
+    productToStepEdges: productToStepEdges.map((e) => ({ source: e.source })),
+    stepToProductEdges: stepToProductEdges.map((e) => ({ target: e.target })),
+  });
 }

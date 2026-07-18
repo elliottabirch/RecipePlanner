@@ -12,17 +12,38 @@
 //    counting down on this card (e.g. the "next" card preview); the live
 //    MM:SS digit readout itself is rendered separately at Display size by
 //    NowNextCard, never inside this chip.
+//  - "blocked"  -> filled, error.main (red) — the step consumes an input that
+//    NOTHING in the planned week produces and that isn't prior stock, so it can
+//    never become ready (unproduced-non-raw-inputs, 260718). Distinct from
+//    "waiting", which resolves once you check the producer off; a blocked step
+//    stays blocked until the plan/recipe data is fixed.
 import { Chip } from "@mui/material";
 
-export type ReadinessChipState = "waiting" | "ready" | "passive";
+export type ReadinessChipState = "waiting" | "ready" | "passive" | "blocked";
 
 export interface ReadinessChipProps {
   state: ReadinessChipState;
-  /** "waiting" -> "waiting on: X, Y"; "ready" -> "Ready"; "passive" -> e.g. "15m passive". */
+  /** "waiting" -> "waiting on: X, Y"; "ready" -> "Ready"; "passive" -> e.g. "15m passive"; "blocked" -> "blocked: nothing makes X". */
   label: string;
 }
 
 export function ReadinessChip({ state, label }: ReadinessChipProps) {
+  if (state === "blocked") {
+    return (
+      <Chip
+        label={label}
+        size="small"
+        variant="filled"
+        sx={{
+          fontSize: "0.7rem",
+          height: 20,
+          backgroundColor: "error.main",
+          color: "white",
+        }}
+      />
+    );
+  }
+
   if (state === "ready") {
     return (
       <Chip

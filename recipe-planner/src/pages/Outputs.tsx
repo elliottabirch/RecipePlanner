@@ -52,6 +52,7 @@ import {
 } from "../lib/aggregation";
 import type {
   WeeklyPlan,
+  Product,
   RecipeProductNode,
   RecipeStep,
   ProductToStepEdge,
@@ -63,6 +64,12 @@ import type {
   ProductExpanded,
 } from "../lib/types";
 import type { Unit } from "../lib/units";
+import { buildWeekGraph } from "../lib/scheduler/week-graph";
+import {
+  collectStoredInputConsumptions,
+  runWeekLint,
+} from "../lib/linter";
+import type { UnmadeInput } from "../components/outputs/UnmadeInputsSection";
 import { getAvailableProviders } from "../lib/listProviders";
 import { useShoppingState } from "../hooks/useShoppingState";
 import {
@@ -509,6 +516,65 @@ export default function Outputs() {
     () => checkInventoryStock(recipeData, inventoryItems),
     [recipeData, inventoryItems]
   );
+
+  // Plan/shop-time detection of consumed-but-unmade inputs: a stored/transient
+  // product this week consumes that no in-plan step produces and that isn't
+  // prior stock (the missing-pull-step finding — e.g. the peanut dressing).
+  // This is the same week lint the cook-mode "Check plan" dialog runs, surfaced
+  // HERE so the gap is caught before the shop, not mid-cook. Each finding is
+  // enriched from the consuming meal's product node (loaded with the
+  // source_recipe / store_bought_product expands, line ~285) so the shopping
+  // list can answer make-vs-buy (unproduced-non-raw-inputs, 260718).
+  const unmadeInputs = useMemo<UnmadeInput[]>(() => {
+    const weekGraph = buildWeekGraph(recipeData);
+    const includedIds = new Set(weekGraph.nodes.map((node) => node.id));
+    const consumptions = collectStoredInputConsumptions(recipeData, includedIds);
+    const findings = runWeekLint(weekGraph, consumptions).filter(
+      (finding) => finding.rule === "missing-pull-step"
+    );
+    const byProduct = new Map<string, UnmadeInput>();
+    for (const finding of findings) {
+      if (!finding.productId || !finding.nodeId) continue;
+      const mealId = finding.nodeId.split("::")[0];
+      const data = recipeData.get(mealId);
+      const node = data?.productNodes.find((n) => n.product === finding.productId);
+      // The node's product carries source_recipe / store_bought_product expands
+      // at runtime (Outputs load), which ExpandedProductNode's type doesn't model.
+      const product = node?.expand?.product as
+        | (Product & {
+            expand?: {
+              source_recipe?: { name?: string };
+              store_bought_product?: {
+                name?: string;
+                expand?: { store?: { name?: string }; section?: { name?: string } };
+              };
+            };
+          })
+        | undefined;
+      const recipeName = data?.recipe.name ?? "";
+      const existing = byProduct.get(finding.productId);
+      if (existing) {
+        if (recipeName && !existing.usedInRecipeNames.includes(recipeName)) {
+          existing.usedInRecipeNames.push(recipeName);
+        }
+        continue;
+      }
+      byProduct.set(finding.productId, {
+        productId: finding.productId,
+        productName: product?.name ?? finding.productId,
+        usedInRecipeNames: recipeName ? [recipeName] : [],
+        sourceRecipeId: product?.source_recipe || undefined,
+        sourceRecipeName: product?.expand?.source_recipe?.name,
+        storeBoughtProductId: product?.store_bought_product || undefined,
+        storeBoughtProductName: product?.expand?.store_bought_product?.name,
+        storeBoughtStoreName:
+          product?.expand?.store_bought_product?.expand?.store?.name,
+        storeBoughtSectionName:
+          product?.expand?.store_bought_product?.expand?.section?.name,
+      });
+    }
+    return Array.from(byProduct.values());
+  }, [recipeData]);
 
   // Filter containers for Micah meals
   const micahMealContainers = useMemo(() => {
@@ -967,6 +1033,7 @@ export default function Outputs() {
                   recipeData={recipeData}
                   onAddRecipeToPlan={handleAddRecipeToPlan}
                   onAddToShoppingList={handleAddToShoppingList}
+                  unmadeInputs={unmadeInputs}
                   manualShoppingItems={manualShoppingItems}
                   onSwap={handleOpenSwap}
                   onMakeIt={handleOpenMakeIt}
