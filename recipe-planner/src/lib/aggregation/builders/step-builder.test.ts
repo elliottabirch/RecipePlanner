@@ -167,3 +167,32 @@ describe("step-builder — convert-or-split merge (DATA-01)", () => {
     );
   });
 });
+
+describe("step-builder — prep_action threading (E1)", () => {
+  it("stores the prep_action on a newly created merged step", () => {
+    const steps = new Map<string, AggregatedFlowStep>();
+    addOrMergeStep(
+      steps,
+      "step-5",
+      "dice onion",
+      StepType.Prep,
+      "Soup",
+      1,
+      [makeInput(1, "each", "onion")],
+      [],
+      "dice"
+    );
+    expect(steps.get("step-5")!.prep_action).toBe("dice");
+  });
+
+  it("keeps the first-seen prep_action but fills in from a later actionless-first member", () => {
+    const steps = new Map<string, AggregatedFlowStep>();
+    // First member has no action; second supplies one → filled in.
+    addOrMergeStep(steps, "s", "chop onion", StepType.Prep, "A", 1, [makeInput(1, "each", "onion")], []);
+    addOrMergeStep(steps, "s", "chop onion", StepType.Prep, "B", 1, [makeInput(1, "each", "onion")], [], "chop");
+    expect(steps.get("s")!.prep_action).toBe("chop");
+    // A later differing value does NOT overwrite the established one.
+    addOrMergeStep(steps, "s", "chop onion", StepType.Prep, "C", 1, [makeInput(1, "each", "onion")], [], "mince");
+    expect(steps.get("s")!.prep_action).toBe("chop");
+  });
+});

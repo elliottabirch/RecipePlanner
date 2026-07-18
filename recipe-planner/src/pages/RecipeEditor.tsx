@@ -78,7 +78,7 @@ import StepNode, {
 } from "../components/nodes/StepNode";
 import ProductForm, { useProductForm } from "../components/ProductForm";
 import { searchProducts } from "../lib/search/product-search";
-import { PREP_ACTION_KEYS, actionVerb } from "../lib/prep-actions";
+import { PREP_ACTION_KEYS, actionVerb, deriveStepLabel } from "../lib/prep-actions";
 
 const nodeTypes = {
   product: ProductNode,
@@ -319,6 +319,8 @@ export default function RecipeEditor() {
       // Convert to React Flow nodes
       const flowNodes: FlowNode[] = [];
       const dbIds: Record<string, string> = {};
+      // product-node id -> product name, for deriving step labels (E1).
+      const productNameByNodeId = new Map<string, string>();
 
       productNodes.forEach((pn) => {
         const nodeId = `product-${pn.id}`;
@@ -326,6 +328,7 @@ export default function RecipeEditor() {
         const productData = (
           pn as RecipeProductNode & { expand?: { product?: Product } }
         ).expand?.product;
+        if (productData?.name) productNameByNodeId.set(pn.id, productData.name);
         flowNodes.push({
           id: nodeId,
           type: "product",
@@ -344,12 +347,22 @@ export default function RecipeEditor() {
       steps.forEach((step) => {
         const nodeId = `step-${step.id}`;
         dbIds[nodeId] = step.id;
+        // Derive the node label ("dice onion") from prep_action + the step's
+        // single input product, matching cook mode (E1); authored name is the
+        // fallback for multi-input / actionless steps.
+        const stepInputEdges = productToStepEdges.filter(
+          (e) => e.target === step.id
+        );
+        const singleInputName =
+          stepInputEdges.length === 1
+            ? productNameByNodeId.get(stepInputEdges[0].source)
+            : undefined;
         flowNodes.push({
           id: nodeId,
           type: "step",
           position: { x: 0, y: 0 }, // Will be set by dagre
           data: {
-            label: step.name,
+            label: deriveStepLabel(step, singleInputName),
             stepType: step.step_type,
             timing: step.timing,
             // Load the Phase-5 step-metadata fields (Plan 03/05) so the Edit

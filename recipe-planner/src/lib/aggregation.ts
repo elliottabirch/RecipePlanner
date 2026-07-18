@@ -7,6 +7,7 @@ import {
   type InventoryItemExpanded,
 } from "./types";
 import { convert, scaleQuantity, type Unit } from "./units";
+import { deriveStepLabel } from "./prep-actions";
 
 // Re-export types from aggregation module
 export type {
@@ -391,15 +392,24 @@ export function buildBatchPrepListFromFlow(
     // Skip steps with "original packaging" outputs
     if (hasOriginalPackagingOutput(step)) return;
 
-    // Use the first step name as the primary name
+    // Derive the display name from the controlled prep_action + single input
+    // ("dice onion"), the same hybrid model as cook mode (E1); fall back to the
+    // authored primary name for multi-input / actionless steps.
     const primaryStepName = step.stepNames[0];
+    const derivedBase =
+      step.inputs.length === 1
+        ? deriveStepLabel(
+            { name: primaryStepName, prep_action: step.prep_action },
+            step.inputs[0].productName
+          )
+        : primaryStepName;
 
     prepSteps.push({
       stepId: step.stepId,
       name:
         step.stepNames.length > 1
-          ? `${primaryStepName} (+ ${step.stepNames.length - 1} variants)`
-          : primaryStepName,
+          ? `${derivedBase} (+ ${step.stepNames.length - 1} variants)`
+          : derivedBase,
       stepType: step.stepType,
       timing: step.stepType === StepType.Assembly ? Timing.Batch : undefined,
       recipeName: step.recipeSources

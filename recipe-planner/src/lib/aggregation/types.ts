@@ -105,6 +105,13 @@ export interface AggregatedFlowStep {
   stepId: string;
   stepNames: string[];
   stepType: StepType;
+  /**
+   * The controlled `prep_action` of the merged step (E1). Signature-merged
+   * steps share input+output product ids, so they share an action — the first
+   * member's value is kept. Used to derive the batch-prep display name
+   * ("dice onion") the same way cook mode does. Absent for actionless steps.
+   */
+  prep_action?: string;
   recipeSources: { recipeName: string; stepName: string; count: number }[];
   inputs: {
     productId: string;

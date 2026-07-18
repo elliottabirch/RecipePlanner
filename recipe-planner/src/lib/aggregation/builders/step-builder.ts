@@ -114,7 +114,8 @@ export function addOrMergeStep(
     productName: string;
     quantity: number;
     unit: string;
-  }[]
+  }[],
+  prepAction?: string
 ): void {
   const existing = steps.get(stepId);
 
@@ -123,6 +124,9 @@ export function addOrMergeStep(
     if (!existing.stepNames.includes(stepName)) {
       existing.stepNames.push(stepName);
     }
+    // Signature-merged steps share an action; keep the first-seen value, but
+    // fill in if the earlier member happened to be actionless (E1).
+    if (!existing.prep_action && prepAction) existing.prep_action = prepAction;
     addStepSource(existing.recipeSources, recipeName, stepName, mealCount);
 
     // Merge inputs — convert-or-split (DATA-01): only combine an incoming
@@ -179,6 +183,7 @@ export function addOrMergeStep(
       stepId,
       stepNames: [stepName],
       stepType,
+      prep_action: prepAction,
       recipeSources: [createStepSource(recipeName, stepName, mealCount)],
       inputs: inputs.map((i) => ({ ...i })),
       outputs: outputs.map((o) => ({ ...o })),
@@ -222,7 +227,8 @@ export function processRecipeSteps(
       recipeName,
       mealCount,
       inputs,
-      outputs
+      outputs,
+      step.prep_action
     );
   });
 }
