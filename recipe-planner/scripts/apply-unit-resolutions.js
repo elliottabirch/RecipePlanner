@@ -7,7 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // PB_URL lets this script be pointed at test (:8091) for rehearsal; default
 // stays prod. Same convention as merge-products.js / normalize-node-units.js.
-const PB_URL = process.env.PB_URL || "http://192.168.50.95:8090";
+const PB_URL = process.env.PB_URL || "http://127.0.0.1:8090";
 
 // Safety default: dry-run unless --apply is explicitly passed — this is the
 // last write step of the Plan 08 supervised prod run, applying the

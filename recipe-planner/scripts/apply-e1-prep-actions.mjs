@@ -16,12 +16,12 @@
 //
 // PB_URL selects test (:8091) vs prod (:8090, default) — rehearse on test first.
 //   node --env-file=.env.local scripts/apply-e1-prep-actions.mjs --dry-run
-//   PB_URL=http://192.168.50.95:8091 node --env-file=.env.local scripts/apply-e1-prep-actions.mjs
+//   PB_URL=http://127.0.0.1:8091 node --env-file=.env.local scripts/apply-e1-prep-actions.mjs
 //   node --env-file=.env.local scripts/apply-e1-prep-actions.mjs
 
 import PocketBase from "pocketbase";
 
-const PB_URL = process.env.PB_URL || "http://192.168.50.95:8090";
+const PB_URL = process.env.PB_URL || "http://127.0.0.1:8090";
 const pb = new PocketBase(PB_URL);
 const DRY_RUN = process.argv.includes("--dry-run");
 

@@ -20,8 +20,8 @@
 import PocketBase from "pocketbase";
 
 const DB_URLS = {
-  production: "http://192.168.50.95:8090",
-  test: "http://192.168.50.95:8091",
+  production: "http://127.0.0.1:8090",
+  test: "http://127.0.0.1:8091",
 };
 const PB_URL = process.env.PB_URL || DB_URLS.production;
 const pb = new PocketBase(PB_URL);

@@ -33,7 +33,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // flow (against a fresh sync-to-test.js copy of prod) before the real prod
 // run. Default stays prod. Same convention as merge-products.js /
 // normalize-node-units.js / apply-unit-resolutions.js.
-const PB_URL = process.env.PB_URL || "http://192.168.50.95:8090";
+const PB_URL = process.env.PB_URL || "http://127.0.0.1:8090";
 
 // Safety default: dry-run unless --apply is explicitly passed (D-08 safety
 // net — never mutate prod data silently).

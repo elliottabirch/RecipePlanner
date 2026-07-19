@@ -3,7 +3,7 @@ import { runLint } from "../src/lib/linter/index.ts";
 
 // PB_URL lets this same script be pointed at test (:8091) instead of prod
 // (:8090). Default stays prod.
-const PB_URL = process.env.PB_URL || "http://192.168.50.95:8090";
+const PB_URL = process.env.PB_URL || "http://127.0.0.1:8090";
 
 const pb = new PocketBase(PB_URL);
 

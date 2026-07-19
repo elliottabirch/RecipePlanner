@@ -1,7 +1,7 @@
 import PocketBase from "pocketbase";
 
 // Connect to PocketBase
-const pb = new PocketBase("http://192.168.50.95:8090");
+const pb = new PocketBase("http://127.0.0.1:8090");
 
 async function findProductMatches() {
   try {

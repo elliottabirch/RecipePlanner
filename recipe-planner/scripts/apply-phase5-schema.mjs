@@ -39,8 +39,8 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 const DB_URLS = {
-  production: "http://192.168.50.95:8090",
-  test: "http://192.168.50.95:8091",
+  production: "http://127.0.0.1:8090",
+  test: "http://127.0.0.1:8091",
 };
 
 // PB_URL lets this same script be pointed at test (:8091) for the mandatory

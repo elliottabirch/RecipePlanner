@@ -31,7 +31,7 @@ import PocketBase from "pocketbase";
 // PB_URL lets this same script be pointed at test (:8091) instead of prod
 // (:8090) — required for the mandatory test-first rehearsal before any
 // prod write.
-const PB_URL = process.env.PB_URL || "http://192.168.50.95:8090";
+const PB_URL = process.env.PB_URL || "http://127.0.0.1:8090";
 const pb = new PocketBase(PB_URL);
 
 const DRY_RUN = process.argv.includes("--dry-run");

@@ -3,8 +3,8 @@ import PocketBase from "pocketbase";
 // Note: DB URLs are also defined in src/lib/db-config.ts for the frontend
 // But that's a TypeScript/browser module, so we duplicate them here for the Node.js script
 const DB_URLS = {
-  production: "http://192.168.50.95:8090",
-  test: "http://192.168.50.95:8091",
+  production: "http://127.0.0.1:8090",
+  test: "http://127.0.0.1:8091",
 };
 
 const pbProd = new PocketBase(DB_URLS.production);

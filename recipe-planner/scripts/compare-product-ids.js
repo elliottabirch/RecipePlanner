@@ -1,7 +1,7 @@
 import PocketBase from "pocketbase";
 
-const pbProd = new PocketBase("http://192.168.50.95:8090");
-const pbTest = new PocketBase("http://192.168.50.95:8091");
+const pbProd = new PocketBase("http://127.0.0.1:8090");
+const pbTest = new PocketBase("http://127.0.0.1:8091");
 
 async function compareProductIds() {
   console.log("\n" + "=".repeat(80));

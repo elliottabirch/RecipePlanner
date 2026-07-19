@@ -11,7 +11,7 @@
 import PocketBase from "pocketbase";
 import { readFileSync } from "node:fs";
 
-const PB_URL = process.env.PB_URL || "http://192.168.50.95:8090";
+const PB_URL = process.env.PB_URL || "http://127.0.0.1:8090";
 const APPLY = process.env.APPLY === "1";
 // Drafts + .env live at the repo root; this script runs from recipe-planner/
 // (where the `pocketbase` dep resolves).

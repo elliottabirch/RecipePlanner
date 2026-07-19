@@ -84,14 +84,14 @@ import PocketBase from "pocketbase";
  *   node scripts/split-create-spaghetti-step.js                 # read-only report
  *   node scripts/split-create-spaghetti-step.js --apply          # write (worksheet must have confirmed:true)
  *   node scripts/split-create-spaghetti-step.js --rollback       # revert a completed --apply
- *   PB_URL=http://192.168.50.95:8091 node scripts/split-create-spaghetti-step.js [--apply|--rollback]
+ *   PB_URL=http://127.0.0.1:8091 node scripts/split-create-spaghetti-step.js [--apply|--rollback]
  */
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Same convention as audit-node-quantities.js: PB_URL lets this script be
 // pointed at test (:8091) for the required rehearsal before the real prod
 // run. Default stays prod.
-const PB_URL = process.env.PB_URL || "http://192.168.50.95:8090";
+const PB_URL = process.env.PB_URL || "http://127.0.0.1:8090";
 
 const APPLY = process.argv.includes("--apply");
 const ROLLBACK = process.argv.includes("--rollback");

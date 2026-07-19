@@ -9,7 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // PB_URL lets this script be pointed at test (:8091) for the D-06 rehearsal
 // flow (against a fresh sync-to-test.js copy of prod) before the real prod
 // run. Default stays prod.
-const PB_URL = process.env.PB_URL || "http://192.168.50.95:8090";
+const PB_URL = process.env.PB_URL || "http://127.0.0.1:8090";
 
 // Safety default: dry-run unless --apply is explicitly passed (D-08 safety
 // net — never mutate prod data silently).

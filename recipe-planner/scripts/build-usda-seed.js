@@ -35,7 +35,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // PB_URL lets this same script be pointed at test (:8091) instead of prod
 // (:8090). Default stays prod — this script only performs READS against it
 // (existing raw-product overlap check, live section/store name resolution).
-const PB_URL = process.env.PB_URL || "http://192.168.50.95:8090";
+const PB_URL = process.env.PB_URL || "http://127.0.0.1:8090";
 const pb = new PocketBase(PB_URL);
 
 const DATA_DIR = path.join(__dirname, "data");

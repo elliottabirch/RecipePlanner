@@ -7,7 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // PB_URL lets this same script be pointed at test (:8091) for the D-06 rehearsal
 // flow instead of prod (:8090). Default stays prod.
-const PB_URL = process.env.PB_URL || "http://192.168.50.95:8090";
+const PB_URL = process.env.PB_URL || "http://127.0.0.1:8090";
 
 const pb = new PocketBase(PB_URL);
 
