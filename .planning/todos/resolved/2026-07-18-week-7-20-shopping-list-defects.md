@@ -10,6 +10,34 @@ related_todos:
   - single-purchase-unit-shopping-lines.md (one line per ingredient in purchase unit)
 ---
 
+## RESOLVED 2026-07-19
+
+Probed live prod + ran the real aggregation (`tsx` importing `buildProductFlowGraph`/
+`buildShoppingListFromFlow`) against plan `vq1ytjtx4cgf4c2` ("7/20"). All four
+reproduced. **Root cause: data classification, not code — the aggregation is correct**
+(shopping list = `ProductType.Raw` only; merge by `product.id`, split by unit dimension).
+
+Fixes applied to prod via `recipe-planner/fix-720-shopping.mjs` (rollback snapshot at
+`recipe-planner/scripts/dedup-output/fix-720-rollback.json`):
+1. **Shallot** — `shallot small dice` (product `p777x10p70vbk11`) was a step output
+   (`shallot → [small dice] → shallot small dice`) mistyped `raw`; flipped to `transient`
+   (every sibling step-output already was). Shopping list now shows only `shallot 1 each`.
+2. **Potato** — merged `yukon gold potato` (`85o6…`, deleted) into `potato (russet)`
+   (`d873…`), renamed survivor `potato`. One line `potato 4 each` (sweet potato stays
+   separate). NOTE: transient children still named `potato (russet) large dice`/`boiled`
+   + registry still has `russet potato`/`red potato`/`fingerling` (not in 7/20) — left alone.
+3. **Chickpea** — global unify: repointed all 3 `chickpeas cooked` (`56jnx…`, deleted)
+   nodes to `chick pea` (`0q18…`, renamed `chickpeas`), converting cup→can (1 can =
+   1.5 cup): Mediterranean 3cup→2, tumeric soup 2cup→1, Harissa Cod 2cup→1. One line
+   `chickpeas 4 each` on 7/20. Touched tumeric soup + Harissa Cod (not in this week).
+4. **Spaghetti** — NO CHANGE (correct). Its 4 buyables are `type=inventory` with in-stock
+   `inventory_items`; inventory-type is excluded from the raw shopping list by design and
+   surfaces via `checkInventoryStock` → out-of-stock restock section when unchecked in the
+   Inventory page. User confirmed leave-as-is.
+
+Verified post-fix with the real aggregation: chickpeas 1 line (4 each), potato 1 line
+(4 each), shallot 1 line, spaghetti 0 (as intended).
+
 ## Problem
 
 Four defects observed live on the **week of 7/20** shopping list (reported together
