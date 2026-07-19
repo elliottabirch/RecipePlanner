@@ -13,7 +13,7 @@ import {
   Alert
 } from '@mui/material';
 import { Storage, SwapHoriz } from '@mui/icons-material';
-import { type DbEnvironment } from '../lib/db-config';
+import { type DbEnvironment, DB_URLS } from '../lib/db-config';
 import { getEnvironment, switchDatabase, getDbUrl } from '../lib/pocketbase';
 
 export default function DatabaseSwitcher() {
@@ -161,7 +161,7 @@ export default function DatabaseSwitcher() {
               <strong>Current:</strong> {getDbUrl()}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              <strong>Switching to:</strong> http://192.168.50.95:8090
+              <strong>Switching to:</strong> {DB_URLS.production}
             </Typography>
           </Box>
         </DialogContent>
