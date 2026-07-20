@@ -1,0 +1,54 @@
+# deploy-to-homelab — requests an auto-deploy from the homelab estate on a
+# green build of main (homelab quick task 260720-a86). Canonical template +
+# runbook: homelab repo infra/ci/app-dispatch-templates/. Requires the repo
+# secret HOMELAB_DISPATCH_TOKEN (a request-only PAT scoped to the homelab repo).
+#
+# On a green build of a push to RecipePlanner's main, this REQUESTS a homelab
+# deploy via repository_dispatch. Homelab's deploy-app job then converges the
+# `recipe-planner` role on brain pinned to this exact SHA. This workflow can
+# only ASK for a deploy — it holds only a repo-scoped, request-only token.
+name: deploy-to-homelab
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    name: build (the deploy gate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Build the SPA image brain will rebuild, so a broken Dockerfile never
+      # reaches the converge. The Dockerfile lives in the SPA subdir and needs
+      # the compile-time VITE_POCKETBASE_URL build arg (fail-loud in the app).
+      # NOTE: verify the context path matches the repo layout (homelab's
+      # recipe-planner role builds `src/recipe-planner`).
+      - name: Build the recipe-planner image
+        run: docker build --build-arg VITE_POCKETBASE_URL=https://pb.home.ebirch.me -t recipe-planner-ci-check src/recipe-planner
+
+  request-deploy:
+    name: request homelab deploy
+    needs: build-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fire repository_dispatch → homelab (deploy-recipe-planner, pinned to this SHA)
+        env:
+          HOMELAB_DISPATCH_TOKEN: ${{ secrets.HOMELAB_DISPATCH_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${HOMELAB_DISPATCH_TOKEN:-}" ]; then
+            echo "::error::HOMELAB_DISPATCH_TOKEN secret is not set — add it (see homelab infra/ci/app-dispatch-templates/README.md)." >&2
+            exit 1
+          fi
+          curl -sSf -X POST \
+            -H "Authorization: Bearer $HOMELAB_DISPATCH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/elliottabirch/homelab/dispatches \
+            -d "$(printf '{"event_type":"deploy-recipe-planner","client_payload":{"sha":"%s"}}' "${GITHUB_SHA}")"
+          echo "Requested homelab deploy-recipe-planner @ ${GITHUB_SHA}"
