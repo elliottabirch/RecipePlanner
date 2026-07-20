@@ -12,6 +12,8 @@ name: deploy-to-homelab
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: read
@@ -34,6 +36,9 @@ jobs:
   request-deploy:
     name: request homelab deploy
     needs: build-test
+    # Only dispatch a real deploy on a push to main (i.e. after merge). PRs run
+    # build-test ONLY — a PR must never deploy un-merged code to brain.
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Fire repository_dispatch → homelab (deploy-recipe-planner, pinned to this SHA)
