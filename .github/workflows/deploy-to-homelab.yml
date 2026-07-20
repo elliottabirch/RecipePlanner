@@ -25,8 +25,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Unit tests (vitest — ~40 spec files under recipe-planner/src + scripts).
+      - name: Unit tests
+        working-directory: recipe-planner
+        run: |
+          npm ci
+          npm test
+
       # Build the SPA image brain will rebuild, so a broken Dockerfile never
-      # reaches the converge. The Dockerfile lives in the repo's `recipe-planner/`
+      # reaches the converge. The image build also runs `tsc -b && vite build`
+      # (typecheck + bundle). The Dockerfile lives in the repo's `recipe-planner/`
       # subdir and needs the compile-time VITE_POCKETBASE_URL build arg
       # (fail-loud in the app). NOTE: homelab's role builds this same subdir,
       # but via its own deploy path `<dir>/src/recipe-planner` — in the REPO
