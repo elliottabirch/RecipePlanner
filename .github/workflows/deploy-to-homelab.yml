@@ -26,12 +26,13 @@ jobs:
       - uses: actions/checkout@v4
 
       # Build the SPA image brain will rebuild, so a broken Dockerfile never
-      # reaches the converge. The Dockerfile lives in the SPA subdir and needs
-      # the compile-time VITE_POCKETBASE_URL build arg (fail-loud in the app).
-      # NOTE: verify the context path matches the repo layout (homelab's
-      # recipe-planner role builds `src/recipe-planner`).
+      # reaches the converge. The Dockerfile lives in the repo's `recipe-planner/`
+      # subdir and needs the compile-time VITE_POCKETBASE_URL build arg
+      # (fail-loud in the app). NOTE: homelab's role builds this same subdir,
+      # but via its own deploy path `<dir>/src/recipe-planner` — in the REPO
+      # the context is just `recipe-planner`.
       - name: Build the recipe-planner image
-        run: docker build --build-arg VITE_POCKETBASE_URL=https://pb.home.ebirch.me -t recipe-planner-ci-check src/recipe-planner
+        run: docker build --build-arg VITE_POCKETBASE_URL=https://pb.home.ebirch.me -t recipe-planner-ci-check recipe-planner
 
   request-deploy:
     name: request homelab deploy
