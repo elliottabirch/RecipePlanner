@@ -41,8 +41,12 @@ function meal(overrides: {
   } as unknown as PlannedMeal;
 }
 
-function recipe(id: string, name: string): { id: string; name: string } {
-  return { id, name };
+function recipe(
+  id: string,
+  name: string,
+  recipeType?: "meal" | "batch_prep"
+): { id: string; name: string; recipe_type?: "meal" | "batch_prep" } {
+  return { id, name, recipe_type: recipeType };
 }
 
 describe("computeLastPlannedDates + orderPoolByLRU — AC#6 LRU tie-break (WEEK-04)", () => {
@@ -185,5 +189,28 @@ describe("poolForSlot — Micah/adult split (match_all + exclude_tags)", () => {
     );
 
     expect(pool).toHaveLength(0);
+  });
+});
+
+describe("poolForSlot — batch_prep excluded from wizard candidates (2026-07-26)", () => {
+  it("drops a tag-matching recipe with recipe_type batch_prep, keeps meal and undefined", () => {
+    const recipeTags = new Map<string, string[]>([
+      ["batch-recipe", ["tag-a"]],
+      ["meal-recipe", ["tag-a"]],
+      ["untyped-recipe", ["tag-a"]],
+    ]);
+    const slot = { pool_tags: ["tag-a"] };
+    const recipes = [
+      recipe("batch-recipe", "Batch", "batch_prep"),
+      recipe("meal-recipe", "Meal", "meal"),
+      recipe("untyped-recipe", "Untyped"), // recipe_type undefined — treated as non-batch
+    ];
+
+    const pool = poolForSlot(slot, recipes, recipeTags);
+
+    expect(pool.map((r) => r.id).sort()).toEqual([
+      "meal-recipe",
+      "untyped-recipe",
+    ]);
   });
 });

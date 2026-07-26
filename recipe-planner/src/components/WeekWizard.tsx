@@ -409,6 +409,13 @@ export default function WeekWizard({ open, plan, onClose }: WeekWizardProps) {
     await addPick(slot, recipe.id);
   }
 
+  // batch_prep recipes never appear as wizard candidates — they enter a week
+  // only via the Outputs out-of-stock/make-it flow, not the "Add other
+  // recipe" escape hatch.
+  const nonBatchRecipes = recipes.filter(
+    (recipe) => recipe.recipe_type !== "batch_prep"
+  );
+
   const handleClose = () => {
     onClose();
   };
@@ -604,7 +611,7 @@ export default function WeekWizard({ open, plan, onClose }: WeekWizardProps) {
                     )}
 
                     <Autocomplete
-                      options={recipes}
+                      options={nonBatchRecipes}
                       value={offPoolSelections.get(slot.id) || null}
                       onChange={(_, newValue) => handleOffPoolSelect(slot, newValue)}
                       getOptionLabel={(option) => option.name}

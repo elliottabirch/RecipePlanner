@@ -75,7 +75,9 @@ function tieBreak(
  *
  * A slot with no `pool_tags` has an empty pool (unchanged behaviour).
  */
-export function poolForSlot<T extends { id: string }>(
+export function poolForSlot<
+  T extends { id: string; recipe_type?: string }
+>(
   slot: Pick<TemplateSlot, "pool_tags"> &
     Partial<Pick<TemplateSlot, "exclude_tags" | "match_all">>,
   recipes: T[],
@@ -85,6 +87,9 @@ export function poolForSlot<T extends { id: string }>(
   const excludeTagIds = new Set(slot.exclude_tags ?? []);
   const matchAll = !!slot.match_all;
   return recipes.filter((recipe) => {
+    // batch_prep recipes are stocked-freezer batch cooks — they enter a week
+    // only via the Outputs out-of-stock/make-it flow, never as wizard picks.
+    if (recipe.recipe_type === "batch_prep") return false;
     const tags = recipeTags.get(recipe.id) || [];
     if (excludeTagIds.size > 0 && tags.some((tagId) => excludeTagIds.has(tagId))) {
       return false;
