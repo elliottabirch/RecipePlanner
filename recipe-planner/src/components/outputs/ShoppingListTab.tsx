@@ -252,6 +252,7 @@ export function ShoppingListTab({
           alignItems: "center",
           gap: 1,
           py: 0.5,
+          flexWrap: { xs: "wrap", md: "nowrap" },
         }}
       >
         <ListItemIcon sx={{ minWidth: 48 }}>
@@ -274,62 +275,76 @@ export function ShoppingListTab({
             </span>
           }
           secondary={secondary}
+          sx={{
+            flex: { xs: "1 1 calc(100% - 56px)", md: "1 1 auto" },
+            minWidth: 0,
+          }}
         />
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <IconButton
-            size="medium"
-            aria-label="Decrease have quantity"
-            onClick={handleDecrease}
-            disabled={atMin}
-            sx={{ minWidth: 48, minHeight: 48 }}
-          >
-            <RemoveIcon />
-          </IconButton>
-          <Typography sx={{ minWidth: 40, textAlign: "center" }}>
-            {formatQty(haveValue)}
-          </Typography>
-          <IconButton
-            size="medium"
-            aria-label="Increase have quantity"
-            onClick={handleIncrease}
-            disabled={atMax}
-            sx={{ minWidth: 48, minHeight: 48 }}
-          >
-            <AddIcon />
-          </IconButton>
-        </Box>
-
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ minWidth: 64 }}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            flexWrap: "wrap",
+            ml: { xs: 7, md: 0 },
+          }}
         >
-          {remainingValue > 0 ? `${formatQty(remainingValue)} to buy` : "All set"}
-        </Typography>
-
-        {item.resolution !== "buy" && (
-          <Box
-            sx={{
-              minWidth: 48,
-              minHeight: 48,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Chip
-              size="small"
-              variant="outlined"
-              label={RESOLUTION_CHIP_LABEL[item.resolution]}
-              onClick={handleUnresolve}
-              aria-label={`Undo resolution for ${item.productName}`}
-              sx={{ cursor: "pointer" }}
-            />
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <IconButton
+              size="medium"
+              aria-label="Decrease have quantity"
+              onClick={handleDecrease}
+              disabled={atMin}
+              sx={{ minWidth: 48, minHeight: 48 }}
+            >
+              <RemoveIcon />
+            </IconButton>
+            <Typography sx={{ minWidth: 40, textAlign: "center" }}>
+              {formatQty(haveValue)}
+            </Typography>
+            <IconButton
+              size="medium"
+              aria-label="Increase have quantity"
+              onClick={handleIncrease}
+              disabled={atMax}
+              sx={{ minWidth: 48, minHeight: 48 }}
+            >
+              <AddIcon />
+            </IconButton>
           </Box>
-        )}
 
-        {renderLineActions(item)}
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ minWidth: 64 }}
+          >
+            {remainingValue > 0 ? `${formatQty(remainingValue)} to buy` : "All set"}
+          </Typography>
+
+          {item.resolution !== "buy" && (
+            <Box
+              sx={{
+                minWidth: 48,
+                minHeight: 48,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Chip
+                size="small"
+                variant="outlined"
+                label={RESOLUTION_CHIP_LABEL[item.resolution]}
+                onClick={handleUnresolve}
+                aria-label={`Undo resolution for ${item.productName}`}
+                sx={{ cursor: "pointer" }}
+              />
+            </Box>
+          )}
+
+          {renderLineActions(item)}
+        </Box>
       </ListItem>
     );
   };
